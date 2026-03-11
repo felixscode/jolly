@@ -25,7 +25,7 @@
 	];
 
 	let current = $state(corrections[0]);
-	let showWord = $state(false);
+	let phase = $state<'hidden' | 'wrong' | 'right'>('hidden');
 	let lastIdx = -1;
 
 	function pickRandom() {
@@ -46,48 +46,65 @@
 
 	function cycleWords() {
 		current = pickRandom();
-		showWord = true;
+		phase = 'wrong';
 
 		wordTimer = setTimeout(() => {
-			showWord = false;
+			phase = 'hidden';
 			wordTimer = setTimeout(() => {
-				if (active) cycleWords();
-			}, 200);
-		}, 1300);
+				phase = 'right';
+				wordTimer = setTimeout(() => {
+					phase = 'hidden';
+					wordTimer = setTimeout(() => {
+						if (active) cycleWords();
+					}, 200);
+				}, 900);
+			}, 150);
+		}, 700);
 	}
 
 	$effect(() => {
 		if (active) {
-			showWord = false;
+			phase = 'hidden';
 			const startTimer = setTimeout(() => cycleWords(), 300);
 			return () => {
 				clearTimeout(startTimer);
 				clearTimers();
-				showWord = false;
+				phase = 'hidden';
 			};
 		} else {
 			clearTimers();
-			showWord = false;
+			phase = 'hidden';
 		}
 	});
 </script>
 
 {#if active}
 	<div
-		class="thinking-bubble pointer-events-none absolute bottom-full left-1/2 mb-2"
+		class="thinking-bubble pointer-events-none absolute bottom-full left-1/2"
 		style="
 			animation: bubble-pulse {scaleSpeed}s linear infinite;
 			--min-scale: {minScale};
 			--max-scale: {maxScale};
 		"
 	>
-		<img src="/jolly_thinking_bubble.svg" alt="" class="w-32" />
-		{#if showWord}
+		<img
+			src="/jolly_thinking_bubble.svg"
+			alt=""
+			style="display: block; width: 150px; max-width: none;"
+		/>
+		{#if phase === 'wrong'}
 			<span
-				class="word-fade absolute inset-0 flex items-center justify-center text-xs font-medium whitespace-nowrap"
+				class="word-fade absolute top-0 flex items-center justify-center text-xs font-semibold"
+				style="height: 55%; left: 40%; right: 0;"
 			>
 				<span class="text-jolly-accent line-through">{current.wrong}</span>
-				<span class="text-accent ml-1">&rarr; {current.right}</span>
+			</span>
+		{:else if phase === 'right'}
+			<span
+				class="word-fade absolute top-0 flex items-center justify-center text-xs font-semibold"
+				style="height: 55%; left: 40%; right: 0;"
+			>
+				<span class="text-accent">{current.right}</span>
 			</span>
 		{/if}
 	</div>

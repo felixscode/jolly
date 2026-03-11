@@ -57,7 +57,7 @@
 			? flyFrame === 1
 				? 'fly1'
 				: 'fly2'
-			: scene === 'hovering' || scene === 'correcting'
+			: scene === 'correcting'
 				? 'thinking'
 				: blinking
 					? 'blink'
@@ -116,7 +116,7 @@
 				greetingTimer = setTimeout(() => {
 					if (!mounted) return;
 					if (scene === 'greeting') scene = 'idle';
-				}, 3000);
+				}, 30000);
 			}, 500);
 		}, 2300);
 
@@ -151,7 +151,11 @@
 
 		function handleLeave() {
 			if (scene === 'hovering') {
-				scene = 'idle';
+				scene = 'greeting';
+				greetingTimer = setTimeout(() => {
+					if (!mounted) return;
+					if (scene === 'greeting') scene = 'idle';
+				}, 30000);
 			}
 		}
 
@@ -159,6 +163,7 @@
 			if (scene !== 'idle' && scene !== 'hovering' && scene !== 'greeting') return;
 			clearTimeout(greetingTimer);
 			scene = 'correcting';
+			const minDelay = new Promise((r) => setTimeout(r, 5000));
 
 			try {
 				const text = await navigator.clipboard.readText();
@@ -182,12 +187,19 @@
 				quoteText = pickQuote();
 			}
 
+			await minDelay;
 			if (!mounted) return;
 			scene = 'quoting';
 			quotingTimer = setTimeout(() => {
 				if (!mounted) return;
-				if (scene === 'quoting') scene = 'idle';
-			}, 3000);
+				if (scene === 'quoting') {
+					scene = 'greeting';
+					greetingTimer = setTimeout(() => {
+						if (!mounted) return;
+						if (scene === 'greeting') scene = 'idle';
+					}, 30000);
+				}
+			}, 5000);
 		}
 
 		function handleKeydown(e: KeyboardEvent) {
@@ -244,7 +256,7 @@
 		</div>
 
 		<!-- Right: character scene -->
-		<div class="flex flex-col items-center select-none">
+		<div class="flex flex-col items-center self-end mb-16 select-none">
 			<!-- Position layer: X + Y with cubic-bezier easing, opacity fade-in -->
 			<div
 				bind:this={posLayerEl}
@@ -271,17 +283,17 @@
 						role="img"
 						aria-label="Jolly"
 					>
-						<!-- Talk bubble -->
+						<!-- Talk bubble (SVG oval) -->
 						<div
-							class="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 rounded-xl border-2 border-[#241e4e] bg-white px-4 py-3 text-center text-sm font-medium whitespace-pre-line text-[#241e4e] shadow-sm"
+							class="pointer-events-none absolute bottom-full left-1/2"
 							style="opacity: {bubbleVisible ? 1 : 0}; transition: opacity 300ms ease;"
 						>
-							{bubbleText}
-							<div
-								class="absolute -bottom-[9px] left-1/2 flex -translate-x-1/2 flex-col items-center gap-[3px]"
-							>
-								<div class="h-2 w-2 rounded-full border-2 border-[#241e4e] bg-white"></div>
-								<div class="h-1.5 w-1.5 rounded-full border-2 border-[#241e4e] bg-white"></div>
+							<div class="relative">
+								<img src="/jolly_talk.svg" alt="" aria-hidden="true" style="display: block; width: 180px; max-width: none;" />
+								<span
+									class="absolute top-0 left-0 right-0 flex items-center justify-center text-center text-sm font-bold whitespace-pre-line text-[#241e4e]"
+									style="height: 75%;"
+								>{bubbleText}</span>
 							</div>
 						</div>
 
@@ -294,39 +306,39 @@
 						/>
 
 						<!-- Layered bird poses -->
-						<div class="relative h-44">
+						<div class="relative h-44 w-36">
 							<img
 								src="/jolly_normal.svg"
 								alt="Jolly"
-								class="absolute bottom-0 left-1/2 h-full -translate-x-1/2 transition-opacity duration-150"
+								class="absolute inset-0 h-full w-full object-contain object-bottom"
 								style="opacity: {pose === 'normal' ? 1 : 0}"
 							/>
 							<img
 								src="/jolly_blink.svg"
 								alt=""
 								aria-hidden="true"
-								class="absolute bottom-0 left-1/2 h-full -translate-x-1/2 transition-opacity duration-150"
+								class="absolute inset-0 h-full w-full object-contain object-bottom"
 								style="opacity: {pose === 'blink' ? 1 : 0}"
 							/>
 							<img
 								src="/jolly_fly1.svg"
 								alt=""
 								aria-hidden="true"
-								class="absolute bottom-0 left-1/2 h-full -translate-x-1/2 transition-opacity duration-150"
+								class="absolute inset-0 h-full w-full object-contain object-bottom"
 								style="opacity: {pose === 'fly1' ? 1 : 0}"
 							/>
 							<img
 								src="/jolly_fly2.svg"
 								alt=""
 								aria-hidden="true"
-								class="absolute bottom-0 left-1/2 h-full -translate-x-1/2 transition-opacity duration-150"
+								class="absolute inset-0 h-full w-full object-contain object-bottom"
 								style="opacity: {pose === 'fly2' ? 1 : 0}"
 							/>
 							<img
 								src="/jolly_thinking.svg"
 								alt=""
 								aria-hidden="true"
-								class="absolute bottom-0 left-1/2 h-full -translate-x-1/2 transition-opacity duration-150"
+								class="absolute inset-0 h-full w-full object-contain object-bottom"
 								style="opacity: {pose === 'thinking' ? 1 : 0}"
 							/>
 						</div>

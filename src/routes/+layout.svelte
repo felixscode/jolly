@@ -16,7 +16,9 @@
 	</main>
 	<footer class="mt-auto border-t border-gray-100 py-8">
 		<div class="mx-auto max-w-4xl px-6 text-center">
-			<p class="text-sm text-gray-400">&copy; 2025 Jolly — made by [your name]. Free and open source.</p>
+			<p class="text-sm text-gray-400">
+				&copy; 2025 Jolly — made by Felix Schelling. Free and open source.
+			</p>
 		</div>
 	</footer>
 </div>

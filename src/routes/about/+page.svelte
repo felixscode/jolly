@@ -1,8 +1,7 @@
 <div class="mx-auto max-w-4xl px-6 pt-16 pb-24">
-
 	<!-- Header -->
 	<div class="mb-16 text-center">
-		<h1 class="text-[5rem] font-extrabold leading-none tracking-tight text-[#241e4e]">
+		<h1 class="text-[5rem] leading-none font-extrabold tracking-tight text-[#241e4e]">
 			Meet Jolly
 		</h1>
 		<p class="mt-4 text-lg text-gray-500">A spell checker that doesn't take itself seriously.</p>
@@ -12,7 +11,6 @@
 
 	<!-- 4-section grid -->
 	<div class="grid grid-cols-2 gap-16">
-
 		<div>
 			<h2 class="mb-3 text-2xl font-bold text-[#241e4e]">How it works</h2>
 			<p class="leading-relaxed text-gray-500">
@@ -43,7 +41,6 @@
 				curious.
 			</p>
 		</div>
-
 	</div>
 
 	<hr class="mt-16 mb-16 border-gray-200" />
@@ -59,16 +56,4 @@
 			The source is open. If something looks wrong or could be better, pull requests are welcome.
 		</p>
 	</div>
-
-	<hr class="mt-16 mb-16 border-gray-200" />
-
-	<div class="text-center">
-		<a
-			href="/download"
-			class="inline-block rounded-lg border-4 border-[#241e4e] bg-[#960200] px-6 py-3 text-sm font-bold text-white transition-opacity hover:opacity-90"
-		>
-			Download Jolly — it's free
-		</a>
-	</div>
-
 </div>
