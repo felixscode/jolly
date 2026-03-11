@@ -1,0 +1,25 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/typography';
+
+@layer base {
+	body {
+		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+		@apply antialiased text-gray-900;
+	}
+
+	/* Jolly brand color utilities — exact colors from SVG files */
+	.text-accent        { color: #241e4e; }
+	.border-accent      { border-color: #241e4e; }
+
+	.bg-jolly-accent    { background-color: #960200; }
+	.text-jolly-accent  { color: #960200; }
+	.border-jolly-accent { border-color: #960200; }
+
+	.bg-jolly-main      { background-color: #ffd046; }
+	.text-jolly-main    { color: #ffd046; }
+	.border-jolly-main  { border-color: #ffd046; }
+
+	.bg-jolly-secondary { background-color: #aea897; }
+	.text-jolly-secondary { color: #aea897; }
+	.border-jolly-secondary { border-color: #aea897; }
+}
