@@ -74,7 +74,7 @@
 
 {#if active}
 	<div
-		class="thinking-bubble absolute bottom-full left-1/2 mb-2 pointer-events-none"
+		class="thinking-bubble pointer-events-none absolute bottom-full left-1/2 mb-2"
 		style="
 			animation: bubble-pulse {scaleSpeed}s linear infinite;
 			--min-scale: {minScale};
