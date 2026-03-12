@@ -1,15 +1,30 @@
 <script lang="ts">
 	let {
 		active,
-		minScale = 0.9,
-		maxScale = 1.15,
-		scaleSpeed = 2
+		scale = 1.0,
+		scaleSpeed = 2,
+		offsetX = 0,
+		offsetY = 0,
+		boxTop = 5,
+		boxLeft = 42,
+		boxW = 72,
+		boxH = 38,
+		debugBubbles = false
 	}: {
 		active: boolean;
-		minScale?: number;
-		maxScale?: number;
+		scale?: number;
 		scaleSpeed?: number;
+		offsetX?: number;
+		offsetY?: number;
+		boxTop?: number;
+		boxLeft?: number;
+		boxW?: number;
+		boxH?: number;
+		debugBubbles?: boolean;
 	} = $props();
+
+	const minScale = $derived(scale * 0.875);
+	const maxScale = $derived(scale * 1.125);
 
 	const corrections = [
 		{ wrong: 'recieve', right: 'receive' },
@@ -80,11 +95,14 @@
 
 {#if active}
 	<div
-		class="thinking-bubble pointer-events-none absolute bottom-full left-1/2"
+		class="thinking-bubble pointer-events-none absolute bottom-full"
 		style="
+			left: 50%;
 			animation: bubble-pulse {scaleSpeed}s linear infinite;
 			--min-scale: {minScale};
 			--max-scale: {maxScale};
+			--offset-x: {offsetX}px;
+			--offset-y: {offsetY}px;
 		"
 	>
 		<img
@@ -92,21 +110,18 @@
 			alt=""
 			style="display: block; width: 150px; max-width: none;"
 		/>
-		{#if phase === 'wrong'}
-			<span
-				class="word-fade absolute top-0 flex items-center justify-center text-xs font-semibold"
-				style="height: 55%; left: 40%; right: 0;"
-			>
-				<span class="text-jolly-accent line-through">{current.wrong}</span>
-			</span>
-		{:else if phase === 'right'}
-			<span
-				class="word-fade absolute top-0 flex items-center justify-center text-xs font-semibold"
-				style="height: 55%; left: 40%; right: 0;"
-			>
-				<span class="text-accent">{current.right}</span>
-			</span>
-		{/if}
+		<div
+			class="pointer-events-none absolute flex items-center justify-center"
+			class:outline={debugBubbles}
+			class:outline-red-500={debugBubbles}
+			style="top:{boxTop}px; left:{boxLeft}px; width:{boxW}px; height:{boxH}px;"
+		>
+			{#if phase === 'wrong'}
+				<span class="word-fade text-xs font-semibold text-jolly-accent line-through">{current.wrong}</span>
+			{:else if phase === 'right'}
+				<span class="word-fade text-xs font-semibold text-accent">{current.right}</span>
+			{/if}
+		</div>
 	</div>
 {/if}
 
@@ -114,10 +129,10 @@
 	@keyframes bubble-pulse {
 		0%,
 		100% {
-			transform: translate(-50%, 0) scale(var(--min-scale));
+			transform: translate(calc(-50% + var(--offset-x)), var(--offset-y)) scale(var(--min-scale));
 		}
 		50% {
-			transform: translate(-50%, 0) scale(var(--max-scale));
+			transform: translate(calc(-50% + var(--offset-x)), var(--offset-y)) scale(var(--max-scale));
 		}
 	}
 

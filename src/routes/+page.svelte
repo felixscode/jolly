@@ -19,14 +19,15 @@
 		<!-- Left: copy -->
 		<div>
 			<p class="mb-3 text-xs font-semibold tracking-widest text-[#960200] uppercase">
-				Your writing companion
+				Your spell check parrot
 			</p>
 			<h1 class="mb-6 text-4xl leading-tight font-extrabold text-[#241e4e]">
 				Catch typos.<br />Keep your voice.
 			</h1>
 			<p class="mb-10 leading-relaxed text-gray-500">
-				Jolly watches what you type, catches your typos, and suggests fixes — with a bit of wit. No
-				red squiggles. No drama. No judgement.
+				Jolly repleats what your saing just like a real Parrot. Unlike a real Parrot he fixes your
+				typos on the fly. No red squiggles. No extra clicking. Copy something hit enter and paste
+				back in.
 			</p>
 			<a
 				href="/download"
@@ -42,6 +43,9 @@
 		</div>
 	</div>
 
+	<p class="mb-8 text-xs text-gray-400">
+		* The web demo uses a free public AI — do not paste sensitive or private data.
+	</p>
 	<hr class="border-gray-200" />
 
 	<!-- Feature strip -->
@@ -55,8 +59,7 @@
 		<div>
 			<h2 class="mb-3 text-xl font-bold text-[#241e4e]">Quiet</h2>
 			<p class="text-sm leading-relaxed text-gray-500">
-				No notifications, no interruptions. Jolly stays in the background until a fix is worth
-				mentioning.
+				No notifications, no interruptions. Jolly sits there silently, waiting for your typo.
 			</p>
 		</div>
 		<div>
