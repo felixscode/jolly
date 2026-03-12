@@ -1,0 +1,10 @@
+/home/dev/jolly/src-tauri/target/debug/deps/wayland_protocols-b0c1e8dbe6b4dc26.d: /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.11/src/lib.rs /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.11/src/protocol_macro.rs /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.11/src/ext.rs /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.11/src/wp.rs /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.11/src/xdg.rs /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.11/src/xwayland.rs
+
+/home/dev/jolly/src-tauri/target/debug/deps/libwayland_protocols-b0c1e8dbe6b4dc26.rmeta: /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.11/src/lib.rs /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.11/src/protocol_macro.rs /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.11/src/ext.rs /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.11/src/wp.rs /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.11/src/xdg.rs /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.11/src/xwayland.rs
+
+/home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.11/src/lib.rs:
+/home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.11/src/protocol_macro.rs:
+/home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.11/src/ext.rs:
+/home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.11/src/wp.rs:
+/home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.11/src/xdg.rs:
+/home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wayland-protocols-0.32.11/src/xwayland.rs:
