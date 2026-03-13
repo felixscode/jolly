@@ -1,7 +1,6 @@
-import type { Model } from '$lib/types/models';
+import type { ModelWithState } from '$lib/types/models';
 
 // Lazy-load Tauri plugins to avoid errors when running outside Tauri.
-// Cache the store instance so repeated calls don't create duplicates.
 let _store: any = null;
 
 async function getStore() {
@@ -12,7 +11,6 @@ async function getStore() {
 	return _store;
 }
 
-// Keyring access via Tauri IPC commands (no JS bindings package exists)
 async function getInvoke() {
 	const { invoke } = await import('@tauri-apps/api/core');
 	return invoke;
@@ -20,21 +18,38 @@ async function getInvoke() {
 
 function createSettingsStore() {
 	let apiKey = $state('');
-	let darkModeOverride = $state(false);
-	let downloadedModels = $state<Model[]>([]);
+	let themeMode = $state<'system' | 'light' | 'dark'>('system');
 	let activeModelId = $state<string | null>(null);
-	let downloadProgress = $state<{ modelId: string; percent: number } | null>(null);
+	let useOpenRouter = $state(false);
+
+	// Models — populated from backend
+	let availableModels = $state<ModelWithState[]>([]);
+	let downloadedModelIds = $state<string[]>([]);
+
+	// Download progress — driven by Tauri events
+	let downloadProgress = $state<{
+		modelId: string;
+		bytesReceived: number;
+		totalBytes: number;
+	} | null>(null);
+	let downloadError = $state<string | null>(null);
+
+	// Event listener cleanup functions
+	let unlisteners: (() => void)[] = [];
 
 	async function loadAll() {
+		// Load preferences from store
 		try {
 			const store = await getStore();
-			darkModeOverride = ((await store.get('darkModeOverride')) as boolean | null) ?? false;
-			downloadedModels = ((await store.get('downloadedModels')) as Model[] | null) ?? [];
+			themeMode =
+				((await store.get('themeMode')) as 'system' | 'light' | 'dark' | null) ?? 'system';
 			activeModelId = ((await store.get('activeModelId')) as string | null) ?? null;
+			useOpenRouter = ((await store.get('useOpenRouter')) as boolean | null) ?? false;
 		} catch (e) {
 			console.warn('Failed to load settings from store:', e);
 		}
 
+		// Load API key from keyring
 		try {
 			const invoke = await getInvoke();
 			const key = await invoke<string | null>('plugin:keyring|get_password', {
@@ -43,9 +58,59 @@ function createSettingsStore() {
 			});
 			apiKey = key ?? '';
 		} catch (e) {
-			// No key stored yet, or keyring unavailable
 			console.warn('Failed to load API key from keyring:', e);
 		}
+
+		// Load models from backend
+		await refreshModels();
+
+		// Subscribe to download events (once)
+		if (unlisteners.length === 0) {
+			await subscribeToEvents();
+		}
+	}
+
+	async function refreshModels() {
+		try {
+			const invoke = await getInvoke();
+			availableModels = await invoke<ModelWithState[]>('list_available_models');
+			downloadedModelIds = await invoke<string[]>('list_downloaded_models');
+		} catch (e) {
+			console.warn('Failed to load models from backend:', e);
+		}
+	}
+
+	async function subscribeToEvents() {
+		const { listen } = await import('@tauri-apps/api/event');
+
+		const u1 = await listen<{ modelId: string; bytesReceived: number; totalBytes: number }>(
+			'download-progress',
+			(event) => {
+				downloadProgress = event.payload;
+				downloadError = null;
+			}
+		);
+
+		const u2 = await listen<{ modelId: string }>('download-complete', async () => {
+			downloadProgress = null;
+			downloadError = null;
+			await refreshModels();
+		});
+
+		const u3 = await listen<{ modelId: string }>('download-cancelled', async () => {
+			downloadProgress = null;
+			await refreshModels();
+		});
+
+		const u4 = await listen<{ modelId: string; error: string }>(
+			'download-error',
+			(event) => {
+				downloadProgress = null;
+				downloadError = event.payload.error;
+			}
+		);
+
+		unlisteners = [u1, u2, u3, u4];
 	}
 
 	async function saveApiKey(key: string) {
@@ -69,25 +134,14 @@ function createSettingsStore() {
 		}
 	}
 
-	async function setDarkModeOverride(value: boolean) {
-		darkModeOverride = value;
+	async function setThemeMode(value: 'system' | 'light' | 'dark') {
+		themeMode = value;
 		try {
 			const store = await getStore();
-			await store.set('darkModeOverride', value);
+			await store.set('themeMode', value);
 			await store.save();
 		} catch (e) {
-			console.error('Failed to save dark mode preference:', e);
-		}
-	}
-
-	async function addDownloadedModel(model: Model) {
-		downloadedModels = [...downloadedModels, model];
-		try {
-			const store = await getStore();
-			await store.set('downloadedModels', downloadedModels);
-			await store.save();
-		} catch (e) {
-			console.error('Failed to save downloaded models:', e);
+			console.error('Failed to save theme preference:', e);
 		}
 	}
 
@@ -102,11 +156,51 @@ function createSettingsStore() {
 		}
 	}
 
-	function setDownloadProgress(progress: { modelId: string; percent: number } | null) {
-		downloadProgress = progress;
+	async function setUseOpenRouter(value: boolean) {
+		useOpenRouter = value;
+		try {
+			const store = await getStore();
+			await store.set('useOpenRouter', value);
+			await store.save();
+		} catch (e) {
+			console.error('Failed to save OpenRouter preference:', e);
+		}
 	}
 
-	// OS color scheme tracking (centralized here so layout + Settings don't duplicate)
+	async function startDownload(modelId: string) {
+		downloadError = null;
+		try {
+			const invoke = await getInvoke();
+			await invoke('start_download', { modelId });
+		} catch (e) {
+			downloadError = String(e);
+		}
+	}
+
+	async function cancelDownload() {
+		try {
+			const invoke = await getInvoke();
+			await invoke('cancel_download');
+		} catch (e) {
+			console.error('Failed to cancel download:', e);
+		}
+	}
+
+	async function deleteModel(modelId: string) {
+		try {
+			const invoke = await getInvoke();
+			await invoke('delete_model', { modelId });
+			await refreshModels();
+			// If the deleted model was active, clear selection
+			if (activeModelId === modelId) {
+				await setActiveModel(null);
+			}
+		} catch (e) {
+			console.error('Failed to delete model:', e);
+		}
+	}
+
+	// OS color scheme tracking
 	let systemDark = $state(false);
 
 	function initSystemDarkListener() {
@@ -119,35 +213,53 @@ function createSettingsStore() {
 		return () => mq.removeEventListener('change', handler);
 	}
 
+	function cleanup() {
+		for (const u of unlisteners) u();
+		unlisteners = [];
+	}
+
 	return {
 		get apiKey() {
 			return apiKey;
 		},
-		get darkModeOverride() {
-			return darkModeOverride;
-		},
-		get downloadedModels() {
-			return downloadedModels;
+		get themeMode() {
+			return themeMode;
 		},
 		get activeModelId() {
 			return activeModelId;
 		},
+		get useOpenRouter() {
+			return useOpenRouter;
+		},
+		get availableModels() {
+			return availableModels;
+		},
+		get downloadedModelIds() {
+			return downloadedModelIds;
+		},
 		get downloadProgress() {
 			return downloadProgress;
+		},
+		get downloadError() {
+			return downloadError;
 		},
 		get systemDark() {
 			return systemDark;
 		},
 		get isDark() {
-			return darkModeOverride || systemDark;
+			return themeMode === 'dark' || (themeMode === 'system' && systemDark);
 		},
 		loadAll,
 		saveApiKey,
-		setDarkModeOverride,
-		addDownloadedModel,
+		setThemeMode,
 		setActiveModel,
-		setDownloadProgress,
-		initSystemDarkListener
+		setUseOpenRouter,
+		startDownload,
+		cancelDownload,
+		deleteModel,
+		refreshModels,
+		initSystemDarkListener,
+		cleanup
 	};
 }
 
