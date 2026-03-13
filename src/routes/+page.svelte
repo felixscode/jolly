@@ -1,5 +1,17 @@
 <script lang="ts">
 	import BirdScene from '$lib/components/BirdScene.svelte';
+	import { onMount } from 'svelte';
+
+	let isDark = $state(false);
+
+	onMount(() => {
+		const observer = new MutationObserver(() => {
+			isDark = document.documentElement.classList.contains('dark');
+		});
+		isDark = document.documentElement.classList.contains('dark');
+		observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+		return () => observer.disconnect();
+	});
 
 	async function webCorrect(text: string): Promise<string> {
 		const res = await fetch('/api/correct', {
@@ -18,13 +30,13 @@
 	<div class="grid flex-1 grid-cols-2 items-center gap-16">
 		<!-- Left: copy -->
 		<div>
-			<p class="mb-3 text-xs font-semibold tracking-widest text-[#960200] uppercase">
+			<p class="mb-3 text-xs font-semibold tracking-widest text-[#960200] dark:text-[#ffd046] uppercase">
 				Your spell check parrot
 			</p>
-			<h1 class="mb-6 text-4xl leading-tight font-extrabold text-[#241e4e]">
+			<h1 class="mb-6 text-4xl leading-tight font-extrabold text-[#241e4e] dark:text-[#e5e5e5]">
 				Catch typos.<br />Keep your voice.
 			</h1>
-			<p class="mb-10 leading-relaxed text-gray-500">
+			<p class="mb-10 leading-relaxed text-gray-500 dark:text-gray-400">
 				Jolly repleats what your saing just like a real Parrot. Unlike a real Parrot he fixes your
 				typos on the fly. No red squiggles. No extra clicking. Copy something hit enter and paste
 				back in.
@@ -39,32 +51,32 @@
 
 		<!-- Right: character scene -->
 		<div class="mb-16 self-end">
-			<BirdScene onCorrect={webCorrect} compact={false} />
+			<BirdScene onCorrect={webCorrect} {isDark} />
 		</div>
 	</div>
 
-	<p class="mb-8 text-xs text-gray-400">
+	<p class="mb-8 text-xs text-gray-400 dark:text-gray-500">
 		* The web demo uses a free public AI — do not paste sensitive or private data.
 	</p>
-	<hr class="border-gray-200" />
+	<hr class="border-gray-200 dark:border-gray-700" />
 
 	<!-- Feature strip -->
 	<div class="my-16 grid grid-cols-3 gap-16">
 		<div>
-			<h2 class="mb-3 text-xl font-bold text-[#241e4e]">Local</h2>
-			<p class="text-sm leading-relaxed text-gray-500">
+			<h2 class="mb-3 text-xl font-bold text-[#241e4e] dark:text-[#e5e5e5]">Local</h2>
+			<p class="text-sm leading-relaxed text-gray-500 dark:text-gray-400">
 				Runs entirely on your machine. Nothing leaves your computer — no cloud, no account required.
 			</p>
 		</div>
 		<div>
-			<h2 class="mb-3 text-xl font-bold text-[#241e4e]">Quiet</h2>
-			<p class="text-sm leading-relaxed text-gray-500">
+			<h2 class="mb-3 text-xl font-bold text-[#241e4e] dark:text-[#e5e5e5]">Quiet</h2>
+			<p class="text-sm leading-relaxed text-gray-500 dark:text-gray-400">
 				No notifications, no interruptions. Jolly sits there silently, waiting for your typo.
 			</p>
 		</div>
 		<div>
-			<h2 class="mb-3 text-xl font-bold text-[#241e4e]">Free</h2>
-			<p class="text-sm leading-relaxed text-gray-500">
+			<h2 class="mb-3 text-xl font-bold text-[#241e4e] dark:text-[#e5e5e5]">Free</h2>
+			<p class="text-sm leading-relaxed text-gray-500 dark:text-gray-400">
 				Open source and free forever. Download it, use it, read the source code if you're curious.
 			</p>
 		</div>
