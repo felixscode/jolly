@@ -1,93 +1,52 @@
-use serde::Deserialize;
-use tauri::AppHandle;
-use tauri_plugin_keyring::KeyringExt;
+use std::sync::Arc;
+use tokio::sync::Mutex;
+
+use tauri::Manager;
 use tauri_plugin_store::StoreExt;
 
-#[derive(Deserialize)]
-struct OpenRouterResponse {
-    choices: Vec<Choice>,
-}
+mod commands;
+pub mod inference;
 
-#[derive(Deserialize)]
-struct Choice {
-    message: Message,
-}
+use inference::download::DownloadManager;
+use inference::model_manager;
 
-#[derive(Deserialize)]
-struct Message {
-    content: String,
-}
-
-/// Read the API key: keyring first, then env var fallback.
-fn get_api_key(app: &AppHandle) -> Result<String, String> {
-    // Try keyring first
-    if let Ok(Some(key)) = app.keyring().get_password("com.jolly.desktop", "openrouter_api_key") {
-        if !key.is_empty() {
-            return Ok(key);
+fn load_local_model(app: &tauri::AppHandle) {
+    let app_data = match app.path().app_data_dir() {
+        Ok(d) => d,
+        Err(e) => {
+            eprintln!("[jolly] Failed to get app data directory: {}", e);
+            return;
         }
+    };
+
+    let models_path = match model_manager::models_dir(&app_data) {
+        Ok(d) => d,
+        Err(e) => {
+            eprintln!("[jolly] Failed to get models directory: {}", e);
+            return;
+        }
+    };
+
+    // Read activeModelId from store (if set)
+    let active_model_id: Option<String> = app
+        .store("settings.json")
+        .ok()
+        .and_then(|store| store.get("activeModelId"))
+        .and_then(|v| v.as_str().map(|s| s.to_string()));
+
+    let model_path =
+        match model_manager::resolve_model_path(&models_path, active_model_id.as_deref()) {
+            Ok(p) => p,
+            Err(e) => {
+                println!("[jolly] No local model available: {}", e);
+                return;
+            }
+        };
+
+    match inference::local::init_model(&model_path) {
+        Ok(()) => println!("[jolly] Local model loaded: {:?}", model_path),
+        Err(e) => eprintln!("[jolly] Failed to load local model: {}", e),
     }
-
-    // Fallback to env var
-    std::env::var("OPENROUTER_API_KEY")
-        .map_err(|_| "No API key configured. Add one in Settings or set OPENROUTER_API_KEY.".to_string())
-}
-
-/// Check if a local model is selected in the store.
-fn get_active_model_id(app: &AppHandle) -> Option<String> {
-    let store = app.store("settings.json").ok()?;
-    store.get("activeModelId").and_then(|v| v.as_str().map(|s| s.to_string()))
-}
-
-#[tauri::command]
-async fn correct_text(app: AppHandle, text: String) -> Result<String, String> {
-    // Check if a local model is selected
-    if let Some(model_id) = get_active_model_id(&app) {
-        println!("Local model selected: {}. Local inference not yet available — using OpenRouter fallback.", model_id);
-    }
-
-    let api_key = get_api_key(&app)?;
-
-    let client = reqwest::Client::new();
-    let response = client
-        .post("https://openrouter.ai/api/v1/chat/completions")
-        .header("Authorization", format!("Bearer {}", api_key))
-        .header("Content-Type", "application/json")
-        .timeout(std::time::Duration::from_secs(30))
-        .json(&serde_json::json!({
-            "model": "openai/gpt-4o-mini",
-            "messages": [
-                {
-                    "role": "system",
-                    "content": "Return ONLY the corrected text, no commentary."
-                },
-                {
-                    "role": "user",
-                    "content": text
-                }
-            ]
-        }))
-        .send()
-        .await
-        .map_err(|e| format!("Request failed: {}", e))?;
-
-    if !response.status().is_success() {
-        let status = response.status();
-        let body = response.text().await.unwrap_or_default();
-        return Err(format!("OpenRouter API error {}: {}", status, body));
-    }
-
-    let data: OpenRouterResponse = response
-        .json()
-        .await
-        .map_err(|e| format!("Failed to parse response: {}", e))?;
-
-    let corrected = data
-        .choices
-        .first()
-        .map(|c| c.message.content.trim().to_string())
-        .unwrap_or(text);
-
-    Ok(corrected)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -97,7 +56,19 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_keyring::init())
-        .invoke_handler(tauri::generate_handler![correct_text])
+        .manage(Arc::new(Mutex::new(DownloadManager::new())))
+        .setup(|app| {
+            load_local_model(app.handle());
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![
+            commands::correct_text,
+            commands::list_available_models,
+            commands::list_downloaded_models,
+            commands::start_download,
+            commands::cancel_download,
+            commands::delete_model,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
