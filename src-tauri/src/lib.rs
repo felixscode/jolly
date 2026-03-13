@@ -1,5 +1,3 @@
-mod inference;
-
 use serde::Deserialize;
 use tauri::AppHandle;
 use tauri_plugin_keyring::KeyringExt;
