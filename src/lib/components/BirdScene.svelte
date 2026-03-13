@@ -4,16 +4,18 @@
 
 	let {
 		onCorrect,
-		compact = false
+		isDark = false
 	}: {
 		onCorrect: (text: string) => Promise<string>;
-		compact?: boolean;
+		isDark?: boolean;
 	} = $props();
 
 	// ── Scene configuration ────────────────────────────────────────────────────
-	const BRANCH_SCALE = 1.4;
-	const BRANCH_OFFSET_X = -10;
-	const BRANCH_OFFSET_Y = -67;
+	const BRANCH_SCALE = 5;
+	const BRANCH_OFFSET_X = 10;
+	const BRANCH_OFFSET_Y = -90;
+	const BRANCH_FADE_START = 75; // % from left where fade begins (steepness)
+	const BRANCH_FADE_END = 75; // % from left where fully transparent
 	const BIRD_LAND_X = -150;
 	const FLY_DEPART_X = 260;
 
@@ -45,12 +47,13 @@
 		| 'hovering'
 		| 'correcting'
 		| 'quoting';
-	type Pose = 'normal' | 'blink' | 'fly1' | 'fly2' | 'thinking';
+	type Pose = 'normal' | 'blink' | 'fly1' | 'fly2' | 'thinking' | 'dead';
 
 	let scene = $state<SceneState>('flying');
 	let flyFrame = $state<1 | 2>(1);
 	let blinking = $state(false);
 	let flyingIn = $state(true);
+	let dead = $state(false);
 	let startY = $state(-400);
 
 	const GREETING_TEXT = "Hi, I'm Jolly!\npress Enter";
@@ -80,15 +83,17 @@
 	}
 
 	const pose = $derived<Pose>(
-		scene === 'flying'
-			? flyFrame === 1
-				? 'fly1'
-				: 'fly2'
-			: scene === 'correcting'
-				? 'thinking'
-				: blinking
-					? 'blink'
-					: 'normal'
+		dead
+			? 'dead'
+			: scene === 'flying'
+				? flyFrame === 1
+					? 'fly1'
+					: 'fly2'
+				: scene === 'correcting'
+					? 'thinking'
+					: blinking
+						? 'blink'
+						: 'normal'
 	);
 
 	const bubbleVisible = $derived(
@@ -99,6 +104,7 @@
 
 	let onEnterRef: (() => void) | undefined;
 	let onLeaveRef: (() => void) | undefined;
+	let onClickRef: (() => void) | undefined;
 
 	function pickQuote(): string {
 		let idx: number;
@@ -107,20 +113,6 @@
 		} while (idx === lastQuoteIdx && quotes.length > 1);
 		lastQuoteIdx = idx;
 		return quotes[idx];
-	}
-
-	async function readClipboard(): Promise<string> {
-		try {
-			return await navigator.clipboard.readText();
-		} catch {
-			// Fallback to Tauri clipboard plugin if available
-			try {
-				const { readText } = await import('@tauri-apps/plugin-clipboard-manager');
-				return await readText();
-			} catch {
-				throw new Error('Clipboard access denied');
-			}
-		}
 	}
 
 	async function writeClipboard(text: string): Promise<void> {
@@ -214,29 +206,23 @@
 			}
 		}
 
-		async function handleCorrection() {
+		async function handleCorrection(text: string) {
 			if (scene !== 'idle' && scene !== 'hovering' && scene !== 'greeting') return;
 			clearTimeout(greetingTimer);
 			scene = 'correcting';
 			const minDelay = new Promise((r) => setTimeout(r, 5000));
 
-			try {
-				const text = await readClipboard();
-				if (!text) {
-					quoteText = 'Nothing to fix here!';
-				} else {
-					try {
-						const correctedText = await onCorrect(text);
-						await writeClipboard(correctedText);
-						quoteText = pickQuote();
-					} catch (err) {
-						console.error('Correction failed:', err);
-						quoteText = "Oops, couldn't fix that!";
-					}
+			if (!text) {
+				quoteText = 'Nothing to fix here!';
+			} else {
+				try {
+					const correctedText = await onCorrect(text);
+					await writeClipboard(correctedText);
+					quoteText = pickQuote();
+				} catch (err) {
+					console.error('Correction failed:', err);
+					quoteText = "Oops, couldn't fix that!";
 				}
-			} catch (err) {
-				console.error('Clipboard read failed:', err);
-				quoteText = "Oops, couldn't fix that!";
 			}
 
 			await minDelay;
@@ -254,17 +240,35 @@
 			}, 5000);
 		}
 
-		function handleKeydown(e: KeyboardEvent) {
+		async function handleKeydown(e: KeyboardEvent) {
 			if (e.key !== 'Enter') return;
 			const tag = (e.target as Element)?.tagName;
 			if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-			handleCorrection();
+			let text: string;
+			try {
+				text = await navigator.clipboard.readText();
+			} catch (err) {
+				console.error('Clipboard read failed:', err);
+				return;
+			}
+			handleCorrection(text);
+		}
+
+		let deadTimer: ReturnType<typeof setTimeout> | undefined;
+		function handleClick() {
+			if (scene === 'flying' || scene === 'correcting') return;
+			dead = true;
+			clearTimeout(deadTimer);
+			deadTimer = setTimeout(() => {
+				dead = false;
+			}, 800);
 		}
 
 		// Attach handlers to window and expose to template
 		window.addEventListener('keydown', handleKeydown);
 		onEnterRef = handleEnter;
 		onLeaveRef = handleLeave;
+		onClickRef = handleClick;
 
 		return () => {
 			mounted = false;
@@ -275,6 +279,7 @@
 			clearTimeout(greetingTimer);
 			clearTimeout(quotingTimer);
 			clearTimeout(blinkTimer);
+			clearTimeout(deadTimer);
 			window.removeEventListener('keydown', handleKeydown);
 		};
 	});
@@ -304,6 +309,7 @@
 				class="relative cursor-pointer"
 				onmouseenter={() => onEnterRef?.()}
 				onmouseleave={() => onLeaveRef?.()}
+				onclick={() => onClickRef?.()}
 				role="img"
 				aria-label="Jolly"
 			>
@@ -316,7 +322,7 @@
 				>
 					<div class="relative">
 						<img
-							src="/jolly_talk.svg"
+							src={isDark ? '/jolly_talk_dark.svg' : '/jolly_talk.svg'}
 							alt=""
 							aria-hidden="true"
 							style="display: block; width: 180px; max-width: none;"
@@ -327,9 +333,7 @@
 							class:outline-red-500={DEBUG_BUBBLES}
 							style="top:{TALK_BOX_TOP}px; left:{TALK_BOX_LEFT}px; width:{TALK_BOX_W}px; height:{TALK_BOX_H}px;"
 						>
-							<span class="text-sm font-bold whitespace-pre-line text-[#241e4e]"
-								>{bubbleText}</span
-							>
+							<span class="text-sm font-bold whitespace-pre-line text-[#241e4e]">{bubbleText}</span>
 						</div>
 					</div>
 				</div>
@@ -349,40 +353,47 @@
 				/>
 
 				<!-- Layered bird poses -->
-				<div class="relative {compact ? 'h-32 w-28' : 'h-44 w-36'}">
+				<div class="relative h-44 w-36">
 					<img
-						src="/jolly_normal.svg"
+						src={isDark ? '/jolly_normal_dark.svg' : '/jolly_normal.svg'}
 						alt="Jolly"
 						class="absolute inset-0 h-full w-full object-contain object-bottom"
-						style="opacity: {pose === 'normal' ? 1 : 0}"
+						style="opacity: {pose === 'normal' ? 1 : 0}; transition: opacity 0ms;"
 					/>
 					<img
-						src="/jolly_blink.svg"
+						src={isDark ? '/jolly_blink_dark.svg' : '/jolly_blink.svg'}
 						alt=""
 						aria-hidden="true"
 						class="absolute inset-0 h-full w-full object-contain object-bottom"
-						style="opacity: {pose === 'blink' ? 1 : 0}"
+						style="opacity: {pose === 'blink' ? 1 : 0}; transition: opacity 0ms;"
 					/>
 					<img
-						src="/jolly_fly1.svg"
+						src={isDark ? '/jolly_fly1_dark.svg' : '/jolly_fly1.svg'}
 						alt=""
 						aria-hidden="true"
 						class="absolute inset-0 h-full w-full object-contain object-bottom"
-						style="opacity: {pose === 'fly1' ? 1 : 0}"
+						style="opacity: {pose === 'fly1' ? 1 : 0}; transition: opacity 0ms;"
 					/>
 					<img
-						src="/jolly_fly2.svg"
+						src={isDark ? '/jolly_fly2_dark.svg' : '/jolly_fly2.svg'}
 						alt=""
 						aria-hidden="true"
 						class="absolute inset-0 h-full w-full object-contain object-bottom"
-						style="opacity: {pose === 'fly2' ? 1 : 0}"
+						style="opacity: {pose === 'fly2' ? 1 : 0}; transition: opacity 0ms;"
 					/>
 					<img
-						src="/jolly_thinking.svg"
+						src={isDark ? '/jolly_thinking_dark.svg' : '/jolly_thinking.svg'}
 						alt=""
 						aria-hidden="true"
 						class="absolute inset-0 h-full w-full object-contain object-bottom"
-						style="opacity: {pose === 'thinking' ? 1 : 0}"
+						style="opacity: {pose === 'thinking' ? 1 : 0}; transition: opacity 0ms;"
+					/>
+					<img
+						src={isDark ? '/jolly_dead_dark.svg' : '/jolly_dead.svg'}
+						alt=""
+						aria-hidden="true"
+						class="absolute inset-0 h-full w-full object-contain object-bottom"
+						style="opacity: {pose === 'dead' ? 1 : 0}; transition: opacity 0ms;"
 					/>
 				</div>
 			</div>
@@ -391,10 +402,10 @@
 
 	<!-- Branch -->
 	<img
-		src="/jolly_branch.svg"
+		src={isDark ? '/jolly_branch_dark.svg' : '/jolly_branch.svg'}
 		alt=""
 		aria-hidden="true"
-		style="width: {BRANCH_SCALE *
-			100}%; max-width: none; transform: translateX({BRANCH_OFFSET_X}px); margin-top: {BRANCH_OFFSET_Y}px;"
+		style="width: {9 *
+			BRANCH_SCALE}rem; max-width: none; transform: translateX({BRANCH_OFFSET_X}px); margin-top: {BRANCH_OFFSET_Y}px; -webkit-mask-image: linear-gradient(to right, black {BRANCH_FADE_START}%, transparent {BRANCH_FADE_END}%); mask-image: linear-gradient(to right, black {BRANCH_FADE_START}%, transparent {BRANCH_FADE_END}%);"
 	/>
 </div>
