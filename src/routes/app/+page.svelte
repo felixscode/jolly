@@ -15,7 +15,7 @@
 
 <!-- Bird scene (always dead-center of screen) -->
 <div class="flex h-full items-center justify-center">
-	<BirdScene onCorrect={tauriCorrect} compact={true} />
+	<BirdScene onCorrect={tauriCorrect} />
 </div>
 
 <!-- Header bar (layered on top) -->
@@ -24,7 +24,9 @@
 	<button
 		class="absolute right-4 rounded-md p-1.5 text-gray-400 transition-colors hover:text-[#241e4e] dark:hover:text-gray-200"
 		aria-label="Settings"
-		onclick={() => { settingsOpen = true; }}
+		onclick={() => {
+			settingsOpen = true;
+		}}
 	>
 		<svg
 			xmlns="http://www.w3.org/2000/svg"

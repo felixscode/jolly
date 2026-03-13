@@ -28,9 +28,9 @@ function createSettingsStore() {
 	async function loadAll() {
 		try {
 			const store = await getStore();
-			darkModeOverride = (((await store.get('darkModeOverride')) as boolean | null) ?? false);
-			downloadedModels = (((await store.get('downloadedModels')) as Model[] | null) ?? []);
-			activeModelId = (((await store.get('activeModelId')) as string | null) ?? null);
+			darkModeOverride = ((await store.get('darkModeOverride')) as boolean | null) ?? false;
+			downloadedModels = ((await store.get('downloadedModels')) as Model[] | null) ?? [];
+			activeModelId = ((await store.get('activeModelId')) as string | null) ?? null;
 		} catch (e) {
 			console.warn('Failed to load settings from store:', e);
 		}
@@ -112,19 +112,35 @@ function createSettingsStore() {
 	function initSystemDarkListener() {
 		const mq = window.matchMedia('(prefers-color-scheme: dark)');
 		systemDark = mq.matches;
-		const handler = (e: MediaQueryListEvent) => { systemDark = e.matches; };
+		const handler = (e: MediaQueryListEvent) => {
+			systemDark = e.matches;
+		};
 		mq.addEventListener('change', handler);
 		return () => mq.removeEventListener('change', handler);
 	}
 
 	return {
-		get apiKey() { return apiKey; },
-		get darkModeOverride() { return darkModeOverride; },
-		get downloadedModels() { return downloadedModels; },
-		get activeModelId() { return activeModelId; },
-		get downloadProgress() { return downloadProgress; },
-		get systemDark() { return systemDark; },
-		get isDark() { return darkModeOverride || systemDark; },
+		get apiKey() {
+			return apiKey;
+		},
+		get darkModeOverride() {
+			return darkModeOverride;
+		},
+		get downloadedModels() {
+			return downloadedModels;
+		},
+		get activeModelId() {
+			return activeModelId;
+		},
+		get downloadProgress() {
+			return downloadProgress;
+		},
+		get systemDark() {
+			return systemDark;
+		},
+		get isDark() {
+			return darkModeOverride || systemDark;
+		},
 		loadAll,
 		saveApiKey,
 		setDarkModeOverride,
