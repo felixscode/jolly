@@ -1,4 +1,9 @@
+mod inference;
+
 use serde::Deserialize;
+use tauri::AppHandle;
+use tauri_plugin_keyring::KeyringExt;
+use tauri_plugin_store::StoreExt;
 
 #[derive(Deserialize)]
 struct OpenRouterResponse {
@@ -15,10 +20,34 @@ struct Message {
     content: String,
 }
 
+/// Read the API key: keyring first, then env var fallback.
+fn get_api_key(app: &AppHandle) -> Result<String, String> {
+    // Try keyring first
+    if let Ok(Some(key)) = app.keyring().get_password("com.jolly.desktop", "openrouter_api_key") {
+        if !key.is_empty() {
+            return Ok(key);
+        }
+    }
+
+    // Fallback to env var
+    std::env::var("OPENROUTER_API_KEY")
+        .map_err(|_| "No API key configured. Add one in Settings or set OPENROUTER_API_KEY.".to_string())
+}
+
+/// Check if a local model is selected in the store.
+fn get_active_model_id(app: &AppHandle) -> Option<String> {
+    let store = app.store("settings.json").ok()?;
+    store.get("activeModelId").and_then(|v| v.as_str().map(|s| s.to_string()))
+}
+
 #[tauri::command]
-async fn correct_text(text: String) -> Result<String, String> {
-    let api_key = std::env::var("OPENROUTER_API_KEY")
-        .map_err(|_| "OPENROUTER_API_KEY environment variable not set".to_string())?;
+async fn correct_text(app: AppHandle, text: String) -> Result<String, String> {
+    // Check if a local model is selected
+    if let Some(model_id) = get_active_model_id(&app) {
+        println!("Local model selected: {}. Local inference not yet available — using OpenRouter fallback.", model_id);
+    }
+
+    let api_key = get_api_key(&app)?;
 
     let client = reqwest::Client::new();
     let response = client
