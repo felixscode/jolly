@@ -1,0 +1,168 @@
+use std::sync::Arc;
+use tokio::sync::Mutex;
+
+use tauri::AppHandle;
+use tauri::Manager;
+use tauri_plugin_keyring::KeyringExt;
+use tauri_plugin_store::StoreExt;
+
+use crate::inference::download::{
+    download_model, get_model_state, DownloadManager, DownloadState,
+};
+use crate::inference::local::LocalProvider;
+use crate::inference::model_manager::models_dir;
+use crate::inference::openrouter::OpenRouterProvider;
+use crate::inference::registry::{self, ModelEntry, MODELS};
+use crate::inference::LLMProvider;
+
+/// Read the API key: keyring first, then env var fallback.
+fn get_api_key(app: &AppHandle) -> Result<String, String> {
+    if let Ok(Some(key)) =
+        app.keyring()
+            .get_password("com.jolly.desktop", "openrouter_api_key")
+    {
+        if !key.is_empty() {
+            return Ok(key);
+        }
+    }
+
+    std::env::var("OPENROUTER_API_KEY")
+        .map_err(|_| "No API key configured. Add one in Settings or set OPENROUTER_API_KEY.".to_string())
+}
+
+/// Check if a local model is selected in the store.
+fn get_active_model_id(app: &AppHandle) -> Option<String> {
+    let store = app.store("settings.json").ok()?;
+    store
+        .get("activeModelId")
+        .and_then(|v| v.as_str().map(|s| s.to_string()))
+}
+
+#[tauri::command]
+pub async fn correct_text(app: AppHandle, text: String) -> Result<String, String> {
+    if text.trim().is_empty() {
+        return Ok(String::new());
+    }
+
+    // If a local model is selected in settings, use local inference
+    let use_local = get_active_model_id(&app).is_some()
+        && crate::inference::local::is_model_loaded();
+
+    if use_local {
+        let local = LocalProvider::new();
+        local.correct_text(&text).await
+    } else {
+        let api_key = get_api_key(&app)?;
+        let openrouter = OpenRouterProvider::new(api_key);
+        openrouter.correct_text(&text).await
+    }
+}
+
+// ── Download management commands ────────────────────────────────
+
+#[derive(Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ModelWithState {
+    #[serde(flatten)]
+    pub entry: ModelEntry,
+    #[serde(flatten)]
+    pub download_state: DownloadState,
+}
+
+#[tauri::command]
+pub async fn list_available_models(app: AppHandle) -> Result<Vec<ModelWithState>, String> {
+    let app_data = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let models_path = models_dir(&app_data)?;
+
+    let result: Vec<ModelWithState> = MODELS
+        .iter()
+        .map(|m| ModelWithState {
+            entry: m.clone(),
+            download_state: get_model_state(&models_path, m),
+        })
+        .collect();
+
+    Ok(result)
+}
+
+#[tauri::command]
+pub async fn list_downloaded_models(app: AppHandle) -> Result<Vec<String>, String> {
+    let app_data = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let models_path = models_dir(&app_data)?;
+
+    let ids: Vec<String> = MODELS
+        .iter()
+        .filter(|m| models_path.join(m.file_name).exists())
+        .map(|m| m.id.to_string())
+        .collect();
+
+    Ok(ids)
+}
+
+#[tauri::command]
+pub async fn start_download(
+    app: AppHandle,
+    state: tauri::State<'_, Arc<Mutex<DownloadManager>>>,
+    model_id: String,
+) -> Result<(), String> {
+    let model = registry::find_model(&model_id).ok_or("Unknown model ID")?;
+
+    let app_data = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let models_path = models_dir(&app_data)?;
+
+    // Check if already downloaded
+    if models_path.join(model.file_name).exists() {
+        return Err("Model already downloaded".to_string());
+    }
+
+    // Check if a download is already active
+    let mut manager = state.lock().await;
+    if manager.is_active() {
+        return Err("A download is already in progress".to_string());
+    }
+
+    let cancel_token = manager.start(&model_id);
+    let dm = state.inner().clone();
+    drop(manager); // Release lock before spawning
+
+    let app_clone = app.clone();
+    let model_clone = model.clone();
+
+    tokio::spawn(async move {
+        let _ = download_model(app_clone, &model_clone, models_path, cancel_token).await;
+        dm.lock().await.finish();
+    });
+
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn cancel_download(
+    state: tauri::State<'_, Arc<Mutex<DownloadManager>>>,
+) -> Result<(), String> {
+    let mut manager = state.lock().await;
+    manager.cancel();
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn delete_model(app: AppHandle, model_id: String) -> Result<(), String> {
+    let model = registry::find_model(&model_id).ok_or("Unknown model ID")?;
+
+    let app_data = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let models_path = models_dir(&app_data)?;
+
+    // Delete .gguf
+    let gguf = models_path.join(model.file_name);
+    if gguf.exists() {
+        std::fs::remove_file(&gguf).map_err(|e| format!("Failed to delete model: {}", e))?;
+    }
+
+    // Also clean up any partial files
+    let part = models_path.join(format!("{}.part", model.file_name));
+    let meta = models_path.join(format!("{}.meta", model.file_name));
+    let _ = std::fs::remove_file(&part);
+    let _ = std::fs::remove_file(&meta);
+
+    Ok(())
+}
