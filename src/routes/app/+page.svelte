@@ -1,7 +1,9 @@
 <script lang="ts">
 	import BirdScene from '$lib/components/BirdScene.svelte';
+	import Settings from '$lib/components/Settings.svelte';
 
 	let hasCorrepted = $state(false);
+	let settingsOpen = $state(false);
 
 	async function tauriCorrect(text: string): Promise<string> {
 		const { invoke } = await import('@tauri-apps/api/core');
@@ -11,13 +13,18 @@
 	}
 </script>
 
-<!-- Header bar -->
-<div class="flex items-center justify-between px-4 pt-3 pb-1">
-	<img src="/jolly_heading.svg" alt="Jolly" class="h-8" />
+<!-- Bird scene (always dead-center of screen) -->
+<div class="flex h-full items-center justify-center">
+	<BirdScene onCorrect={tauriCorrect} compact={true} />
+</div>
+
+<!-- Header bar (layered on top) -->
+<div class="absolute inset-x-0 top-0 flex items-center justify-center px-4 pt-3 pb-1">
+	<img src="/jolly_heading.svg" alt="Jolly" class="h-16" />
 	<button
-		class="rounded-md p-1.5 text-gray-400 transition-colors hover:text-[#241e4e]"
+		class="absolute right-4 rounded-md p-1.5 text-gray-400 transition-colors hover:text-[#241e4e] dark:hover:text-gray-200"
 		aria-label="Settings"
-		disabled
+		onclick={() => { settingsOpen = true; }}
 	>
 		<svg
 			xmlns="http://www.w3.org/2000/svg"
@@ -38,12 +45,12 @@
 	</button>
 </div>
 
-<!-- Bird scene (centered, fills remaining space) -->
-<div class="flex flex-1 items-center justify-center">
-	<BirdScene onCorrect={tauriCorrect} compact={true} />
-</div>
-
-<!-- Hint text -->
+<!-- Hint text (layered on bottom) -->
 {#if !hasCorrepted}
-	<p class="pb-4 text-center text-xs text-gray-400">press Enter to fix your clipboard</p>
+	<p class="absolute inset-x-0 bottom-0 pb-4 text-center text-xs text-gray-400 dark:text-gray-500">
+		press Enter to fix your clipboard
+	</p>
 {/if}
+
+<!-- Settings panel -->
+<Settings bind:open={settingsOpen} />
