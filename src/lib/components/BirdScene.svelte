@@ -350,6 +350,7 @@
 					boxW={THINK_BOX_W}
 					boxH={THINK_BOX_H}
 					debugBubbles={DEBUG_BUBBLES}
+					{isDark}
 				/>
 
 				<!-- Layered bird poses -->

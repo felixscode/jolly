@@ -9,7 +9,8 @@
 		boxLeft = 42,
 		boxW = 72,
 		boxH = 38,
-		debugBubbles = false
+		debugBubbles = false,
+		isDark = false
 	}: {
 		active: boolean;
 		scale?: number;
@@ -21,6 +22,7 @@
 		boxW?: number;
 		boxH?: number;
 		debugBubbles?: boolean;
+		isDark?: boolean;
 	} = $props();
 
 	const minScale = $derived(scale * 0.875);
@@ -106,7 +108,7 @@
 		"
 	>
 		<img
-			src="/jolly_thinking_bubble.svg"
+			src={isDark ? '/jolly_thinking_bubble_dark.svg' : '/jolly_thinking_bubble.svg'}
 			alt=""
 			style="display: block; width: 150px; max-width: none;"
 		/>
@@ -117,9 +119,11 @@
 			style="top:{boxTop}px; left:{boxLeft}px; width:{boxW}px; height:{boxH}px;"
 		>
 			{#if phase === 'wrong'}
-				<span class="word-fade text-xs font-semibold text-jolly-accent line-through">{current.wrong}</span>
+				<span class="word-fade text-jolly-accent text-xs font-semibold line-through"
+					>{current.wrong}</span
+				>
 			{:else if phase === 'right'}
-				<span class="word-fade text-xs font-semibold text-accent">{current.right}</span>
+				<span class="word-fade text-accent text-xs font-semibold">{current.right}</span>
 			{/if}
 		</div>
 	</div>
