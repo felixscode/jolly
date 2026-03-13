@@ -10,6 +10,11 @@
 		@apply text-gray-900 antialiased;
 	}
 
+	.dark body {
+		background-color: #0f0d1e;
+		color: #e5e5e5;
+	}
+
 	/* Jolly brand color utilities — exact colors from SVG files */
 	.text-accent {
 		color: #241e4e;
