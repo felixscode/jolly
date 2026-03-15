@@ -7,6 +7,10 @@ edition = "2021"
 name = "jolly_lib"
 crate-type = ["lib", "cdylib", "staticlib"]
 
+[[bin]]
+name = "benchmark"
+path = "src/bin/benchmark.rs"
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
@@ -24,10 +28,10 @@ tokio-util = { version = "0.7", features = ["rt"] }
 sha2 = "0.10"
 mistralrs = { version = "0.7" }
 async-trait = "0.1"
+dirs-next = "2"
 
 [dev-dependencies]
 tempfile = "3"
-dirs-next = "2"
 
 [features]
 metal = ["mistralrs/metal"]
