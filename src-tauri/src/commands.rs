@@ -38,20 +38,34 @@ fn get_active_model_id(app: &AppHandle) -> Option<String> {
         .and_then(|v| v.as_str().map(|s| s.to_string()))
 }
 
+/// Check if the user has toggled "use OpenRouter" in settings.
+fn get_use_openrouter(app: &AppHandle) -> bool {
+    app.store("settings.json")
+        .ok()
+        .and_then(|store| store.get("useOpenRouter"))
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false)
+}
+
 #[tauri::command]
 pub async fn correct_text(app: AppHandle, text: String) -> Result<String, String> {
     if text.trim().is_empty() {
         return Ok(String::new());
     }
 
-    // If a local model is selected in settings, use local inference
-    let use_local = get_active_model_id(&app).is_some()
+    let use_openrouter = get_use_openrouter(&app);
+    let has_local = get_active_model_id(&app).is_some()
         && crate::inference::local::is_model_loaded();
 
+    // Use local inference only if a model is loaded AND user hasn't toggled OpenRouter
+    let use_local = has_local && !use_openrouter;
+
     if use_local {
+        eprintln!("[jolly] Using local inference");
         let local = LocalProvider::new();
         local.correct_text(&text).await
     } else {
+        eprintln!("[jolly] Using OpenRouter API");
         let api_key = get_api_key(&app)?;
         let openrouter = OpenRouterProvider::new(api_key);
         openrouter.correct_text(&text).await
