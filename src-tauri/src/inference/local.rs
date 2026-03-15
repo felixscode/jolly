@@ -131,6 +131,8 @@ impl LLMProvider for LocalProvider {
 
 /// Runs inference synchronously. Called inside spawn_blocking.
 pub fn run_inference(text: &str) -> Result<String, String> {
+    eprintln!("[jolly] run_inference called with: {:?}", text);
+
     let model_guard = MODEL
         .read()
         .map_err(|e| format!("Model lock poisoned: {}", e))?;
@@ -150,15 +152,23 @@ pub fn run_inference(text: &str) -> Result<String, String> {
 
     let response = rt
         .block_on(model.send_chat_request(messages))
-        .map_err(|e| format!("Inference failed: {}", e))?;
+        .map_err(|e| {
+            eprintln!("[jolly] Inference error: {}", e);
+            format!("Inference failed: {}", e)
+        })?;
 
+    eprintln!("[jolly] Response choices: {}", response.choices.len());
     let content = response
         .choices
         .first()
-        .and_then(|c| c.message.content.as_deref())
+        .and_then(|c| {
+            eprintln!("[jolly] Choice content: {:?}", c.message.content);
+            c.message.content.as_deref()
+        })
         .unwrap_or("")
         .trim()
         .to_string();
 
+    eprintln!("[jolly] Returning: {:?}", content);
     Ok(content)
 }
