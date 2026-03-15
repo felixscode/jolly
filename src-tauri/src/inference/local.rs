@@ -47,10 +47,26 @@ pub fn swap_model(model_path: &Path) -> Result<(), String> {
         .map_err(|e| format!("Failed to create runtime: {}", e))?;
 
     let model = rt.block_on(async {
-        GgufModelBuilder::new(dir, vec![file_name])
+        let result = GgufModelBuilder::new(&dir, vec![&file_name])
             .with_logging()
             .build()
-            .await
+            .await;
+
+        match result {
+            Ok(m) => {
+                eprintln!("[jolly] Model loaded with default device (GPU if available)");
+                Ok(m)
+            }
+            Err(gpu_err) => {
+                eprintln!("[jolly] GPU init failed: {gpu_err}");
+                eprintln!("[jolly] Falling back to CPU inference");
+                GgufModelBuilder::new(&dir, vec![&file_name])
+                    .with_logging()
+                    .with_force_cpu()
+                    .build()
+                    .await
+            }
+        }
     })
     .map_err(|e| format!("Failed to load model: {}", e))?;
 
