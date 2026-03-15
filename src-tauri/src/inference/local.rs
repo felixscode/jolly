@@ -141,8 +141,10 @@ pub fn run_inference(text: &str) -> Result<String, String> {
         .ok_or("Local model not loaded. Download a model in Settings.")?;
 
     let messages = TextMessages::new()
-        .add_message(TextMessageRole::System, SYSTEM_PROMPT)
-        .add_message(TextMessageRole::User, text);
+        .add_message(
+            TextMessageRole::User,
+            format!("{}\n\n{}", SYSTEM_PROMPT, text),
+        );
 
     // Use a temporary runtime for the async send_chat_request
     let rt = tokio::runtime::Builder::new_current_thread()
