@@ -14,6 +14,35 @@ struct TestCase {
     expected: &'static str,
 }
 
+/// Read RSS (Resident Set Size) in MB from /proc/self/status.
+fn rss_mb() -> f64 {
+    fs::read_to_string("/proc/self/status")
+        .ok()
+        .and_then(|s| {
+            s.lines()
+                .find(|l| l.starts_with("VmRSS:"))
+                .and_then(|l| l.split_whitespace().nth(1))
+                .and_then(|v| v.parse::<f64>().ok())
+        })
+        .map(|kb| kb / 1024.0)
+        .unwrap_or(0.0)
+}
+
+/// Word-level similarity: proportion of expected words present in output.
+/// Returns a score from 0.0 to 1.0.
+fn word_similarity(expected: &str, output: &str) -> f64 {
+    let expected_words: Vec<&str> = expected.split_whitespace().collect();
+    if expected_words.is_empty() {
+        return if output.trim().is_empty() { 1.0 } else { 0.0 };
+    }
+    let output_lower = output.to_lowercase();
+    let matched = expected_words
+        .iter()
+        .filter(|w| output_lower.contains(&w.to_lowercase()))
+        .count();
+    matched as f64 / expected_words.len() as f64
+}
+
 fn test_cases() -> Vec<TestCase> {
     let mut id = 0;
     let mut next_id = || {
@@ -336,9 +365,12 @@ fn main() {
     let mut csv = fs::File::create(&csv_path).expect("Failed to create CSV file");
     writeln!(
         csv,
-        "test_id,language,category,model_id,model_name,exact_match,time_ms,input,expected,output"
+        "test_id,language,category,model_id,model_name,exact_match,similarity,time_ms,rss_mb,input,expected,output"
     )
     .unwrap();
+
+    let rss_before_models = rss_mb();
+    eprintln!("Baseline RSS: {:.0} MB", rss_before_models);
 
     // Run benchmark for each model
     for model in &downloaded {
@@ -350,38 +382,47 @@ fn main() {
             eprintln!("FAILED to load {}: {}", model.name, e);
             continue;
         }
+        let rss_after_load = rss_mb();
         eprintln!(
-            "Model loaded in {:.1}s",
-            load_start.elapsed().as_secs_f64()
+            "Model loaded in {:.1}s | RSS: {:.0} MB (+{:.0} MB)",
+            load_start.elapsed().as_secs_f64(),
+            rss_after_load,
+            rss_after_load - rss_before_models,
         );
 
         for case in &cases {
             let start = Instant::now();
             let result = local::run_inference(case.input);
             let elapsed_ms = start.elapsed().as_millis();
+            let current_rss = rss_mb();
 
             match result {
                 Ok(output) => {
-                    let exact_match = output.trim() == case.expected.trim();
+                    let trimmed = output.trim();
+                    let exact_match = trimmed == case.expected.trim();
+                    let similarity = word_similarity(case.expected, trimmed);
                     eprintln!(
-                        "  [{:2}] {:2} {:6} {:>5}ms {} | {}",
+                        "  [{:2}] {:2} {:6} {:>5}ms sim={:.2} {} | {}",
                         case.id,
                         case.language,
                         case.category,
                         elapsed_ms,
+                        similarity,
                         if exact_match { "PASS" } else { "FAIL" },
                         &output.chars().take(60).collect::<String>(),
                     );
                     writeln!(
                         csv,
-                        "{},{},{},{},{},{},{},{},{},{}",
+                        "{},{},{},{},{},{},{:.2},{},{:.0},{},{},{}",
                         case.id,
                         case.language,
                         case.category,
                         model.id,
                         escape_csv(model.name),
                         exact_match,
+                        similarity,
                         elapsed_ms,
+                        current_rss,
                         escape_csv(case.input),
                         escape_csv(case.expected),
                         escape_csv(&output),
@@ -395,13 +436,14 @@ fn main() {
                     );
                     writeln!(
                         csv,
-                        "{},{},{},{},{},false,{},{},{},{}",
+                        "{},{},{},{},{},false,0.00,{},{:.0},{},{},{}",
                         case.id,
                         case.language,
                         case.category,
                         model.id,
                         escape_csv(model.name),
                         elapsed_ms,
+                        current_rss,
                         escape_csv(case.input),
                         escape_csv(case.expected),
                         escape_csv(&format!("ERROR: {}", e)),
@@ -413,6 +455,7 @@ fn main() {
 
         // Unload model before loading next one
         local::unload_model();
+        eprintln!("Model unloaded | RSS: {:.0} MB", rss_mb());
     }
 
     csv.flush().unwrap();
