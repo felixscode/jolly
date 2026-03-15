@@ -21,6 +21,7 @@ function createSettingsStore() {
 	let themeMode = $state<'system' | 'light' | 'dark'>('system');
 	let activeModelId = $state<string | null>(null);
 	let useOpenRouter = $state(false);
+	let correctionHistory = $state<string[]>([]);
 
 	// Models — populated from backend
 	let availableModels = $state<ModelWithState[]>([]);
@@ -45,6 +46,7 @@ function createSettingsStore() {
 				((await store.get('themeMode')) as 'system' | 'light' | 'dark' | null) ?? 'system';
 			activeModelId = ((await store.get('activeModelId')) as string | null) ?? null;
 			useOpenRouter = ((await store.get('useOpenRouter')) as boolean | null) ?? false;
+			correctionHistory = ((await store.get('correctionHistory')) as string[] | null) ?? [];
 		} catch (e) {
 			console.warn('Failed to load settings from store:', e);
 		}
@@ -102,13 +104,10 @@ function createSettingsStore() {
 			await refreshModels();
 		});
 
-		const u4 = await listen<{ modelId: string; error: string }>(
-			'download-error',
-			(event) => {
-				downloadProgress = null;
-				downloadError = event.payload.error;
-			}
-		);
+		const u4 = await listen<{ modelId: string; error: string }>('download-error', (event) => {
+			downloadProgress = null;
+			downloadError = event.payload.error;
+		});
 
 		unlisteners = [u1, u2, u3, u4];
 	}
@@ -200,6 +199,34 @@ function createSettingsStore() {
 		}
 	}
 
+	const MAX_HISTORY = 20;
+
+	async function addToHistory(text: string) {
+		if (!text.trim()) return;
+		correctionHistory = [text, ...correctionHistory.filter((t) => t !== text)].slice(
+			0,
+			MAX_HISTORY
+		);
+		try {
+			const store = await getStore();
+			await store.set('correctionHistory', correctionHistory);
+			await store.save();
+		} catch (e) {
+			console.error('Failed to save correction history:', e);
+		}
+	}
+
+	async function clearHistory() {
+		correctionHistory = [];
+		try {
+			const store = await getStore();
+			await store.set('correctionHistory', []);
+			await store.save();
+		} catch (e) {
+			console.error('Failed to clear correction history:', e);
+		}
+	}
+
 	// OS color scheme tracking
 	let systemDark = $state(false);
 
@@ -249,7 +276,12 @@ function createSettingsStore() {
 		get isDark() {
 			return themeMode === 'dark' || (themeMode === 'system' && systemDark);
 		},
+		get correctionHistory() {
+			return correctionHistory;
+		},
 		loadAll,
+		addToHistory,
+		clearHistory,
 		saveApiKey,
 		setThemeMode,
 		setActiveModel,

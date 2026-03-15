@@ -1,14 +1,18 @@
 <script lang="ts">
 	import BirdScene from '$lib/components/BirdScene.svelte';
+	import History from '$lib/components/History.svelte';
 	import Settings from '$lib/components/Settings.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
 
 	let hasCorrepted = $state(false);
 	let settingsOpen = $state(false);
+	let historyOpen = $state(false);
 
 	async function tauriCorrect(text: string): Promise<string> {
 		const { invoke } = await import('@tauri-apps/api/core');
 		const result = await invoke<string>('correct_text', { text });
 		hasCorrepted = true;
+		await settings.addToHistory(result);
 		return result;
 	}
 </script>
@@ -20,9 +24,32 @@
 
 <!-- Header bar (layered on top) -->
 <div class="absolute inset-x-0 top-0 flex items-center justify-center px-4 pt-3 pb-1">
-	<img src="/jolly_heading.svg" alt="Jolly" class="h-16" />
 	<button
-		class="absolute right-4 rounded-md p-1.5 text-gray-400 transition-colors hover:text-[#241e4e] dark:hover:text-gray-200"
+		class="absolute left-4 rounded-md p-1.5 text-gray-400 transition-colors hover:text-[#960200] dark:text-[#e8e8e3]/40 dark:hover:text-[#ffd046]"
+		aria-label="History"
+		onclick={() => {
+			historyOpen = true;
+		}}
+	>
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			width="18"
+			height="18"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="2"
+			stroke-linecap="round"
+			stroke-linejoin="round"
+		>
+			<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+			<path d="M3 3v5h5" />
+			<path d="M12 7v5l4 2" />
+		</svg>
+	</button>
+	<img src="/jolly_heading.png" alt="Jolly" class="h-16" />
+	<button
+		class="absolute right-4 rounded-md p-1.5 text-gray-400 transition-colors hover:text-[#960200] dark:text-[#e8e8e3]/40 dark:hover:text-[#ffd046]"
 		aria-label="Settings"
 		onclick={() => {
 			settingsOpen = true;
@@ -54,5 +81,6 @@
 	</p>
 {/if}
 
-<!-- Settings panel -->
+<!-- Panels -->
+<History bind:open={historyOpen} />
 <Settings bind:open={settingsOpen} />
