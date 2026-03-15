@@ -12,8 +12,6 @@ use super::SYSTEM_PROMPT;
 /// Global model handle. RwLock so models can be swapped at runtime.
 static MODEL: RwLock<Option<Model>> = RwLock::new(None);
 
-const MAX_OUTPUT_TOKENS: usize = 1024;
-
 /// Initialize and load a GGUF model from the given path.
 /// Call this once during app startup. For subsequent model changes use `swap_model`.
 pub fn init_model(model_path: &Path) -> Result<(), String> {

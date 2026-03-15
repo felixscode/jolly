@@ -146,6 +146,25 @@ pub async fn cancel_download(
 }
 
 #[tauri::command]
+pub async fn activate_model(app: AppHandle, model_id: String) -> Result<(), String> {
+    let model = registry::find_model(&model_id).ok_or("Unknown model ID")?;
+
+    let app_data = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let models_path = models_dir(&app_data)?;
+    let model_path = models_path.join(model.file_name);
+
+    if !model_path.exists() {
+        return Err(format!("Model file not found: {}", model.file_name));
+    }
+
+    tokio::task::spawn_blocking(move || {
+        crate::inference::local::swap_model(&model_path)
+    })
+    .await
+    .map_err(|e| format!("Task failed: {}", e))?
+}
+
+#[tauri::command]
 pub async fn delete_model(app: AppHandle, model_id: String) -> Result<(), String> {
     let model = registry::find_model(&model_id).ok_or("Unknown model ID")?;
 
