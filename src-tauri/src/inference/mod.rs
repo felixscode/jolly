@@ -8,7 +8,7 @@ use async_trait::async_trait;
 
 /// System prompt shared by all providers for consistent correction behavior.
 pub const SYSTEM_PROMPT: &str =
-    "You are a spell checker. Return ONLY the corrected text, no commentary. Preserve the user's writing style and voice.";
+    "Fix spelling and grammar errors. Rules: return ONLY the corrected text. No commentary, no explanations, no prefixes. Preserve the original language, formatting, newlines, and tone exactly. Do not add or remove content.";
 
 /// Trait implemented by all text correction providers.
 #[async_trait]
