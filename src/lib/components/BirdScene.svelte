@@ -3,40 +3,45 @@
 	import ThinkingBubble from '$lib/components/ThinkingBubble.svelte';
 
 	let {
-		onCorrect,
-		isDark = false
+		onCorrect
 	}: {
 		onCorrect: (text: string) => Promise<string>;
-		isDark?: boolean;
 	} = $props();
 
 	// ── Scene configuration ────────────────────────────────────────────────────
-	const BRANCH_SCALE = 5;
-	const BRANCH_OFFSET_X = 10;
-	const BRANCH_OFFSET_Y = -90;
-	const BRANCH_FADE_START = 75; // % from left where fade begins (steepness)
+	// Bird visual center offset (eye position as % of image, relative to geometric center)
+	const BIRD_EYE_OFFSET_X = 10; // eye is 10% right of geometric center
+	const BIRD_EYE_OFFSET_Y = 25; // eye is 25% above geometric center
+
+	// Branch positioning relative to the bird
+	const BRANCH_ANCHOR_X = -90; // px from bird left edge to branch image left edge
+	const BRANCH_ANCHOR_Y = -75; // px offset from bird bottom to branch trunk
+	const BRANCH_WIDTH = 135; // rem
+	const BRANCH_FADE_START = 75; // % from left where fade begins
 	const BRANCH_FADE_END = 75; // % from left where fully transparent
-	const BIRD_LAND_X = -150;
-	const FLY_DEPART_X = 260;
+
+	// Fly-in animation
+	const FLY_DEPART_X = 260; // bird flies in from this many px to the right
 
 	// ── Bubble tuning ──────────────────────────────────────────────────────────
 	const DEBUG_BUBBLES = false;
 
 	const TALK_BUBBLE_OFFSET_X = 140;
 	const TALK_BUBBLE_OFFSET_Y = -10;
-	const TALK_BOX_TOP = 13;
-	const TALK_BOX_LEFT = 48;
+	const TALK_BOX_TOP = 16;
+	const TALK_BOX_LEFT = 40;
 	const TALK_BOX_W = 128;
 	const TALK_BOX_H = 58;
 
-	const THINK_SCALE = 2.0;
-	const THINK_SCALE_SPEED = 2;
+	const THINK_SCALE = 1.0;
+	const THINK_PULSE = 0.03;
+	const THINK_SCALE_SPEED = 3;
 	const THINK_BUBBLE_OFFSET_X = 140;
 	const THINK_BUBBLE_OFFSET_Y = -10;
-	const THINK_BOX_TOP = 5;
-	const THINK_BOX_LEFT = 42;
-	const THINK_BOX_W = 72;
-	const THINK_BOX_H = 38;
+	const THINK_BOX_TOP = 16;
+	const THINK_BOX_LEFT = 40;
+	const THINK_BOX_W = 85;
+	const THINK_BOX_H = 50;
 	// ───────────────────────────────────────────────────────────────────────────
 
 	type SceneState =
@@ -54,7 +59,6 @@
 	let blinking = $state(false);
 	let flyingIn = $state(true);
 	let dead = $state(false);
-	let startY = $state(-400);
 
 	const GREETING_TEXT = "Hi, I'm Jolly!\npress Enter";
 
@@ -68,19 +72,6 @@
 	];
 	let quoteText = $state(quotes[0]);
 	let lastQuoteIdx = -1;
-
-	let containerEl: HTMLDivElement | null = null;
-	let posLayerEl: HTMLDivElement | null = null;
-
-	function offsetTop(el: HTMLElement): number {
-		let top = 0;
-		let cur: HTMLElement | null = el;
-		while (cur) {
-			top += cur.offsetTop;
-			cur = cur.offsetParent as HTMLElement | null;
-		}
-		return top;
-	}
 
 	const pose = $derived<Pose>(
 		dead
@@ -119,7 +110,6 @@
 		try {
 			await navigator.clipboard.writeText(text);
 		} catch {
-			// Fallback to Tauri clipboard plugin if available
 			try {
 				const { writeText } = await import('@tauri-apps/plugin-clipboard-manager');
 				await writeText(text);
@@ -134,11 +124,6 @@
 		let greetingTimer: ReturnType<typeof setTimeout>;
 		let quotingTimer: ReturnType<typeof setTimeout>;
 		let blinkTimer: ReturnType<typeof setTimeout>;
-
-		// Measure fly-in start position
-		if (containerEl && posLayerEl) {
-			startY = -(offsetTop(posLayerEl) - offsetTop(containerEl));
-		}
 
 		// Alternate fly frames while flying
 		const flyInterval = setInterval(() => {
@@ -156,7 +141,6 @@
 			clearInterval(flyInterval);
 			scene = 'landed';
 
-			// Brief pause, then greeting
 			setTimeout(() => {
 				if (!mounted) return;
 				scene = 'greeting';
@@ -167,7 +151,7 @@
 			}, 500);
 		}, 2300);
 
-		// Blink loop — only blinks during greeting, idle, or quoting
+		// Blink loop
 		function scheduleBlink() {
 			const delay = 2500 + Math.random() * 4000;
 			blinkTimer = setTimeout(() => {
@@ -188,7 +172,6 @@
 
 		const t3 = setTimeout(scheduleBlink, 3300);
 
-		// Mouse handlers stored so they can reference timers
 		function handleEnter() {
 			if (scene === 'idle' || scene === 'greeting') {
 				clearTimeout(greetingTimer);
@@ -221,7 +204,20 @@
 					quoteText = pickQuote();
 				} catch (err) {
 					console.error('Correction failed:', err);
-					quoteText = "Oops, couldn't fix that!";
+					const code = String(err);
+					if (code.includes('no_api_key')) {
+						quoteText = 'No API key set — add one in Settings!';
+					} else if (code.includes('bad_api_key')) {
+						quoteText = 'API key seems wrong — check Settings!';
+					} else if (code.includes('model_not_loaded')) {
+						quoteText = 'Model not loaded — grab one in Settings!';
+					} else if (code.includes('local_inference_failed')) {
+						quoteText = "Hmm, the model couldn't handle that — try again!";
+					} else if (code.includes('api_failed')) {
+						quoteText = "Can't reach the API — check your connection!";
+					} else {
+						quoteText = "Oops, couldn't fix that!";
+					}
 				}
 			}
 
@@ -240,13 +236,22 @@
 			}, 5000);
 		}
 
+		async function readClipboard(): Promise<string> {
+			try {
+				const { readText } = await import('@tauri-apps/plugin-clipboard-manager');
+				return await readText();
+			} catch {
+				return await navigator.clipboard.readText();
+			}
+		}
+
 		async function handleKeydown(e: KeyboardEvent) {
 			if (e.key !== 'Enter') return;
 			const tag = (e.target as Element)?.tagName;
 			if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
 			let text: string;
 			try {
-				text = await navigator.clipboard.readText();
+				text = await readClipboard();
 			} catch (err) {
 				console.error('Clipboard read failed:', err);
 				return;
@@ -264,7 +269,6 @@
 			}, 800);
 		}
 
-		// Attach handlers to window and expose to template
 		window.addEventListener('keydown', handleKeydown);
 		onEnterRef = handleEnter;
 		onLeaveRef = handleLeave;
@@ -285,19 +289,20 @@
 	});
 </script>
 
-<div bind:this={containerEl} class="flex flex-col items-center select-none">
-	<!-- Position layer: X + Y with cubic-bezier easing, opacity fade-in -->
+<!-- Container: relative anchor for bird + branch -->
+<div
+	class="relative select-none"
+	style="transform: translate({-BIRD_EYE_OFFSET_X}%, {BIRD_EYE_OFFSET_Y}%);"
+>
+	<!-- Position layer: fly-in animation (lands at 0,0 = centered) -->
 	<div
-		bind:this={posLayerEl}
 		style="
-		transform: {flyingIn
-			? `translate(${BIRD_LAND_X + FLY_DEPART_X}px, ${startY}px)`
-			: `translate(${BIRD_LAND_X}px, 0)`};
+		transform: {flyingIn ? `translate(${FLY_DEPART_X}px, -300px)` : 'translate(0, 0)'};
 		opacity: {flyingIn ? 0 : 1};
 		transition: transform 1800ms cubic-bezier(0.3, 0.3, 0.8, 0.9), opacity 500ms ease-out;
 	"
 	>
-		<!-- Scale layer: 0.75 → 1 linearly over the same duration -->
+		<!-- Scale layer: 0.75 → 1 during fly-in -->
 		<div
 			style="
 			transform: {flyingIn ? 'scale(0.75)' : 'scale(1)'};
@@ -313,7 +318,7 @@
 				role="img"
 				aria-label="Jolly"
 			>
-				<!-- Talk bubble (SVG oval) -->
+				<!-- Talk bubble -->
 				<div
 					class="pointer-events-none absolute bottom-full"
 					style="left: 50%; opacity: {bubbleVisible
@@ -322,7 +327,7 @@
 				>
 					<div class="relative">
 						<img
-							src={isDark ? '/jolly_talk_dark.svg' : '/jolly_talk.svg'}
+							src="/jolly_talk.png"
 							alt=""
 							aria-hidden="true"
 							style="display: block; width: 180px; max-width: none;"
@@ -333,15 +338,16 @@
 							class:outline-red-500={DEBUG_BUBBLES}
 							style="top:{TALK_BOX_TOP}px; left:{TALK_BOX_LEFT}px; width:{TALK_BOX_W}px; height:{TALK_BOX_H}px;"
 						>
-							<span class="text-sm font-bold whitespace-pre-line text-[#241e4e]">{bubbleText}</span>
+							<span class="text-sm font-bold whitespace-pre-line text-[#423f37]">{bubbleText}</span>
 						</div>
 					</div>
 				</div>
 
-				<!-- Thinking bubble (clipboard correction) -->
+				<!-- Thinking bubble -->
 				<ThinkingBubble
 					active={scene === 'correcting'}
 					scale={THINK_SCALE}
+					pulseAmount={THINK_PULSE}
 					scaleSpeed={THINK_SCALE_SPEED}
 					offsetX={THINK_BUBBLE_OFFSET_X}
 					offsetY={THINK_BUBBLE_OFFSET_Y}
@@ -350,47 +356,46 @@
 					boxW={THINK_BOX_W}
 					boxH={THINK_BOX_H}
 					debugBubbles={DEBUG_BUBBLES}
-					{isDark}
 				/>
 
 				<!-- Layered bird poses -->
 				<div class="relative h-44 w-36">
 					<img
-						src={isDark ? '/jolly_normal_dark.svg' : '/jolly_normal.svg'}
+						src="/jolly_normal.png"
 						alt="Jolly"
 						class="absolute inset-0 h-full w-full object-contain object-bottom"
 						style="opacity: {pose === 'normal' ? 1 : 0}; transition: opacity 0ms;"
 					/>
 					<img
-						src={isDark ? '/jolly_blink_dark.svg' : '/jolly_blink.svg'}
+						src="/jolly_blinzel.png"
 						alt=""
 						aria-hidden="true"
 						class="absolute inset-0 h-full w-full object-contain object-bottom"
 						style="opacity: {pose === 'blink' ? 1 : 0}; transition: opacity 0ms;"
 					/>
 					<img
-						src={isDark ? '/jolly_fly1_dark.svg' : '/jolly_fly1.svg'}
+						src="/jolly_fly1.png"
 						alt=""
 						aria-hidden="true"
 						class="absolute inset-0 h-full w-full object-contain object-bottom"
 						style="opacity: {pose === 'fly1' ? 1 : 0}; transition: opacity 0ms;"
 					/>
 					<img
-						src={isDark ? '/jolly_fly2_dark.svg' : '/jolly_fly2.svg'}
+						src="/jolly_fly2.png"
 						alt=""
 						aria-hidden="true"
 						class="absolute inset-0 h-full w-full object-contain object-bottom"
 						style="opacity: {pose === 'fly2' ? 1 : 0}; transition: opacity 0ms;"
 					/>
 					<img
-						src={isDark ? '/jolly_thinking_dark.svg' : '/jolly_thinking.svg'}
+						src="/jolly_thinking.png"
 						alt=""
 						aria-hidden="true"
 						class="absolute inset-0 h-full w-full object-contain object-bottom"
 						style="opacity: {pose === 'thinking' ? 1 : 0}; transition: opacity 0ms;"
 					/>
 					<img
-						src={isDark ? '/jolly_dead_dark.svg' : '/jolly_dead.svg'}
+						src="/jolly_dead.png"
 						alt=""
 						aria-hidden="true"
 						class="absolute inset-0 h-full w-full object-contain object-bottom"
@@ -401,12 +406,19 @@
 		</div>
 	</div>
 
-	<!-- Branch -->
+	<!-- Branch: positioned relative to bird -->
 	<img
-		src={isDark ? '/jolly_branch_dark.svg' : '/jolly_branch.svg'}
+		src="/jolly_tree.png"
 		alt=""
 		aria-hidden="true"
-		style="width: {9 *
-			BRANCH_SCALE}rem; max-width: none; transform: translateX({BRANCH_OFFSET_X}px); margin-top: {BRANCH_OFFSET_Y}px; -webkit-mask-image: linear-gradient(to right, black {BRANCH_FADE_START}%, transparent {BRANCH_FADE_END}%); mask-image: linear-gradient(to right, black {BRANCH_FADE_START}%, transparent {BRANCH_FADE_END}%);"
+		class="pointer-events-none absolute"
+		style="
+			width: {BRANCH_WIDTH}rem;
+			max-width: none;
+			top: calc(100% + {BRANCH_ANCHOR_Y}px);
+			left: {BRANCH_ANCHOR_X}px;
+			-webkit-mask-image: linear-gradient(to right, black {BRANCH_FADE_START}%, transparent {BRANCH_FADE_END}%);
+			mask-image: linear-gradient(to right, black {BRANCH_FADE_START}%, transparent {BRANCH_FADE_END}%);
+		"
 	/>
 </div>

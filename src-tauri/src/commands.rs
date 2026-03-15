@@ -27,7 +27,7 @@ fn get_api_key(app: &AppHandle) -> Result<String, String> {
     }
 
     std::env::var("OPENROUTER_API_KEY")
-        .map_err(|_| "No API key configured. Add one in Settings or set OPENROUTER_API_KEY.".to_string())
+        .map_err(|_| "no_api_key".to_string())
 }
 
 /// Check if a local model is selected in the store.
@@ -63,12 +63,25 @@ pub async fn correct_text(app: AppHandle, text: String) -> Result<String, String
     if use_local {
         eprintln!("[jolly] Using local inference");
         let local = LocalProvider::new();
-        local.correct_text(&text).await
+        local.correct_text(&text).await.map_err(|e| {
+            eprintln!("[jolly] Local inference error: {}", e);
+            "local_inference_failed".to_string()
+        })
+    } else if !use_openrouter && !has_local && get_active_model_id(&app).is_some() {
+        // User selected a model but it's not loaded
+        Err("model_not_loaded".to_string())
     } else {
         eprintln!("[jolly] Using OpenRouter API");
         let api_key = get_api_key(&app)?;
         let openrouter = OpenRouterProvider::new(api_key);
-        openrouter.correct_text(&text).await
+        openrouter.correct_text(&text).await.map_err(|e| {
+            eprintln!("[jolly] OpenRouter error: {}", e);
+            if e.contains("401") || e.contains("403") {
+                "bad_api_key".to_string()
+            } else {
+                "api_failed".to_string()
+            }
+        })
     }
 }
 
