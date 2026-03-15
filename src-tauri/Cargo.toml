@@ -22,15 +22,13 @@ reqwest = { version = "0.12", features = ["json", "stream"] }
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "sync", "fs"] }
 tokio-util = { version = "0.7", features = ["rt"] }
 sha2 = "0.10"
-llama-cpp-2 = { version = "0.1", features = ["sampler"] }
+mistralrs = { version = "0.7" }
 async-trait = "0.1"
-encoding_rs = "0.8"
 
 [dev-dependencies]
 tempfile = "3"
 dirs-next = "2"
 
 [features]
-metal = ["llama-cpp-2/metal"]
-vulkan = ["llama-cpp-2/vulkan"]
-cuda = ["llama-cpp-2/cuda"]
+metal = ["mistralrs/metal"]
+cuda = ["mistralrs/cuda"]
