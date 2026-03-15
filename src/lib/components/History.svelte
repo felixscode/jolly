@@ -80,7 +80,7 @@
 			<div class="flex flex-col gap-2">
 				{#each settings.correctionHistory as text}
 					<div
-						class="group flex items-start gap-2 rounded-lg border border-gray-200 px-3 py-2.5 dark:border-white/10"
+						class="group flex items-start gap-2 rounded-lg border border-[#960200] px-3 py-2.5 dark:border-[#ffd046]"
 					>
 						<p
 							class="min-w-0 flex-1 text-sm leading-snug text-[#423f37] line-clamp-2 dark:text-[#e8e8e3]"
