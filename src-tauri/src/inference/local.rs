@@ -46,29 +46,52 @@ pub fn swap_model(model_path: &Path) -> Result<(), String> {
         .build()
         .map_err(|e| format!("Failed to create runtime: {}", e))?;
 
-    let model = rt.block_on(async {
-        let result = GgufModelBuilder::new(&dir, vec![&file_name])
-            .with_logging()
-            .build()
-            .await;
+    // Try default device (GPU if compiled with cuda/metal).
+    // mistralrs may panic on CUDA driver mismatch, so catch that.
+    let gpu_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        rt.block_on(async {
+            GgufModelBuilder::new(&dir, vec![&file_name])
+                .with_logging()
+                .build()
+                .await
+        })
+    }));
 
-        match result {
-            Ok(m) => {
-                eprintln!("[jolly] Model loaded with default device (GPU if available)");
-                Ok(m)
-            }
-            Err(gpu_err) => {
-                eprintln!("[jolly] GPU init failed: {gpu_err}");
-                eprintln!("[jolly] Falling back to CPU inference");
+    let model = match gpu_result {
+        Ok(Ok(m)) => {
+            eprintln!("[jolly] Model loaded with default device (GPU if available)");
+            m
+        }
+        Ok(Err(e)) => {
+            eprintln!("[jolly] GPU init failed: {e}");
+            eprintln!("[jolly] Falling back to CPU inference");
+            rt.block_on(async {
                 GgufModelBuilder::new(&dir, vec![&file_name])
                     .with_logging()
                     .with_force_cpu()
                     .build()
                     .await
-            }
+            })
+            .map_err(|e| format!("Failed to load model on CPU: {}", e))?
         }
-    })
-    .map_err(|e| format!("Failed to load model: {}", e))?;
+        Err(panic_info) => {
+            let msg = panic_info
+                .downcast_ref::<String>()
+                .map(|s| s.as_str())
+                .or_else(|| panic_info.downcast_ref::<&str>().copied())
+                .unwrap_or("unknown panic");
+            eprintln!("[jolly] GPU init panicked: {msg}");
+            eprintln!("[jolly] Falling back to CPU inference");
+            rt.block_on(async {
+                GgufModelBuilder::new(&dir, vec![&file_name])
+                    .with_logging()
+                    .with_force_cpu()
+                    .build()
+                    .await
+            })
+            .map_err(|e| format!("Failed to load model on CPU: {}", e))?
+        }
+    };
 
     let mut slot = MODEL.write().map_err(|e| format!("Model lock poisoned: {}", e))?;
     *slot = Some(model);
