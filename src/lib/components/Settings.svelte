@@ -46,16 +46,11 @@
 		settings.availableModels.filter((m) => m.state !== 'downloaded')
 	);
 
-	let downloadedModels = $derived(
-		settings.availableModels.filter((m) => m.state === 'downloaded')
-	);
+	let downloadedModels = $derived(settings.availableModels.filter((m) => m.state === 'downloaded'));
 
 	// Auto-select first available model for download
 	$effect(() => {
-		if (
-			modelsForDownload.length > 0 &&
-			!modelsForDownload.some((m) => m.id === selectedModelId)
-		) {
+		if (modelsForDownload.length > 0 && !modelsForDownload.some((m) => m.id === selectedModelId)) {
 			selectedModelId = modelsForDownload[0].id;
 		}
 	});
@@ -89,18 +84,18 @@
 
 <!-- Panel -->
 <div
-	class="fixed top-0 right-0 z-50 flex h-full w-[70%] max-w-[560px] flex-col bg-white shadow-xl transition-transform duration-200 ease-out dark:bg-gray-800 {open
+	class="fixed top-0 right-0 z-50 flex h-full w-[70%] max-w-[560px] flex-col bg-[#e8e8e3] shadow-xl transition-transform duration-200 ease-out dark:bg-[#423f37] {open
 		? 'translate-x-0'
 		: 'translate-x-full'}"
 >
 	<!-- Header -->
 	<div
-		class="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-gray-700"
+		class="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-white/10"
 	>
-		<h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Settings</h2>
+		<h2 class="text-lg font-semibold text-[#423f37] dark:text-[#e8e8e3]">Settings</h2>
 		<button
 			onclick={close}
-			class="rounded-md p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+			class="rounded-md p-1 text-gray-400 hover:text-[#423f37] dark:text-[#e8e8e3]/60 dark:hover:text-[#e8e8e3]"
 			aria-label="Close settings"
 		>
 			<svg
@@ -123,31 +118,35 @@
 	<div class="flex-1 space-y-6 overflow-y-auto px-5 py-4">
 		<!-- Section 1: Theme -->
 		<section>
-			<h3 class="text-sm font-bold text-gray-900 dark:text-gray-100">Theme</h3>
-			<div class="mt-2 inline-flex rounded-md border border-gray-300 dark:border-gray-600">
-				{#each [{ value: 'system', label: 'System' }, { value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }] as opt}
-					<button
-						onclick={() => settings.setThemeMode(opt.value as 'system' | 'light' | 'dark')}
-						class="px-4 py-1.5 text-sm font-medium transition-colors first:rounded-l-md last:rounded-r-md {settings.themeMode ===
-						opt.value
-							? 'bg-[#241e4e] text-white'
-							: 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'}"
-					>
-						{opt.label}
-					</button>
-				{/each}
+			<div class="flex items-center justify-between">
+				<h3 class="text-sm font-bold text-[#423f37] dark:text-[#e8e8e3]">Theme</h3>
+				<button
+					onclick={() => settings.setThemeMode(settings.isDark ? 'light' : 'dark')}
+					class="text-gray-400 transition-colors hover:text-[#960200] dark:text-[#e8e8e3]/60 dark:hover:text-[#ffd046]"
+					aria-label={settings.isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+				>
+					{#if settings.isDark}
+						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+						</svg>
+					{:else}
+						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+						</svg>
+					{/if}
+				</button>
 			</div>
 		</section>
 
 		<!-- Section 2: Local AI Models — Download -->
 		<section>
-			<h3 class="text-sm font-bold text-gray-900 dark:text-gray-100">Local AI Models</h3>
+			<h3 class="text-sm font-bold text-[#423f37] dark:text-[#e8e8e3]">Local AI Models</h3>
 
 			{#if modelsForDownload.length > 0}
 				<div class="mt-2 flex gap-2">
 					<select
 						bind:value={selectedModelId}
-						class="flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+						class="flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-[#423f37] dark:border-white/20 dark:bg-white/10 dark:text-[#e8e8e3]"
 						disabled={!!settings.downloadProgress}
 					>
 						{#each modelsForDownload as model}
@@ -161,7 +160,7 @@
 					{#if settings.downloadProgress}
 						<button
 							onclick={() => settings.cancelDownload()}
-							class="rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20"
+							class="rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-500 transition-colors hover:bg-red-50 dark:border-red-400 dark:text-red-400 dark:hover:bg-red-500/20"
 						>
 							Cancel
 						</button>
@@ -169,14 +168,14 @@
 						{@const selected = modelsForDownload.find((m) => m.id === selectedModelId)}
 						<button
 							onclick={() => settings.startDownload(selectedModelId)}
-							class="rounded-md bg-[#241e4e] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1a1639] disabled:cursor-not-allowed disabled:opacity-50"
+							class="rounded-md border-2 border-[#960200] bg-transparent px-4 py-2 text-sm font-medium text-[#423f37] transition-colors hover:bg-[#ffd046] hover:text-[#960200] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#ffd046] dark:text-[#e8e8e3] dark:hover:bg-[#960200] dark:hover:text-[#ffd046]"
 						>
 							{selected?.state === 'partial' ? 'Resume' : 'Download'}
 						</button>
 					{/if}
 				</div>
 			{:else}
-				<p class="mt-2 text-xs text-gray-400 dark:text-gray-500">All models downloaded</p>
+				<p class="mt-2 text-xs text-gray-400 dark:text-[#e8e8e3]/50">All models downloaded</p>
 			{/if}
 
 			<!-- Download Progress -->
@@ -185,13 +184,11 @@
 				{@const percent = p.totalBytes > 0 ? Math.round((p.bytesReceived / p.totalBytes) * 100) : 0}
 				{@const model = settings.availableModels.find((m) => m.id === p.modelId)}
 				<div class="mt-3">
-					<div class="mb-1 flex justify-between text-xs text-gray-500 dark:text-gray-400">
+					<div class="mb-1 flex justify-between text-xs text-gray-500 dark:text-[#e8e8e3]/50">
 						<span>{model?.name ?? 'Unknown'}</span>
-						<span
-							>{formatBytes(p.bytesReceived)} / {formatBytes(p.totalBytes)} ({percent}%)</span
-						>
+						<span>{formatBytes(p.bytesReceived)} / {formatBytes(p.totalBytes)} ({percent}%)</span>
 					</div>
-					<div class="h-2 w-full rounded-full bg-gray-200 dark:bg-gray-700">
+					<div class="h-2 w-full rounded-full bg-gray-200 dark:bg-white/10">
 						<div
 							class="h-full rounded-full bg-green-500 transition-all duration-200"
 							style="width: {percent}%"
@@ -208,14 +205,14 @@
 
 		<!-- Section 3: Downloaded Models -->
 		<section>
-			<h3 class="text-sm font-bold text-gray-900 dark:text-gray-100">Downloaded Models</h3>
+			<h3 class="text-sm font-bold text-[#423f37] dark:text-[#e8e8e3]">Downloaded Models</h3>
 			{#if downloadedModels.length === 0}
-				<p class="mt-2 text-xs text-gray-400 dark:text-gray-500">No models downloaded yet</p>
+				<p class="mt-2 text-xs text-gray-400 dark:text-[#e8e8e3]/50">No models downloaded yet</p>
 			{:else if !settings.useOpenRouter}
 				<div class="mt-2 space-y-1">
 					{#each downloadedModels as model}
 						<div
-							class="flex items-center gap-2 rounded-md px-3 py-2 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
+							class="flex items-center gap-2 rounded-md px-3 py-2 transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
 						>
 							<label class="flex flex-1 cursor-pointer items-center gap-3">
 								<input
@@ -224,18 +221,18 @@
 									value={model.id}
 									checked={settings.activeModelId === model.id}
 									onchange={() => handleModelSwitch(model.id)}
-									class="h-4 w-4 accent-[#241e4e]"
+									class="h-4 w-4 accent-[#960200] dark:accent-[#ffd046]"
 								/>
-								<span class="text-sm text-gray-700 dark:text-gray-300">
+								<span class="text-sm text-[#423f37] dark:text-[#e8e8e3]">
 									<span class="font-medium">{model.name}</span>
-									<span class="text-gray-400 dark:text-gray-500">
+									<span class="text-gray-400 dark:text-[#e8e8e3]/40">
 										— {formatBytes(model.sizeBytes)}
 									</span>
 								</span>
 							</label>
 							<button
 								onclick={() => settings.deleteModel(model.id)}
-								class="rounded p-1 text-gray-300 transition-colors hover:text-red-500 dark:text-gray-600 dark:hover:text-red-400"
+								class="rounded p-1 text-gray-300 transition-colors hover:text-red-500 dark:text-[#e8e8e3]/30 dark:hover:text-red-400"
 								aria-label="Delete {model.name}"
 							>
 								<svg
@@ -258,11 +255,11 @@
 						</div>
 					{/each}
 				</div>
-				<p class="mt-1 text-xs text-gray-400 dark:text-gray-500">
+				<p class="mt-1 text-xs text-gray-400 dark:text-[#e8e8e3]/50">
 					Restart app after downloading a new model to activate it.
 				</p>
 			{:else}
-				<p class="mt-2 text-xs text-gray-400 dark:text-gray-500">
+				<p class="mt-2 text-xs text-gray-400 dark:text-[#e8e8e3]/50">
 					Disabled while OpenRouter is active
 				</p>
 			{/if}
@@ -276,12 +273,12 @@
 		<!-- Section 4: OpenRouter -->
 		<section>
 			<div class="flex items-center justify-between">
-				<h3 class="text-sm font-bold text-gray-900 dark:text-gray-100">OpenRouter</h3>
+				<h3 class="text-sm font-bold text-[#423f37] dark:text-[#e8e8e3]">OpenRouter</h3>
 				<button
 					onclick={() => settings.setUseOpenRouter(!settings.useOpenRouter)}
 					class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors {settings.useOpenRouter
-						? 'bg-[#241e4e]'
-						: 'bg-gray-300 dark:bg-gray-600'}"
+						? 'bg-[#960200] dark:bg-[#ffd046]'
+						: 'bg-gray-300 dark:bg-white/20'}"
 					role="switch"
 					aria-checked={settings.useOpenRouter}
 					aria-label="Toggle OpenRouter"
@@ -293,21 +290,21 @@
 					></span>
 				</button>
 			</div>
-			<p class="mt-1 text-xs text-gray-400 dark:text-gray-500">
+			<p class="mt-1 text-xs text-gray-400 dark:text-[#e8e8e3]/50">
 				Jolly is slow? This might be limited resources on your machine. Consider running Jolly
 				through
 				<a
 					href="https://openrouter.ai"
 					target="_blank"
 					rel="noopener noreferrer"
-					class="text-[#241e4e] underline dark:text-[#ffd046]">OpenRouter</a
+					class="text-[#960200] underline dark:text-[#ffd046]">OpenRouter</a
 				>.
 			</p>
 			{#if settings.useOpenRouter}
 				<div class="mt-3">
 					<label
 						for="api-key-input"
-						class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+						class="block text-sm font-medium text-[#423f37] dark:text-[#e8e8e3]"
 					>
 						API Key
 					</label>
@@ -318,13 +315,13 @@
 								type={showKey ? 'text' : 'password'}
 								bind:value={keyInput}
 								placeholder="sk-or-..."
-								class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 pr-10 text-sm focus:border-[#241e4e] focus:ring-1 focus:ring-[#241e4e] focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+								class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 pr-10 text-sm text-[#423f37] focus:border-[#960200] focus:ring-1 focus:ring-[#960200] focus:outline-none dark:border-white/20 dark:bg-white/10 dark:text-[#e8e8e3] dark:focus:border-[#ffd046] dark:focus:ring-[#ffd046]"
 							/>
 							<button
 								onclick={() => {
 									showKey = !showKey;
 								}}
-								class="absolute top-1/2 right-2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+								class="absolute top-1/2 right-2 -translate-y-1/2 text-gray-400 hover:text-[#423f37] dark:text-[#e8e8e3]/40 dark:hover:text-[#e8e8e3]"
 								aria-label={showKey ? 'Hide key' : 'Show key'}
 								type="button"
 							>
@@ -367,7 +364,7 @@
 						</div>
 						<button
 							onclick={handleSaveKey}
-							class="rounded-md bg-[#241e4e] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1a1639]"
+							class="rounded-md border-2 border-[#960200] bg-transparent px-4 py-2 text-sm font-medium text-[#423f37] transition-colors hover:bg-[#ffd046] hover:text-[#960200] dark:border-[#ffd046] dark:text-[#e8e8e3] dark:hover:bg-[#960200] dark:hover:text-[#ffd046]"
 						>
 							{keySaved ? 'Saved!' : 'Save'}
 						</button>

@@ -47,7 +47,7 @@
 			<path d="M12 7v5l4 2" />
 		</svg>
 	</button>
-	<img src="/jolly_heading.png" alt="Jolly" class="h-16" />
+	<img src="/jolly_heading.svg" alt="Jolly" class="h-16" />
 	<button
 		class="absolute right-4 rounded-md p-1.5 text-gray-400 transition-colors hover:text-[#960200] dark:text-[#e8e8e3]/40 dark:hover:text-[#ffd046]"
 		aria-label="Settings"

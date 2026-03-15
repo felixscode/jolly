@@ -6,9 +6,7 @@ const isTauri = !!process.env.TAURI_ENV_PLATFORM;
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
 	kit: {
-		adapter: isTauri
-			? adapterStatic({ fallback: 'index.html' })
-			: adapterAuto()
+		adapter: isTauri ? adapterStatic({ fallback: 'index.html' }) : adapterAuto()
 	}
 };
 

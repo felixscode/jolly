@@ -327,7 +327,7 @@
 				>
 					<div class="relative">
 						<img
-							src="/jolly_talk.png"
+							src="/jolly_talk.svg"
 							alt=""
 							aria-hidden="true"
 							style="display: block; width: 180px; max-width: none;"
@@ -361,41 +361,41 @@
 				<!-- Layered bird poses -->
 				<div class="relative h-44 w-36">
 					<img
-						src="/jolly_normal.png"
+						src="/jolly_normal.svg"
 						alt="Jolly"
 						class="absolute inset-0 h-full w-full object-contain object-bottom"
 						style="opacity: {pose === 'normal' ? 1 : 0}; transition: opacity 0ms;"
 					/>
 					<img
-						src="/jolly_blinzel.png"
+						src="/jolly_bilnzel.svg"
 						alt=""
 						aria-hidden="true"
 						class="absolute inset-0 h-full w-full object-contain object-bottom"
 						style="opacity: {pose === 'blink' ? 1 : 0}; transition: opacity 0ms;"
 					/>
 					<img
-						src="/jolly_fly1.png"
+						src="/jolly_fly1.svg"
 						alt=""
 						aria-hidden="true"
 						class="absolute inset-0 h-full w-full object-contain object-bottom"
 						style="opacity: {pose === 'fly1' ? 1 : 0}; transition: opacity 0ms;"
 					/>
 					<img
-						src="/jolly_fly2.png"
+						src="/jolly_fly2.svg"
 						alt=""
 						aria-hidden="true"
 						class="absolute inset-0 h-full w-full object-contain object-bottom"
 						style="opacity: {pose === 'fly2' ? 1 : 0}; transition: opacity 0ms;"
 					/>
 					<img
-						src="/jolly_thinking.png"
+						src="/jolly_thinking.svg"
 						alt=""
 						aria-hidden="true"
 						class="absolute inset-0 h-full w-full object-contain object-bottom"
 						style="opacity: {pose === 'thinking' ? 1 : 0}; transition: opacity 0ms;"
 					/>
 					<img
-						src="/jolly_dead.png"
+						src="/jolly_dead.svg"
 						alt=""
 						aria-hidden="true"
 						class="absolute inset-0 h-full w-full object-contain object-bottom"
@@ -408,7 +408,7 @@
 
 	<!-- Branch: positioned relative to bird -->
 	<img
-		src="/jolly_tree.png"
+		src="/jolly_tree.svg"
 		alt=""
 		aria-hidden="true"
 		class="pointer-events-none absolute"

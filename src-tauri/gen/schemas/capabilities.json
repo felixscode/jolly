@@ -1,1 +1,1 @@
-{"default":{"identifier":"default","description":"Default permissions for Jolly","local":true,"windows":["main"],"permissions":["core:default","opener:default","clipboard-manager:allow-read-text","clipboard-manager:allow-write-text"]}}
+{"default":{"identifier":"default","description":"Default permissions for Jolly","local":true,"windows":["main"],"permissions":["core:default","opener:default","clipboard-manager:allow-read-text","clipboard-manager:allow-write-text","store:default","keyring:default"]}}

@@ -5,5 +5,10 @@ import svgr from 'vite-plugin-svgr';
 import mkcert from 'vite-plugin-mkcert';
 
 export default defineConfig({
-	plugins: [tailwindcss(), sveltekit(), svgr(), mkcert()]
+	plugins: [tailwindcss(), sveltekit(), svgr(), mkcert()],
+	server: {
+		watch: {
+			ignored: ['**/src-tauri/target/**']
+		}
+	}
 });

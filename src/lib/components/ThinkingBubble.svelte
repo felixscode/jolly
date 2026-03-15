@@ -2,18 +2,19 @@
 	let {
 		active,
 		scale = 1.0,
+		pulseAmount = 0.125,
 		scaleSpeed = 2,
 		offsetX = 0,
 		offsetY = 0,
-		boxTop = 5,
-		boxLeft = 42,
-		boxW = 72,
-		boxH = 38,
-		debugBubbles = false,
-		isDark = false
+		boxTop = 12,
+		boxLeft = 35,
+		boxW = 85,
+		boxH = 50,
+		debugBubbles = false
 	}: {
 		active: boolean;
 		scale?: number;
+		pulseAmount?: number;
 		scaleSpeed?: number;
 		offsetX?: number;
 		offsetY?: number;
@@ -22,11 +23,10 @@
 		boxW?: number;
 		boxH?: number;
 		debugBubbles?: boolean;
-		isDark?: boolean;
 	} = $props();
 
-	const minScale = $derived(scale * 0.875);
-	const maxScale = $derived(scale * 1.125);
+	const minScale = $derived(scale * (1 - pulseAmount));
+	const maxScale = $derived(scale * (1 + pulseAmount));
 
 	const corrections = [
 		{ wrong: 'recieve', right: 'receive' },
@@ -97,18 +97,17 @@
 
 {#if active}
 	<div
-		class="thinking-bubble pointer-events-none absolute bottom-full"
+		class="thinking-bubble pointer-events-none absolute"
 		style="
-			left: 50%;
-			animation: bubble-pulse {scaleSpeed}s linear infinite;
+			left: calc(50% + {offsetX}px);
+			bottom: calc(100% - {offsetY}px);
 			--min-scale: {minScale};
 			--max-scale: {maxScale};
-			--offset-x: {offsetX}px;
-			--offset-y: {offsetY}px;
+			--pulse-speed: {scaleSpeed}s;
 		"
 	>
 		<img
-			src={isDark ? '/jolly_thinking_bubble_dark.svg' : '/jolly_thinking_bubble.svg'}
+			src="/jolly_thinking_bubble.svg"
 			alt=""
 			style="display: block; width: 150px; max-width: none;"
 		/>
@@ -133,10 +132,10 @@
 	@keyframes bubble-pulse {
 		0%,
 		100% {
-			transform: translate(calc(-50% + var(--offset-x)), var(--offset-y)) scale(var(--min-scale));
+			transform: translate(-50%, 0) scale(var(--min-scale));
 		}
 		50% {
-			transform: translate(calc(-50% + var(--offset-x)), var(--offset-y)) scale(var(--max-scale));
+			transform: translate(-50%, 0) scale(var(--max-scale));
 		}
 	}
 
@@ -157,6 +156,7 @@
 
 	.thinking-bubble {
 		transform-origin: bottom center;
+		animation: bubble-pulse var(--pulse-speed) linear infinite;
 	}
 
 	.word-fade {

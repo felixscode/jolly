@@ -1,0 +1,737 @@
+test_id,language,category,model_id,model_name,exact_match,similarity,time_ms,rss_mb,input,expected,output
+1,en,short,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",true,1.00,3874,2071,"I recieved your messege yesterday.","I received your message yesterday.","I received your message yesterday."
+2,en,short,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",true,1.00,1057,2086,"The wether was beautful today.","The weather was beautiful today.","The weather was beautiful today."
+3,en,short,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",true,1.00,1418,2100,"She definately went to the libary after scool.","She definitely went to the library after school.","She definitely went to the library after school."
+4,en,short,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",true,1.00,1414,2114,"He was very excitted about the upcomming event.","He was very excited about the upcoming event.","He was very excited about the upcoming event."
+5,en,short,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",true,1.00,1200,2128,"The goverment annouced new policys today.","The government announced new policies today.","The government announced new policies today."
+6,en,short,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",false,0.86,1379,2142,"Its importent to maintane a helthy lifestyle.","It's important to maintain a healthy lifestyle.","It is important to maintain a healthy lifestyle."
+7,en,short,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",true,1.00,1088,2156,"The resturant had excelent sevice.","The restaurant had excellent service.","The restaurant had excellent service."
+8,en,short,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",true,1.00,1201,2169,"We should seperate the diffrent categries.","We should separate the different categories.","We should separate the different categories."
+9,en,short,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",false,1.00,1299,2170,"The commitee made a unanmous desicion.","The committee made a unanimous decision.","The committee made an unanimous decision."
+10,en,short,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",true,1.00,1153,2170,"She accidently droped her favrite vase.","She accidentally dropped her favorite vase.","She accidentally dropped her favorite vase."
+11,en,short,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",true,1.00,1193,2172,"The professer gave a fasinating lecure.","The professor gave a fascinating lecture.","The professor gave a fascinating lecture."
+12,en,short,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",true,1.00,1224,2186,"I beleive the calender is incorect.","I believe the calendar is incorrect.","I believe the calendar is incorrect."
+13,de,short,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",false,0.00,1102,2200,"Ich habe gestern deine Nachich erhalten.","Ich habe gestern deine Nachricht erhalten.","I received your reply yesterday."
+14,de,short,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",false,0.00,1141,2214,"Das Weter war heute wunderschon.","Das Wetter war heute wunderschön.","The weather was today wonderful."
+15,de,short,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",false,0.80,1195,2228,"Wir solten uns morgen trefen.","Wir sollten uns morgen treffen.","Wir sollen uns morgen treffen."
+16,de,short,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",false,0.00,1518,2242,"Die Besprechung wurde auf nechste Woche verschoben.","Die Besprechung wurde auf nächste Woche verschoben.","The meeting has been postponed to next week."
+17,de,short,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",true,1.00,1580,2256,"Er hat die Aufgabe volstandig erledigt.","Er hat die Aufgabe vollständig erledigt.","Er hat die Aufgabe vollständig erledigt."
+18,de,short,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",false,0.00,1295,2270,"Die Regirung hat neue Massnahmen beschlosen.","Die Regierung hat neue Maßnahmen beschlossen.","The government has adopted new measures."
+19,de,short,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",false,0.00,1262,2284,"Bitte schiken Sie mir die Unterlangen.","Bitte schicken Sie mir die Unterlagen.","Please send me the underlined text."
+20,de,short,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",true,1.00,1571,2298,"Das Ergbnis war uberraschend positiv.","Das Ergebnis war überraschend positiv.","Das Ergebnis war überraschend positiv."
+21,en,medium,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",true,1.00,2909,2313,"I wanted to let you know that the meting has been rescheduld. Please make sure to update your calender acordingly.","I wanted to let you know that the meeting has been rescheduled. Please make sure to update your calendar accordingly.","I wanted to let you know that the meeting has been rescheduled. Please make sure to update your calendar accordingly."
+22,en,medium,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",true,1.00,2531,2326,"The new sofware update has been relased. All employes should instal it before the end of the week.","The new software update has been released. All employees should install it before the end of the week.","The new software update has been released. All employees should install it before the end of the week."
+23,en,medium,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",true,1.00,2763,2340,"We are planing to expend our operatons to new markets. The stratigic review is schedled for next mounth.","We are planning to expand our operations to new markets. The strategic review is scheduled for next month.","We are planning to expand our operations to new markets. The strategic review is scheduled for next month."
+24,en,medium,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",true,1.00,2652,2354,"The projct deliverables are due by Firday. Please ensure all documention is completd and submited on time.","The project deliverables are due by Friday. Please ensure all documentation is completed and submitted on time.","The project deliverables are due by Friday. Please ensure all documentation is completed and submitted on time."
+25,en,medium,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",true,1.00,2543,2368,"Thank you for your patiance during this transistion period. We apreciate your continiued support and understading.","Thank you for your patience during this transition period. We appreciate your continued support and understanding.","Thank you for your patience during this transition period. We appreciate your continued support and understanding."
+26,en,medium,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",true,1.00,2786,2382,"The reserch team has publishd there findings. The resuts are very promissing and could lead to signifcant breakthroughs.","The research team has published their findings. The results are very promising and could lead to significant breakthroughs.","The research team has published their findings. The results are very promising and could lead to significant breakthroughs."
+27,en,medium,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",true,1.00,2780,2396,"Our custmer satisfation scores have improoved significently. This is larglely due to the new traning programm we implmented.","Our customer satisfaction scores have improved significantly. This is largely due to the new training program we implemented.","Our customer satisfaction scores have improved significantly. This is largely due to the new training program we implemented."
+28,en,medium,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",true,1.00,2751,2410,"The budjet for next quater has been aproved. We can now procede with hiring aditional staff for the departement.","The budget for next quarter has been approved. We can now proceed with hiring additional staff for the department.","The budget for next quarter has been approved. We can now proceed with hiring additional staff for the department."
+29,de,medium,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",false,0.93,3321,2424,"Ich wollte Ihnen mitteilen, dass die Besprechng verschoben wurde. Bitte aktualisiren Sie Ihren Kalender entsprchend.","Ich wollte Ihnen mitteilen, dass die Besprechung verschoben wurde. Bitte aktualisieren Sie Ihren Kalender entsprechend.","Ich möchte Ihnen mitteilen, dass die Besprechung verschoben wurde. Bitte aktualisieren Sie Ihren Kalender entsprechend."
+30,de,medium,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",false,0.93,2502,2438,"Das neue Softwar-Update wurde veröfentlicht. Alle Mitarbeiter solten es vor Ende der Woche instalieren.","Das neue Software-Update wurde veröffentlicht. Alle Mitarbeiter sollten es vor Ende der Woche installieren.","Das neue Software-Update wurde veröffentlicht. Alle Mitarbeiter sollen es vor Ende der Woche installieren."
+31,de,medium,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",false,0.00,2895,2452,"Wir planen unsere Geschäfstätigkeit auf neue Märkte auszuweiten. Die strategische Überprüfung ist für nächsten Monat geplannt.","Wir planen unsere Geschäftstätigkeit auf neue Märkte auszuweiten. Die strategische Überprüfung ist für nächsten Monat geplant.","We plan to expand our business activities to new markets. The strategic review is scheduled for next month."
+32,de,medium,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",false,0.94,3587,2466,"Vielen Dank für Ihre Gedult während dieser Übergangsphase. Wir schätzen Ihre fortwärende Unterstüzung und Ihr Verständniss.","Vielen Dank für Ihre Geduld während dieser Übergangsphase. Wir schätzen Ihre fortwährende Unterstützung und Ihr Verständnis.","Vielen Dank für Ihre Geduld während dieser Übergangsphase. Wir schätzen Ihre fortlaufende Unterstützung und Ihr Verständnis."
+33,de,medium,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",false,0.00,3285,2480,"Das Forschungsteam hat seine Ergebnise veröfentlicht. Die Resultate sind sehr vielversprechnd und könten zu bedeutenden Durchbrüchen füren.","Das Forschungsteam hat seine Ergebnisse veröffentlicht. Die Resultate sind sehr vielversprechend und könnten zu bedeutenden Durchbrüchen führen.","The research team has released its results. The outcomes are very promising and could lead to significant breakthroughs."
+34,en,long,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",true,1.00,6526,2494,"The anual report has been finalized and is reddy for distribusion. It includes a comprehensve overview of our finacial performence, key achivements, and strategec goals for the upcomming year. All departement heads should reveiw the relevent sections and provide there feedback by the end of next week.","The annual report has been finalized and is ready for distribution. It includes a comprehensive overview of our financial performance, key achievements, and strategic goals for the upcoming year. All department heads should review the relevant sections and provide their feedback by the end of next week.","The annual report has been finalized and is ready for distribution. It includes a comprehensive overview of our financial performance, key achievements, and strategic goals for the upcoming year. All department heads should review the relevant sections and provide their feedback by the end of next week."
+35,en,long,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",true,1.00,6612,2508,"We are pleased to anounce that our compeny has been reconized as one of the top emploiers in the region. This acheivement reflecs our comitment to creating a positive work enviroment and investing in our employes profesional developement. We would like to thank evreyone for there hard work and dedicaton.","We are pleased to announce that our company has been recognized as one of the top employers in the region. This achievement reflects our commitment to creating a positive work environment and investing in our employees' professional development. We would like to thank everyone for their hard work and dedication.","We are pleased to announce that our company has been recognized as one of the top employers in the region. This achievement reflects our commitment to creating a positive work environment and investing in our employees' professional development. We would like to thank everyone for their hard work and dedication."
+36,en,long,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",true,1.00,7367,2522,"Following our disscusion last week, I wanted to summerize the key action itmes. First, the marketing team will prepair a revised campain proposel by Wensday. Second, the enginering departement will conduct a feasability study on the new product lien. Third, finace will provide an updated budjet forcast for the remainding quater.","Following our discussion last week, I wanted to summarize the key action items. First, the marketing team will prepare a revised campaign proposal by Wednesday. Second, the engineering department will conduct a feasibility study on the new product line. Third, finance will provide an updated budget forecast for the remaining quarter.","Following our discussion last week, I wanted to summarize the key action items. First, the marketing team will prepare a revised campaign proposal by Wednesday. Second, the engineering department will conduct a feasibility study on the new product line. Third, finance will provide an updated budget forecast for the remaining quarter."
+37,en,long,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",true,1.00,7680,2536,"The custmer feedback survay results are in, and they paint a very encuraging picture. Overal satisfation has incresed by fifteen percent compaired to last quater. The areas that recieved the highist marks were custmer suport responsivness and product qualty. However, there are still oppertunities for improvment in our delivry timelines and onlien ordering expirience.","The customer feedback survey results are in, and they paint a very encouraging picture. Overall satisfaction has increased by fifteen percent compared to last quarter. The areas that received the highest marks were customer support responsiveness and product quality. However, there are still opportunities for improvement in our delivery timelines and online ordering experience.","The customer feedback survey results are in, and they paint a very encouraging picture. Overall satisfaction has increased by fifteen percent compared to last quarter. The areas that received the highest marks were customer support responsiveness and product quality. However, there are still opportunities for improvement in our delivery timelines and online ordering experience."
+38,de,long,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",false,0.07,7063,2550,"Der Jahresbericht wurde fertiggestelt und ist bereit zur Verteilung. Er enthält einen umfasenden Überblick über unsere finanziele Leistung, wichtige Errungenschaften und strategische Ziele für das komende Jahr. Alle Abteilungsleiter solten die relevanten Abschnite überprüfen und bis Ende nächster Woche ihr Fedback geben.","Der Jahresbericht wurde fertiggestellt und ist bereit zur Verteilung. Er enthält einen umfassenden Überblick über unsere finanzielle Leistung, wichtige Errungenschaften und strategische Ziele für das kommende Jahr. Alle Abteilungsleiter sollten die relevanten Abschnitte überprüfen und bis Ende nächster Woche ihr Feedback geben.","The annual report has been finalized and is ready for distribution. It includes a comprehensive overview of our financial performance, significant achievements, and strategic goals for the upcoming year. All divisional managers should review the relevant sections and provide feedback by the end of next week."
+39,de,long,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",false,0.04,7174,2564,"Wir freuen uns mitzutelen, dass unser Unternehmen als einer der besten Arbeitgeber der Region ausgezeichent wurde. Diese Auszeichung spiegelt unser Engagment für die Schafung eines positiven Arbeitsumfeldes und die Investition in die berufliche Entwickelung unserer Mitarbeiter wider. Wir möchten allen für ihre harte Arbeit und Hingabe dancken.","Wir freuen uns mitzuteilen, dass unser Unternehmen als einer der besten Arbeitgeber der Region ausgezeichnet wurde. Diese Auszeichnung spiegelt unser Engagement für die Schaffung eines positiven Arbeitsumfeldes und die Investition in die berufliche Entwicklung unserer Mitarbeiter wider. Wir möchten allen für ihre harte Arbeit und Hingabe danken.","We are delighted to announce that our company has been recognized as one of the best employers in the region. This award reflects our commitment to creating a positive work environment and our investment in our employees' professional development. We would like to thank all for their hard work and dedication."
+40,de,long,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",true,1.00,10874,2578,"Nach unserer Diskusion letzte Woche möchte ich die wichtigsten Aktionspunkte zusammenfasen. Erstens wird das Marketingteam bis Mitwoch einen überarbeiteten Kampagnenvorschlag erstelen. Zweitens wird die Ingenieursabteilung eine Machbarkeitsstudie für die neue Produktlinie durchfüren. Drittens wird die Finanzabteilung eine aktualiesierte Budgetprognose für das verbleibende Quartal bereitstelen.","Nach unserer Diskussion letzte Woche möchte ich die wichtigsten Aktionspunkte zusammenfassen. Erstens wird das Marketingteam bis Mittwoch einen überarbeiteten Kampagnenvorschlag erstellen. Zweitens wird die Ingenieursabteilung eine Machbarkeitsstudie für die neue Produktlinie durchführen. Drittens wird die Finanzabteilung eine aktualisierte Budgetprognose für das verbleibende Quartal bereitstellen.","Nach unserer Diskussion letzte Woche möchte ich die wichtigsten Aktionspunkte zusammenfassen. Erstens wird das Marketingteam bis Mittwoch einen überarbeiteten Kampagnenvorschlag erstellen. Zweitens wird die Ingenieursabteilung eine Machbarkeitsstudie für die neue Produktlinie durchführen. Drittens wird die Finanzabteilung eine aktualisierte Budgetprognose für das verbleibende Quartal bereitstellen."
+41,en,email,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",true,1.00,8435,2592,"Hi Sarah,
+
+I hope this email findz you well. I wanted to follow up on our conversaton from last week regardng the new project timelien.
+
+After revieing the requiremants, I beleive we can meet the orignal deadlien if we allocate addtional resurces to the developement team. Could we scheduel a quick call tommorow to discus this furthur?
+
+Best regards,
+Tom","Hi Sarah,
+
+I hope this email finds you well. I wanted to follow up on our conversation from last week regarding the new project timeline.
+
+After reviewing the requirements, I believe we can meet the original deadline if we allocate additional resources to the development team. Could we schedule a quick call tomorrow to discuss this further?
+
+Best regards,
+Tom","Hi Sarah,
+
+I hope this email finds you well. I wanted to follow up on our conversation from last week regarding the new project timeline.
+
+After reviewing the requirements, I believe we can meet the original deadline if we allocate additional resources to the development team. Could we schedule a quick call tomorrow to discuss this further?
+
+Best regards,
+Tom"
+42,en,email,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",true,1.00,10773,2606,"Dear Mr. Johnson,
+
+Thank you for your intrest in our servises. I am writting to confrim your apointment on Thurdsay, March 20th at 2:00 PM.
+
+Please bring the folowing documets:
+- A valid photo ID
+- Your insurence card
+- Any relevent medical recods
+
+If you need to rescheduel, please contac our ofice at least 24 hours in advanse.
+
+Sincerely,
+Dr. Emily Chen
+City Medical Center","Dear Mr. Johnson,
+
+Thank you for your interest in our services. I am writing to confirm your appointment on Thursday, March 20th at 2:00 PM.
+
+Please bring the following documents:
+- A valid photo ID
+- Your insurance card
+- Any relevant medical records
+
+If you need to reschedule, please contact our office at least 24 hours in advance.
+
+Sincerely,
+Dr. Emily Chen
+City Medical Center","Dear Mr. Johnson,
+
+Thank you for your interest in our services. I am writing to confirm your appointment on Thursday, March 20th at 2:00 PM.
+
+Please bring the following documents:
+- A valid photo ID
+- Your insurance card
+- Any relevant medical records
+
+If you need to reschedule, please contact our office at least 24 hours in advance.
+
+Sincerely,
+Dr. Emily Chen
+City Medical Center"
+43,en,email,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",false,1.00,6898,2621,"Hey team,
+
+Quick update on the Q2 planing:
+
+1. The markting budjet has been aprooved
+2. We need to finlize the hiring plan by Firday
+3. The product roadmapp review is next Teusday
+
+Let me know if you have any questons or conserns.
+
+Cheers,
+Alex","Hey team,
+
+Quick update on the Q2 planning:
+
+1. The marketing budget has been approved
+2. We need to finalize the hiring plan by Friday
+3. The product roadmap review is next Tuesday
+
+Let me know if you have any questions or concerns.
+
+Cheers,
+Alex","Hey team,
+
+Quick update on the Q2 planning:
+
+1. The marketing budget has been approved.
+2. We need to finalize the hiring plan by Friday.
+3. The product roadmap review is next Tuesday.
+
+Let me know if you have any questions or concerns.
+
+Cheers,
+Alex"
+44,en,email,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",true,1.00,10916,2635,"Dear Hiring Comittee,
+
+I am writting to express my intrest in the Senior Sofware Enginere postion advertized on your websight. With over ten years of experiance in full-stack developement, I am confidant that my skills and backround make me an excelent candidat for this role.
+
+I have atached my resume and cover leter for your reveiw. I look forwrd to the opertunity to discus how I can contribut to your team.
+
+Thank you for your considration.
+
+Best regards,
+Michael Torres","Dear Hiring Committee,
+
+I am writing to express my interest in the Senior Software Engineer position advertised on your website. With over ten years of experience in full-stack development, I am confident that my skills and background make me an excellent candidate for this role.
+
+I have attached my resume and cover letter for your review. I look forward to the opportunity to discuss how I can contribute to your team.
+
+Thank you for your consideration.
+
+Best regards,
+Michael Torres","Dear Hiring Committee,
+
+I am writing to express my interest in the Senior Software Engineer position advertised on your website. With over ten years of experience in full-stack development, I am confident that my skills and background make me an excellent candidate for this role.
+
+I have attached my resume and cover letter for your review. I look forward to the opportunity to discuss how I can contribute to your team.
+
+Thank you for your consideration.
+
+Best regards,
+Michael Torres"
+45,en,email,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",true,1.00,9898,2649,"Subject: Urgant - Server Maintanence Schedled
+
+Dear all,
+
+Please be advized that we will be preforming schedled maintanence on our producion servers this Saterday from 10:00 PM to 4:00 AM.
+
+During this peroid, the folowing servises will be unavailble:
+- Email
+- Cloud storiage
+- Internal dashbords
+
+We apologise for any inconveneince and apreciate your understandng.
+
+IT Departement","Subject: Urgent - Server Maintenance Scheduled
+
+Dear all,
+
+Please be advised that we will be performing scheduled maintenance on our production servers this Saturday from 10:00 PM to 4:00 AM.
+
+During this period, the following services will be unavailable:
+- Email
+- Cloud storage
+- Internal dashboards
+
+We apologize for any inconvenience and appreciate your understanding.
+
+IT Department","Subject: Urgent - Server Maintenance Scheduled
+
+Dear all,
+
+Please be advised that we will be performing scheduled maintenance on our production servers this Saturday from 10:00 PM to 4:00 AM.
+
+During this period, the following services will be unavailable:
+- Email
+- Cloud storage
+- Internal dashboards
+
+We apologize for any inconvenience and appreciate your understanding.
+
+IT Department"
+46,de,email,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",false,0.06,9682,2663,"Hallo Frau Müller,
+
+ich hofe, diese E-Mail ereicht Sie gut. Ich wollte mich bezüglich unseres Gesprächs von letzter Woche zum neuen Projektzeitplan melden.
+
+Nach Durchsicht der Anforderugen bin ich der Meinung, dass wir den ursprünglichen Termin einhalten könen, wenn wir dem Entwicklungsteam zusätzliche Ressorcen zuweisen. Könnten wir morgen einen kurzen Anruf vereinbahren, um dies weiter zu bespreschen?
+
+Mit freundlichen Grüßen,
+Thomas Schmidt","Hallo Frau Müller,
+
+ich hoffe, diese E-Mail erreicht Sie gut. Ich wollte mich bezüglich unseres Gesprächs von letzter Woche zum neuen Projektzeitplan melden.
+
+Nach Durchsicht der Anforderungen bin ich der Meinung, dass wir den ursprünglichen Termin einhalten können, wenn wir dem Entwicklungsteam zusätzliche Ressourcen zuweisen. Könnten wir morgen einen kurzen Anruf vereinbaren, um dies weiter zu besprechen?
+
+Mit freundlichen Grüßen,
+Thomas Schmidt","Hello Frau Müller,
+
+I hope this email reaches you well. I wanted to inform you about our discussion from last week regarding the new project timeline.
+
+After reviewing the requirements, I believe we can adhere to the original schedule if we allocate additional resources to the development team. Could we schedule a brief call tomorrow to discuss this further?
+
+Best regards,
+Thomas Schmidt"
+47,de,email,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",false,0.94,14757,2677,"Sehr geerter Herr Weber,
+
+vielen Dank für Ihr Interesse an unseren Dienstleistunegn. Ich schreibe Ihnen, um Ihren Termin am Donerstag, den 20. März um 14:00 Uhr zu bestatigen.
+
+Bitte bringen Sie folgene Dokumente mit:
+- Einen gültigen Lichtbildausweis
+- Ihre Versicherungskarte
+- Alle relevanten medizinischen Unterlangen
+
+Wenn Sie umbuchen müsen, kontaktieren Sie bitte unser Büro mindestons 24 Stunden im Vorraus.
+
+Mit freundlichen Grüßen,
+Dr. Anna Fischer
+Stadtklinik Berlin","Sehr geehrter Herr Weber,
+
+vielen Dank für Ihr Interesse an unseren Dienstleistungen. Ich schreibe Ihnen, um Ihren Termin am Donnerstag, den 20. März um 14:00 Uhr zu bestätigen.
+
+Bitte bringen Sie folgende Dokumente mit:
+- Einen gültigen Lichtbildausweis
+- Ihre Versicherungskarte
+- Alle relevanten medizinischen Unterlagen
+
+Wenn Sie umbuchen müssen, kontaktieren Sie bitte unser Büro mindestens 24 Stunden im Voraus.
+
+Mit freundlichen Grüßen,
+Dr. Anna Fischer
+Stadtklinik Berlin","Sehr geehrter Herr Weber,
+
+vielen Dank für Ihr Interesse an unseren Dienstleistungen. Ich schreibe Ihnen, um Ihren Termin am Donnerstag, den 20. März um 14:00 Uhr zu bestätigen.
+
+Bitte bringen Sie folgende Dokumente mit:
+- Einen gültigen Lichtbildausweis
+- Ihre Versicherungskarte
+- Alle relevanten medizinischen Unterlagen
+
+Wenn Sie benötigen, kontaktieren Sie bitte unser Büro mindestens 24 Stunden vorher.
+
+Mit freundlichen Grüßen,
+Dr. Anna Fischer
+Stadtklinik Berlin"
+48,de,email,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",false,0.97,8850,2691,"Hallo Team,
+
+kurzes Update zur Q2-Plannung:
+
+1. Das Marketingbudget wurde genehimgt
+2. Wir müssen den Einstellungsplan bis Frietag finalisiren
+3. Die Produkt-Roadmap-Überprüfung ist nächsten Dienstag
+
+Lasst mich wissen, wenn ihr Fragen oder Bedenken habbt.
+
+Viele Grüße,
+Alexander","Hallo Team,
+
+kurzes Update zur Q2-Planung:
+
+1. Das Marketingbudget wurde genehmigt
+2. Wir müssen den Einstellungsplan bis Freitag finalisieren
+3. Die Produkt-Roadmap-Überprüfung ist nächsten Dienstag
+
+Lasst mich wissen, wenn ihr Fragen oder Bedenken habt.
+
+Viele Grüße,
+Alexander","Hallo Team,
+
+kurzes Update zur Q2-Plannung:
+
+1. Das Marketingbudget wurde genehmigt
+2. Wir müssen den Einstellungsplan bis Freitag finalisieren
+3. Die Produkt-Roadmap-Überprüfung ist am nächsten Dienstag
+
+Lasst mich wissen, wenn ihr Fragen oder Bedenken habt.
+
+Viele Grüße,
+Alexander"
+49,de,email,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",false,0.98,16004,2705,"Sehr geehrtes Einstellungskomitee,
+
+mit großem Interesse bewerbe ich mich auf die ausgeschriebne Stelle als Senior Software Engenieur auf Ihrer Webseite. Mit über zehn Jaren Erfahrung in der Full-Stack-Entwickelung bin ich überzeugt, dass meine Fähigkeiten und mein Hintergrund mich zu einem ausgezeichnetten Kandidaten für diese Rolle machen.
+
+Ich habe meinen Lebenslauf und mein Anschreiben zur Durchsicht beigefügt. Ich freue mich auf die Möglichkeit zu bespreschen, wie ich zu Ihrem Team beitragen kan.
+
+Vielen Dank für Ihre Berücksichtigung.
+
+Mit freundlichen Grüßen,
+Michael Wagner","Sehr geehrtes Einstellungskomitee,
+
+mit großem Interesse bewerbe ich mich auf die ausgeschriebene Stelle als Senior Software Ingenieur auf Ihrer Webseite. Mit über zehn Jahren Erfahrung in der Full-Stack-Entwicklung bin ich überzeugt, dass meine Fähigkeiten und mein Hintergrund mich zu einem ausgezeichneten Kandidaten für diese Rolle machen.
+
+Ich habe meinen Lebenslauf und mein Anschreiben zur Durchsicht beigefügt. Ich freue mich auf die Möglichkeit zu besprechen, wie ich zu Ihrem Team beitragen kann.
+
+Vielen Dank für Ihre Berücksichtigung.
+
+Mit freundlichen Grüßen,
+Michael Wagner","Sehr geehrtes Einstellungskomitee,
+
+mit großem Interesse bewerbe ich mich auf die ausgeschriebene Stelle als Senior Software Engineer auf Ihrer Webseite. Mit über zehn Jahren Erfahrung in der Full-Stack-Entwicklung bin ich überzeugt, dass meine Fähigkeiten und mein Hintergrund mich zu einem ausgezeichneten Kandidaten für diese Rolle machen.
+
+Ich habe meinen Lebenslauf und mein Anschreiben zur Durchsicht beigefügt. Ich freue mich auf die Möglichkeit, wie ich zu Ihrem Team beitragen kann.
+
+Vielen Dank für Ihre Berücksichtigung.
+
+Mit freundlichen Grüßen,
+Michael Wagner"
+50,de,email,qwen2.5-1.5b-instruct-q4km,"Qwen 2.5 1.5B Instruct",false,1.00,14001,2719,"Betreff: Dringent - Geplannte Serverwartung
+
+Liebe Kolleginnen und Kollegen,
+
+bitte beachten Sie, dass wir diesen Samstag von 22:00 bis 4:00 Uhr eine geplannte Wartung an unseren Produktionsservern durchfüren werden.
+
+Während dieses Zeitraums werden folgene Dienste nicht verfügbar sein:
+- E-Mail
+- Cloud-Speicher
+- Interne Dashbords
+
+Wir entschuldigen uns für etwaige Unanemlichkeiten und danken für Ihr Verständniss.
+
+IT-Abteilung","Betreff: Dringend - Geplante Serverwartung
+
+Liebe Kolleginnen und Kollegen,
+
+bitte beachten Sie, dass wir diesen Samstag von 22:00 bis 4:00 Uhr eine geplante Wartung an unseren Produktionsservern durchführen werden.
+
+Während dieses Zeitraums werden folgende Dienste nicht verfügbar sein:
+- E-Mail
+- Cloud-Speicher
+- Interne Dashboards
+
+Wir entschuldigen uns für etwaige Unannehmlichkeiten und danken für Ihr Verständnis.
+
+IT-Abteilung","Betreff: Dringend - Geplantene Serverwartung
+
+Liebe Kolleginnen und Kollegen,
+
+bitte beachten Sie, dass wir diesen Samstag von 22:00 bis 4:00 Uhr eine geplante Wartung an unseren Produktionsservern durchführen werden.
+
+Während dieses Zeitraums werden folgende Dienste nicht verfügbar sein:
+- E-Mail
+- Cloud-Speicher
+- Interne Dashboards
+
+Wir entschuldigen uns für etwaige Unannehmlichkeiten und danken für Ihr Verständnis.
+
+IT-Abteilung"
+1,en,short,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,5815,3392,"I recieved your messege yesterday.","I received your message yesterday.","I received your message yesterday."
+2,en,short,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,1596,3392,"The wether was beautful today.","The weather was beautiful today.","The weather was beautiful today."
+3,en,short,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,2066,3392,"She definately went to the libary after scool.","She definitely went to the library after school.","She definitely went to the library after school."
+4,en,short,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,2089,3392,"He was very excitted about the upcomming event.","He was very excited about the upcoming event.","He was very excited about the upcoming event."
+5,en,short,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,1847,3392,"The goverment annouced new policys today.","The government announced new policies today.","The government announced new policies today."
+6,en,short,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,2008,3392,"Its importent to maintane a helthy lifestyle.","It's important to maintain a healthy lifestyle.","It's important to maintain a healthy lifestyle."
+7,en,short,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,1673,3397,"The resturant had excelent sevice.","The restaurant had excellent service.","The restaurant had excellent service."
+8,en,short,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,1843,3415,"We should seperate the diffrent categries.","We should separate the different categories.","We should separate the different categories."
+9,en,short,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,1912,3433,"The commitee made a unanmous desicion.","The committee made a unanimous decision.","The committee made a unanimous decision."
+10,en,short,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,1768,3451,"She accidently droped her favrite vase.","She accidentally dropped her favorite vase.","She accidentally dropped her favorite vase."
+11,en,short,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,1875,3469,"The professer gave a fasinating lecure.","The professor gave a fascinating lecture.","The professor gave a fascinating lecture."
+12,en,short,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,1841,3487,"I beleive the calender is incorect.","I believe the calendar is incorrect.","I believe the calendar is incorrect."
+13,de,short,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,1868,3505,"Ich habe gestern deine Nachich erhalten.","Ich habe gestern deine Nachricht erhalten.","Ich habe gestern deine Nachricht erhalten."
+14,de,short,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,2119,3506,"Das Weter war heute wunderschon.","Das Wetter war heute wunderschön.","Das Wetter war heute wunderschön."
+15,de,short,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,1849,3506,"Wir solten uns morgen trefen.","Wir sollten uns morgen treffen.","Wir sollten uns morgen treffen."
+16,de,short,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,2520,3517,"Die Besprechung wurde auf nechste Woche verschoben.","Die Besprechung wurde auf nächste Woche verschoben.","Die Besprechung wurde auf nächste Woche verschoben."
+17,de,short,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,2369,3535,"Er hat die Aufgabe volstandig erledigt.","Er hat die Aufgabe vollständig erledigt.","Er hat die Aufgabe vollständig erledigt."
+18,de,short,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,2381,3553,"Die Regirung hat neue Massnahmen beschlosen.","Die Regierung hat neue Maßnahmen beschlossen.","Die Regierung hat neue Maßnahmen beschlossen."
+19,de,short,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,2027,3571,"Bitte schiken Sie mir die Unterlangen.","Bitte schicken Sie mir die Unterlagen.","Bitte schicken Sie mir die Unterlagen."
+20,de,short,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,2308,3589,"Das Ergbnis war uberraschend positiv.","Das Ergebnis war überraschend positiv.","Das Ergebnis war überraschend positiv."
+21,en,medium,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,4414,3607,"I wanted to let you know that the meting has been rescheduld. Please make sure to update your calender acordingly.","I wanted to let you know that the meeting has been rescheduled. Please make sure to update your calendar accordingly.","I wanted to let you know that the meeting has been rescheduled. Please make sure to update your calendar accordingly."
+22,en,medium,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,3801,3626,"The new sofware update has been relased. All employes should instal it before the end of the week.","The new software update has been released. All employees should install it before the end of the week.","The new software update has been released. All employees should install it before the end of the week."
+23,en,medium,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,4104,3644,"We are planing to expend our operatons to new markets. The stratigic review is schedled for next mounth.","We are planning to expand our operations to new markets. The strategic review is scheduled for next month.","We are planning to expand our operations to new markets. The strategic review is scheduled for next month."
+24,en,medium,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,4026,3662,"The projct deliverables are due by Firday. Please ensure all documention is completd and submited on time.","The project deliverables are due by Friday. Please ensure all documentation is completed and submitted on time.","The project deliverables are due by Friday. Please ensure all documentation is completed and submitted on time."
+25,en,medium,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,3898,3680,"Thank you for your patiance during this transistion period. We apreciate your continiued support and understading.","Thank you for your patience during this transition period. We appreciate your continued support and understanding.","Thank you for your patience during this transition period. We appreciate your continued support and understanding."
+26,en,medium,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,4196,3698,"The reserch team has publishd there findings. The resuts are very promissing and could lead to signifcant breakthroughs.","The research team has published their findings. The results are very promising and could lead to significant breakthroughs.","The research team has published their findings. The results are very promising and could lead to significant breakthroughs."
+27,en,medium,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,4177,3716,"Our custmer satisfation scores have improoved significently. This is larglely due to the new traning programm we implmented.","Our customer satisfaction scores have improved significantly. This is largely due to the new training program we implemented.","Our customer satisfaction scores have improved significantly. This is largely due to the new training program we implemented."
+28,en,medium,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,4177,3734,"The budjet for next quater has been aproved. We can now procede with hiring aditional staff for the departement.","The budget for next quarter has been approved. We can now proceed with hiring additional staff for the department.","The budget for next quarter has been approved. We can now proceed with hiring additional staff for the department."
+29,de,medium,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,4966,3751,"Ich wollte Ihnen mitteilen, dass die Besprechng verschoben wurde. Bitte aktualisiren Sie Ihren Kalender entsprchend.","Ich wollte Ihnen mitteilen, dass die Besprechung verschoben wurde. Bitte aktualisieren Sie Ihren Kalender entsprechend.","Ich wollte Ihnen mitteilen, dass die Besprechung verschoben wurde. Bitte aktualisieren Sie Ihren Kalender entsprechend."
+30,de,medium,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,3866,3770,"Das neue Softwar-Update wurde veröfentlicht. Alle Mitarbeiter solten es vor Ende der Woche instalieren.","Das neue Software-Update wurde veröffentlicht. Alle Mitarbeiter sollten es vor Ende der Woche installieren.","Das neue Software-Update wurde veröffentlicht. Alle Mitarbeiter sollten es vor Ende der Woche installieren."
+31,de,medium,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",false,0.94,5456,3788,"Wir planen unsere Geschäfstätigkeit auf neue Märkte auszuweiten. Die strategische Überprüfung ist für nächsten Monat geplannt.","Wir planen unsere Geschäftstätigkeit auf neue Märkte auszuweiten. Die strategische Überprüfung ist für nächsten Monat geplant.","Wir planen unsere Geschäfstätigkeit auf neue Märkte auszuweiten. Die strategische Überprüfung ist für den nächsten Monat geplant."
+32,de,medium,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,5626,3806,"Vielen Dank für Ihre Gedult während dieser Übergangsphase. Wir schätzen Ihre fortwärende Unterstüzung und Ihr Verständniss.","Vielen Dank für Ihre Geduld während dieser Übergangsphase. Wir schätzen Ihre fortwährende Unterstützung und Ihr Verständnis.","Vielen Dank für Ihre Geduld während dieser Übergangsphase. Wir schätzen Ihre fortwährende Unterstützung und Ihr Verständnis."
+33,de,medium,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",false,0.88,6338,3824,"Das Forschungsteam hat seine Ergebnise veröfentlicht. Die Resultate sind sehr vielversprechnd und könten zu bedeutenden Durchbrüchen füren.","Das Forschungsteam hat seine Ergebnisse veröffentlicht. Die Resultate sind sehr vielversprechend und könnten zu bedeutenden Durchbrüchen führen.","Das Forschungsteam hat seine Ergebnisse veröfentlicht. Die Ergebnisse sind sehr vielversprechend und könnten zu bedeutenden Durchbrüchen führen."
+34,en,long,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,9916,3842,"The anual report has been finalized and is reddy for distribusion. It includes a comprehensve overview of our finacial performence, key achivements, and strategec goals for the upcomming year. All departement heads should reveiw the relevent sections and provide there feedback by the end of next week.","The annual report has been finalized and is ready for distribution. It includes a comprehensive overview of our financial performance, key achievements, and strategic goals for the upcoming year. All department heads should review the relevant sections and provide their feedback by the end of next week.","The annual report has been finalized and is ready for distribution. It includes a comprehensive overview of our financial performance, key achievements, and strategic goals for the upcoming year. All department heads should review the relevant sections and provide their feedback by the end of next week."
+35,en,long,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,10142,3860,"We are pleased to anounce that our compeny has been reconized as one of the top emploiers in the region. This acheivement reflecs our comitment to creating a positive work enviroment and investing in our employes profesional developement. We would like to thank evreyone for there hard work and dedicaton.","We are pleased to announce that our company has been recognized as one of the top employers in the region. This achievement reflects our commitment to creating a positive work environment and investing in our employees' professional development. We would like to thank everyone for their hard work and dedication.","We are pleased to announce that our company has been recognized as one of the top employers in the region. This achievement reflects our commitment to creating a positive work environment and investing in our employees' professional development. We would like to thank everyone for their hard work and dedication."
+36,en,long,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,11121,3878,"Following our disscusion last week, I wanted to summerize the key action itmes. First, the marketing team will prepair a revised campain proposel by Wensday. Second, the enginering departement will conduct a feasability study on the new product lien. Third, finace will provide an updated budjet forcast for the remainding quater.","Following our discussion last week, I wanted to summarize the key action items. First, the marketing team will prepare a revised campaign proposal by Wednesday. Second, the engineering department will conduct a feasibility study on the new product line. Third, finance will provide an updated budget forecast for the remaining quarter.","Following our discussion last week, I wanted to summarize the key action items. First, the marketing team will prepare a revised campaign proposal by Wednesday. Second, the engineering department will conduct a feasibility study on the new product line. Third, finance will provide an updated budget forecast for the remaining quarter."
+37,en,long,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",false,1.00,11535,3898,"The custmer feedback survay results are in, and they paint a very encuraging picture. Overal satisfation has incresed by fifteen percent compaired to last quater. The areas that recieved the highist marks were custmer suport responsivness and product qualty. However, there are still oppertunities for improvment in our delivry timelines and onlien ordering expirience.","The customer feedback survey results are in, and they paint a very encouraging picture. Overall satisfaction has increased by fifteen percent compared to last quarter. The areas that received the highest marks were customer support responsiveness and product quality. However, there are still opportunities for improvement in our delivery timelines and online ordering experience.","Customer feedback survey results are in, and they paint a very encouraging picture. Overall satisfaction has increased by fifteen percent compared to last quarter. The areas that received the highest marks were customer support responsiveness and product quality. However, there are still opportunities for improvement in our delivery timelines and online ordering experience."
+38,de,long,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",false,0.98,13416,3916,"Der Jahresbericht wurde fertiggestelt und ist bereit zur Verteilung. Er enthält einen umfasenden Überblick über unsere finanziele Leistung, wichtige Errungenschaften und strategische Ziele für das komende Jahr. Alle Abteilungsleiter solten die relevanten Abschnite überprüfen und bis Ende nächster Woche ihr Fedback geben.","Der Jahresbericht wurde fertiggestellt und ist bereit zur Verteilung. Er enthält einen umfassenden Überblick über unsere finanzielle Leistung, wichtige Errungenschaften und strategische Ziele für das kommende Jahr. Alle Abteilungsleiter sollten die relevanten Abschnitte überprüfen und bis Ende nächster Woche ihr Feedback geben.","Der Jahresbericht wurde fertiggestellt und ist bereit zur Verteilung. Er enthält einen umfassenden Überblick über unsere finanzielle Leistung, wichtige Errungenschaften und strategische Ziele für das kommende Jahr. Alle Abteilungsleiter sollten die relevanten Abschnitte überprüfen und bis zum Ende der nächsten Woche ihr Feedback geben."
+39,de,long,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",false,1.00,12778,3934,"Wir freuen uns mitzutelen, dass unser Unternehmen als einer der besten Arbeitgeber der Region ausgezeichent wurde. Diese Auszeichung spiegelt unser Engagment für die Schafung eines positiven Arbeitsumfeldes und die Investition in die berufliche Entwickelung unserer Mitarbeiter wider. Wir möchten allen für ihre harte Arbeit und Hingabe dancken.","Wir freuen uns mitzuteilen, dass unser Unternehmen als einer der besten Arbeitgeber der Region ausgezeichnet wurde. Diese Auszeichnung spiegelt unser Engagement für die Schaffung eines positiven Arbeitsumfeldes und die Investition in die berufliche Entwicklung unserer Mitarbeiter wider. Wir möchten allen für ihre harte Arbeit und Hingabe danken.","Wir freuen uns, mitzuteilen, dass unser Unternehmen als einer der besten Arbeitgeber der Region ausgezeichnet wurde. Diese Auszeichnung spiegelt unser Engagement für die Schaffung eines positiven Arbeitsumfeldes und die Investition in die berufliche Entwicklung unserer Mitarbeiter wider. Wir möchten allen für ihre harte Arbeit und Hingabe danken."
+40,de,long,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",false,0.95,16671,3958,"Nach unserer Diskusion letzte Woche möchte ich die wichtigsten Aktionspunkte zusammenfasen. Erstens wird das Marketingteam bis Mitwoch einen überarbeiteten Kampagnenvorschlag erstelen. Zweitens wird die Ingenieursabteilung eine Machbarkeitsstudie für die neue Produktlinie durchfüren. Drittens wird die Finanzabteilung eine aktualiesierte Budgetprognose für das verbleibende Quartal bereitstelen.","Nach unserer Diskussion letzte Woche möchte ich die wichtigsten Aktionspunkte zusammenfassen. Erstens wird das Marketingteam bis Mittwoch einen überarbeiteten Kampagnenvorschlag erstellen. Zweitens wird die Ingenieursabteilung eine Machbarkeitsstudie für die neue Produktlinie durchführen. Drittens wird die Finanzabteilung eine aktualisierte Budgetprognose für das verbleibende Quartal bereitstellen.","Nach unserer Diskussion letzte Woche möchte ich die wichtigsten Aktionspunkte zusammenfasen. Erstens wird das Marketingteam bis Mitwoch einen überarbeiteten Kampagnenvorschlag erstellen. Zweitens wird die Ingenieursabteilung eine Machbarkeitsstudie für die neue Produktlinie durchführen. Drittens wird die Finanzabteilung eine aktualisierte Budgetprognose für das verbleibende Quartal bereitstellen."
+41,en,email,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,12863,3976,"Hi Sarah,
+
+I hope this email findz you well. I wanted to follow up on our conversaton from last week regardng the new project timelien.
+
+After revieing the requiremants, I beleive we can meet the orignal deadlien if we allocate addtional resurces to the developement team. Could we scheduel a quick call tommorow to discus this furthur?
+
+Best regards,
+Tom","Hi Sarah,
+
+I hope this email finds you well. I wanted to follow up on our conversation from last week regarding the new project timeline.
+
+After reviewing the requirements, I believe we can meet the original deadline if we allocate additional resources to the development team. Could we schedule a quick call tomorrow to discuss this further?
+
+Best regards,
+Tom","Hi Sarah,
+
+I hope this email finds you well. I wanted to follow up on our conversation from last week regarding the new project timeline.
+
+After reviewing the requirements, I believe we can meet the original deadline if we allocate additional resources to the development team. Could we schedule a quick call tomorrow to discuss this further?
+
+Best regards,
+Tom"
+42,en,email,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",false,1.00,16458,3996,"Dear Mr. Johnson,
+
+Thank you for your intrest in our servises. I am writting to confrim your apointment on Thurdsay, March 20th at 2:00 PM.
+
+Please bring the folowing documets:
+- A valid photo ID
+- Your insurence card
+- Any relevent medical recods
+
+If you need to rescheduel, please contac our ofice at least 24 hours in advanse.
+
+Sincerely,
+Dr. Emily Chen
+City Medical Center","Dear Mr. Johnson,
+
+Thank you for your interest in our services. I am writing to confirm your appointment on Thursday, March 20th at 2:00 PM.
+
+Please bring the following documents:
+- A valid photo ID
+- Your insurance card
+- Any relevant medical records
+
+If you need to reschedule, please contact our office at least 24 hours in advance.
+
+Sincerely,
+Dr. Emily Chen
+City Medical Center","Dear Mr. Johnson,
+
+Thank you for your interest in our services. I am writing to confirm your appointment on Thursday, March 20th at 2:00 PM.
+
+Please bring the following documents:
+- A valid photo ID
+- Your insurance card
+- Any relevant medical records
+
+If you need to reschedule, please contact our office at least 24 hours in advance.
+
+Sincerely,
+Dr. Emily Chen  
+City Medical Center"
+43,en,email,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",false,1.00,10440,4012,"Hey team,
+
+Quick update on the Q2 planing:
+
+1. The markting budjet has been aprooved
+2. We need to finlize the hiring plan by Firday
+3. The product roadmapp review is next Teusday
+
+Let me know if you have any questons or conserns.
+
+Cheers,
+Alex","Hey team,
+
+Quick update on the Q2 planning:
+
+1. The marketing budget has been approved
+2. We need to finalize the hiring plan by Friday
+3. The product roadmap review is next Tuesday
+
+Let me know if you have any questions or concerns.
+
+Cheers,
+Alex","Hey team,
+
+Quick update on the Q2 planning:
+
+1. The marketing budget has been approved.
+2. We need to finalize the hiring plan by Friday.
+3. The product roadmap review is next Tuesday.
+
+Let me know if you have any questions or concerns.
+
+Cheers,
+Alex"
+44,en,email,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",true,1.00,16631,4025,"Dear Hiring Comittee,
+
+I am writting to express my intrest in the Senior Sofware Enginere postion advertized on your websight. With over ten years of experiance in full-stack developement, I am confidant that my skills and backround make me an excelent candidat for this role.
+
+I have atached my resume and cover leter for your reveiw. I look forwrd to the opertunity to discus how I can contribut to your team.
+
+Thank you for your considration.
+
+Best regards,
+Michael Torres","Dear Hiring Committee,
+
+I am writing to express my interest in the Senior Software Engineer position advertised on your website. With over ten years of experience in full-stack development, I am confident that my skills and background make me an excellent candidate for this role.
+
+I have attached my resume and cover letter for your review. I look forward to the opportunity to discuss how I can contribute to your team.
+
+Thank you for your consideration.
+
+Best regards,
+Michael Torres","Dear Hiring Committee,
+
+I am writing to express my interest in the Senior Software Engineer position advertised on your website. With over ten years of experience in full-stack development, I am confident that my skills and background make me an excellent candidate for this role.
+
+I have attached my resume and cover letter for your review. I look forward to the opportunity to discuss how I can contribute to your team.
+
+Thank you for your consideration.
+
+Best regards,
+Michael Torres"
+45,en,email,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",false,0.98,15104,4039,"Subject: Urgant - Server Maintanence Schedled
+
+Dear all,
+
+Please be advized that we will be preforming schedled maintanence on our producion servers this Saterday from 10:00 PM to 4:00 AM.
+
+During this peroid, the folowing servises will be unavailble:
+- Email
+- Cloud storiage
+- Internal dashbords
+
+We apologise for any inconveneince and apreciate your understandng.
+
+IT Departement","Subject: Urgent - Server Maintenance Scheduled
+
+Dear all,
+
+Please be advised that we will be performing scheduled maintenance on our production servers this Saturday from 10:00 PM to 4:00 AM.
+
+During this period, the following services will be unavailable:
+- Email
+- Cloud storage
+- Internal dashboards
+
+We apologize for any inconvenience and appreciate your understanding.
+
+IT Department","Subject: Urgant - Server Maintenance Scheduled
+
+Dear all,
+
+Please be advised that we will be performing scheduled maintenance on our production servers this Saturday from 10:00 PM to 4:00 AM.
+
+During this period, the following services will be unavailable:
+- Email
+- Cloud storage
+- Internal dashboards
+
+We apologize for any inconvenience and appreciate your understanding.
+
+IT Department"
+46,de,email,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",false,0.95,18956,4058,"Hallo Frau Müller,
+
+ich hofe, diese E-Mail ereicht Sie gut. Ich wollte mich bezüglich unseres Gesprächs von letzter Woche zum neuen Projektzeitplan melden.
+
+Nach Durchsicht der Anforderugen bin ich der Meinung, dass wir den ursprünglichen Termin einhalten könen, wenn wir dem Entwicklungsteam zusätzliche Ressorcen zuweisen. Könnten wir morgen einen kurzen Anruf vereinbahren, um dies weiter zu bespreschen?
+
+Mit freundlichen Grüßen,
+Thomas Schmidt","Hallo Frau Müller,
+
+ich hoffe, diese E-Mail erreicht Sie gut. Ich wollte mich bezüglich unseres Gesprächs von letzter Woche zum neuen Projektzeitplan melden.
+
+Nach Durchsicht der Anforderungen bin ich der Meinung, dass wir den ursprünglichen Termin einhalten können, wenn wir dem Entwicklungsteam zusätzliche Ressourcen zuweisen. Könnten wir morgen einen kurzen Anruf vereinbaren, um dies weiter zu besprechen?
+
+Mit freundlichen Grüßen,
+Thomas Schmidt","Hallo Frau Müller,
+
+ich hoffe, diese E-Mail erreicht Sie gut. Ich wollte mich bezüglich unseres Gesprächs von letzter Woche zum neuen Projektzeitplan melden.
+
+Nach Überprüfung der Anforderungen bin ich der Meinung, dass wir den ursprüunglichen Termin einhalten können, wenn wir dem Entwicklungsteam zusätzliche Ressourcen zuweisen. Könnten wir morgen einen kurzen Anruf vereinbahren, um dies weiter zu besprechen?
+
+Mit freundlichen Grüßen,
+Thomas Schmidt"
+47,de,email,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",false,0.99,22557,4076,"Sehr geerter Herr Weber,
+
+vielen Dank für Ihr Interesse an unseren Dienstleistunegn. Ich schreibe Ihnen, um Ihren Termin am Donerstag, den 20. März um 14:00 Uhr zu bestatigen.
+
+Bitte bringen Sie folgene Dokumente mit:
+- Einen gültigen Lichtbildausweis
+- Ihre Versicherungskarte
+- Alle relevanten medizinischen Unterlangen
+
+Wenn Sie umbuchen müsen, kontaktieren Sie bitte unser Büro mindestons 24 Stunden im Vorraus.
+
+Mit freundlichen Grüßen,
+Dr. Anna Fischer
+Stadtklinik Berlin","Sehr geehrter Herr Weber,
+
+vielen Dank für Ihr Interesse an unseren Dienstleistungen. Ich schreibe Ihnen, um Ihren Termin am Donnerstag, den 20. März um 14:00 Uhr zu bestätigen.
+
+Bitte bringen Sie folgende Dokumente mit:
+- Einen gültigen Lichtbildausweis
+- Ihre Versicherungskarte
+- Alle relevanten medizinischen Unterlagen
+
+Wenn Sie umbuchen müssen, kontaktieren Sie bitte unser Büro mindestens 24 Stunden im Voraus.
+
+Mit freundlichen Grüßen,
+Dr. Anna Fischer
+Stadtklinik Berlin","Sehr geehrter Herr Weber,
+
+vielen Dank für Ihr Interesse an unseren Dienstleistungen. Ich schreibe Ihnen, um Ihren Termin am Donnerstag, den 20. März um 14:00 Uhr zu bestätigen.
+
+Bitte bringen Sie folgende Dokumente mit:
+- Einen gültigen Ausweis
+- Ihre Versicherungskarte
+- Alle relevanten medizinischen Unterlagen
+
+Wenn Sie umbuchen müssen, kontaktieren Sie bitte unser Büro mindestens 24 Stunden im Voraus.
+
+Mit freundlichen Grüßen,
+Dr. Anna Fischer  
+Stadtklinik Berlin"
+48,de,email,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",false,0.97,13219,4094,"Hallo Team,
+
+kurzes Update zur Q2-Plannung:
+
+1. Das Marketingbudget wurde genehimgt
+2. Wir müssen den Einstellungsplan bis Frietag finalisiren
+3. Die Produkt-Roadmap-Überprüfung ist nächsten Dienstag
+
+Lasst mich wissen, wenn ihr Fragen oder Bedenken habbt.
+
+Viele Grüße,
+Alexander","Hallo Team,
+
+kurzes Update zur Q2-Planung:
+
+1. Das Marketingbudget wurde genehmigt
+2. Wir müssen den Einstellungsplan bis Freitag finalisieren
+3. Die Produkt-Roadmap-Überprüfung ist nächsten Dienstag
+
+Lasst mich wissen, wenn ihr Fragen oder Bedenken habt.
+
+Viele Grüße,
+Alexander","Hallo Team,
+
+kurzes Update zur Q2-Plannung:
+
+1. Das Marketingbudget wurde genehmigt.
+2. Wir müssen den Einstellungsplan bis Freitag finalisieren.
+3. Die Produkt-Roadmap-Überprüfung ist nächsten Dienstag.
+
+Lasst mich wissen, wenn ihr Fragen oder Bedenken habt.
+
+Viele Grüße,
+Alexander"
+49,de,email,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",false,0.98,24372,4112,"Sehr geehrtes Einstellungskomitee,
+
+mit großem Interesse bewerbe ich mich auf die ausgeschriebne Stelle als Senior Software Engenieur auf Ihrer Webseite. Mit über zehn Jaren Erfahrung in der Full-Stack-Entwickelung bin ich überzeugt, dass meine Fähigkeiten und mein Hintergrund mich zu einem ausgezeichnetten Kandidaten für diese Rolle machen.
+
+Ich habe meinen Lebenslauf und mein Anschreiben zur Durchsicht beigefügt. Ich freue mich auf die Möglichkeit zu bespreschen, wie ich zu Ihrem Team beitragen kan.
+
+Vielen Dank für Ihre Berücksichtigung.
+
+Mit freundlichen Grüßen,
+Michael Wagner","Sehr geehrtes Einstellungskomitee,
+
+mit großem Interesse bewerbe ich mich auf die ausgeschriebene Stelle als Senior Software Ingenieur auf Ihrer Webseite. Mit über zehn Jahren Erfahrung in der Full-Stack-Entwicklung bin ich überzeugt, dass meine Fähigkeiten und mein Hintergrund mich zu einem ausgezeichneten Kandidaten für diese Rolle machen.
+
+Ich habe meinen Lebenslauf und mein Anschreiben zur Durchsicht beigefügt. Ich freue mich auf die Möglichkeit zu besprechen, wie ich zu Ihrem Team beitragen kann.
+
+Vielen Dank für Ihre Berücksichtigung.
+
+Mit freundlichen Grüßen,
+Michael Wagner","Sehr geehrtes Einstellungskomitee,
+
+mit großem Interesse bewerbe ich mich auf die ausgeschriebene Stelle als Senior Software Engineer auf Ihrer Webseite. Mit über zehn Jahren Erfahrung in der Full-Stack-Entwicklung bin ich überzeugt, dass meine Fähigkeiten und mein Hintergrund mich zu einem ausgezeichneten Kandidaten für diese Rolle machen.
+
+Ich habe meinen Lebenslauf und mein Anschreiben zur Durchsicht beigefügt. Ich freue mich auf die Möglichkeit, wie ich zu Ihrem Team beitragen kann.
+
+Vielen Dank für Ihre Berücksichtigung.
+
+Mit freundlichen Grüßen,
+Michael Wagner"
+50,de,email,qwen2.5-3b-instruct-q4km,"Qwen 2.5 3B Instruct",false,0.93,21573,4130,"Betreff: Dringent - Geplannte Serverwartung
+
+Liebe Kolleginnen und Kollegen,
+
+bitte beachten Sie, dass wir diesen Samstag von 22:00 bis 4:00 Uhr eine geplannte Wartung an unseren Produktionsservern durchfüren werden.
+
+Während dieses Zeitraums werden folgene Dienste nicht verfügbar sein:
+- E-Mail
+- Cloud-Speicher
+- Interne Dashbords
+
+Wir entschuldigen uns für etwaige Unanemlichkeiten und danken für Ihr Verständniss.
+
+IT-Abteilung","Betreff: Dringend - Geplante Serverwartung
+
+Liebe Kolleginnen und Kollegen,
+
+bitte beachten Sie, dass wir diesen Samstag von 22:00 bis 4:00 Uhr eine geplante Wartung an unseren Produktionsservern durchführen werden.
+
+Während dieses Zeitraums werden folgende Dienste nicht verfügbar sein:
+- E-Mail
+- Cloud-Speicher
+- Interne Dashboards
+
+Wir entschuldigen uns für etwaige Unannehmlichkeiten und danken für Ihr Verständnis.
+
+IT-Abteilung","Betreff: Dringend - Geplannte Serverwartung
+
+Liebe Kolleginnen und Kollegen,
+
+bitte beachten Sie, dass wir diesen Samstag von 22:00 bis 04:00 Uhr eine geplannte Wartung an unseren Produktionsservern durchführen werden.
+
+Während dieses Zeitraums werden folgende Dienste nicht verfügbar sein:
+- E-Mail
+- Cloud-Speicher
+- Interne Dashbords
+
+Wir entschuldigen uns für eventuelle Unannehmlichkeiten und danken für Ihr Verständnis.
+
+IT-Abteilung"

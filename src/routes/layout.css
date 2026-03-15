@@ -11,16 +11,16 @@
 	}
 
 	.dark body {
-		background-color: #0f0d1e;
-		color: #e5e5e5;
+		background-color: #2b2a2a;
+		color: #e8e8e3;
 	}
 
 	/* Jolly brand color utilities — exact colors from SVG files */
 	.text-accent {
-		color: #241e4e;
+		color: #423f37;
 	}
 	.border-accent {
-		border-color: #241e4e;
+		border-color: #423f37;
 	}
 
 	.bg-jolly-accent {

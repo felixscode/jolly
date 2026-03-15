@@ -29,7 +29,7 @@
 
 <!-- Panel -->
 <div
-	class="fixed top-0 left-0 z-50 flex h-full w-[70%] max-w-[560px] flex-col bg-white shadow-xl transition-transform duration-200 ease-out dark:bg-[#423f37] {open
+	class="fixed top-0 left-0 z-50 flex h-full w-[70%] max-w-[560px] flex-col bg-[#e8e8e3] shadow-xl transition-transform duration-200 ease-out dark:bg-[#423f37] {open
 		? 'translate-x-0'
 		: '-translate-x-full'}"
 >

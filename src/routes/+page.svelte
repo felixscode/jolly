@@ -25,57 +25,63 @@
 	}
 </script>
 
-<div class="mx-auto flex max-w-4xl flex-col px-6" style="min-height: calc(100svh - 130px);">
-	<!-- Hero: fills available height, branch scene centered vertically -->
-	<div class="grid flex-1 grid-cols-2 items-center gap-16">
+<div
+	class="mx-auto flex max-w-4xl flex-col overflow-x-hidden px-6"
+	style="height: calc(100svh - 116px - 117px);"
+>
+	<!-- Hero -->
+	<div class="grid flex-1 grid-cols-2 items-center gap-12">
 		<!-- Left: copy -->
 		<div>
-			<p class="mb-3 text-xs font-semibold tracking-widest text-[#960200] dark:text-[#ffd046] uppercase">
+			<p
+				class="mb-2 text-xs font-semibold tracking-widest text-[#960200] uppercase dark:text-[#ffd046]"
+			>
 				Your spell check parrot
 			</p>
-			<h1 class="mb-6 text-4xl leading-tight font-extrabold text-[#241e4e] dark:text-[#e5e5e5]">
-				Catch typos.<br />Keep your voice.
+			<h1 class="mb-3 text-4xl leading-tight font-extrabold text-[#423f37] dark:text-[#e8e8e3]">
+				Catch Typos<br /> Private and Fun
 			</h1>
-			<p class="mb-10 leading-relaxed text-gray-500 dark:text-gray-400">
-				Jolly repleats what your saing just like a real Parrot. Unlike a real Parrot he fixes your
-				typos on the fly. No red squiggles. No extra clicking. Copy something hit enter and paste
-				back in.
+			<p class="mb-5 text-sm leading-relaxed text-gray-500 dark:text-gray-400">
+				Jolly repeats what you're saying — just like a real parrot. Unlike a real parrot, he fixes
+				your typos on the fly. No red squiggles. No extra clicking. Copy something, hit Enter, and
+				paste back in.
 			</p>
 			<a
 				href="/download"
-				class="inline-block rounded-lg border-4 border-[#241e4e] bg-[#960200] px-6 py-3 text-sm font-bold text-white transition-opacity hover:opacity-90"
+				class="inline-block rounded-lg border-4 border-[#960200] bg-transparent px-6 py-3 text-sm font-bold text-[#423f37] transition-colors hover:bg-[#ffd046] hover:text-[#960200] dark:border-[#ffd046] dark:text-[#e8e8e3] dark:hover:bg-[#960200] dark:hover:text-[#ffd046]"
 			>
 				Download Jolly — it's free
 			</a>
 		</div>
 
 		<!-- Right: character scene -->
-		<div class="mb-16 self-end">
-			<BirdScene onCorrect={webCorrect} {isDark} />
+		<div class="flex items-center justify-center overflow-visible">
+			<BirdScene onCorrect={webCorrect} />
 		</div>
 	</div>
 
-	<p class="mb-8 text-xs text-gray-400 dark:text-gray-500">
+	<p class="py-2 text-xs text-gray-400 dark:text-gray-500">
 		* The web demo uses a free public AI — do not paste sensitive or private data.
 	</p>
+
 	<hr class="border-gray-200 dark:border-gray-700" />
 
 	<!-- Feature strip -->
-	<div class="my-16 grid grid-cols-3 gap-16">
+	<div class="grid grid-cols-3 gap-12 py-6">
 		<div>
-			<h2 class="mb-3 text-xl font-bold text-[#241e4e] dark:text-[#e5e5e5]">Local</h2>
+			<h2 class="mb-1 text-lg font-bold text-[#423f37] dark:text-[#e8e8e3]">Local</h2>
 			<p class="text-sm leading-relaxed text-gray-500 dark:text-gray-400">
 				Runs entirely on your machine. Nothing leaves your computer — no cloud, no account required.
 			</p>
 		</div>
 		<div>
-			<h2 class="mb-3 text-xl font-bold text-[#241e4e] dark:text-[#e5e5e5]">Quiet</h2>
+			<h2 class="mb-1 text-lg font-bold text-[#423f37] dark:text-[#e8e8e3]">Quiet</h2>
 			<p class="text-sm leading-relaxed text-gray-500 dark:text-gray-400">
 				No notifications, no interruptions. Jolly sits there silently, waiting for your typo.
 			</p>
 		</div>
 		<div>
-			<h2 class="mb-3 text-xl font-bold text-[#241e4e] dark:text-[#e5e5e5]">Free</h2>
+			<h2 class="mb-1 text-lg font-bold text-[#423f37] dark:text-[#e8e8e3]">Free</h2>
 			<p class="text-sm leading-relaxed text-gray-500 dark:text-gray-400">
 				Open source and free forever. Download it, use it, read the source code if you're curious.
 			</p>
