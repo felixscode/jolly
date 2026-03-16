@@ -1,5 +1,7 @@
 use std::path::Path;
-use std::sync::RwLock;
+use std::sync::{LazyLock, RwLock};
+
+use regex::Regex;
 
 use async_trait::async_trait;
 use mistralrs::{
@@ -11,6 +13,13 @@ use super::SYSTEM_PROMPT;
 
 /// Global model handle. RwLock so models can be swapped at runtime.
 static MODEL: RwLock<Option<Model>> = RwLock::new(None);
+
+/// Number of sentences per LLM call. Increase for speed, decrease for quality.
+const SENTENCES_PER_BATCH: usize = 1;
+
+/// Regex matching sentence-ending punctuation followed by whitespace.
+static SENTENCE_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"[.!?]\s+").unwrap());
 
 /// Initialize and load a GGUF model from the given path.
 /// Call this once during app startup. For subsequent model changes use `swap_model`.
@@ -109,6 +118,34 @@ pub fn unload_model() {
 /// Check if a model is loaded and ready for inference.
 pub fn is_model_loaded() -> bool {
     MODEL.read().map(|m| m.is_some()).unwrap_or(false)
+}
+
+/// Split text into (sentence, trailing_separator) pairs.
+/// Punctuation stays with the sentence; whitespace between sentences is captured
+/// so the original spacing can be restored during reassembly.
+fn split_sentences(text: &str) -> Vec<(&str, &str)> {
+    if text.is_empty() {
+        return Vec::new();
+    }
+
+    let mut result = Vec::new();
+    let mut last_end = 0;
+
+    for m in SENTENCE_RE.find_iter(text) {
+        // The match covers e.g. ". " — punctuation char is at m.start(),
+        // whitespace is m.start()+1 .. m.end()
+        let sentence = &text[last_end..m.start() + 1]; // includes the punctuation
+        let separator = &text[m.start() + 1..m.end()]; // the whitespace
+        result.push((sentence, separator));
+        last_end = m.end();
+    }
+
+    // Remainder after last match (or entire text if no matches)
+    if last_end < text.len() {
+        result.push((&text[last_end..], ""));
+    }
+
+    result
 }
 
 pub struct LocalProvider;
