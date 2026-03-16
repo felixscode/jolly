@@ -160,9 +160,56 @@ impl LocalProvider {
 impl LLMProvider for LocalProvider {
     async fn correct_text(&self, text: &str) -> Result<String, String> {
         let text = text.to_string();
-        tauri::async_runtime::spawn_blocking(move || run_inference(&text))
-            .await
-            .map_err(|e| format!("Inference task failed: {}", e))?
+        tauri::async_runtime::spawn_blocking(move || {
+            let parts = split_sentences(&text);
+
+            // Fast path: 0 or 1 sentences — no splitting needed
+            if parts.len() <= 1 {
+                return run_inference(&text);
+            }
+
+            let num_batches = (parts.len() + SENTENCES_PER_BATCH - 1) / SENTENCES_PER_BATCH;
+            eprintln!(
+                "[jolly] Splitting text into {} sentences ({} batches at SENTENCES_PER_BATCH={})",
+                parts.len(),
+                num_batches,
+                SENTENCES_PER_BATCH,
+            );
+
+            let mut corrected_parts: Vec<String> = Vec::new();
+
+            for batch in parts.chunks(SENTENCES_PER_BATCH) {
+                let batch_text: String = batch
+                    .iter()
+                    .map(|(sentence, _)| *sentence)
+                    .collect::<Vec<_>>()
+                    .join(" ");
+                let corrected = run_inference(&batch_text)?;
+                corrected_parts.push(corrected);
+            }
+
+            // Reassemble using original separators between batches.
+            // Each batch's trailing separator comes from its last sentence's
+            // original separator — this is the whitespace that sat between
+            // this batch's end and the next batch's start in the input.
+            // Note: when SENTENCES_PER_BATCH > 1, separators *within* a batch
+            // are replaced by a single space (the join above). Only inter-batch
+            // separators are preserved exactly.
+            let mut result = String::new();
+            for (i, corrected) in corrected_parts.iter().enumerate() {
+                result.push_str(corrected);
+                let batch_end_idx =
+                    ((i + 1) * SENTENCES_PER_BATCH).min(parts.len()) - 1;
+                let (_, sep) = parts[batch_end_idx];
+                if !sep.is_empty() {
+                    result.push_str(sep);
+                }
+            }
+
+            Ok(result)
+        })
+        .await
+        .map_err(|e| format!("Inference task failed: {}", e))?
     }
 }
 
