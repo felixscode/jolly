@@ -3598,6 +3598,7 @@ dependencies = [
  "async-trait",
  "dirs-next",
  "mistralrs",
+ "regex",
  "reqwest 0.12.28",
  "serde",
  "serde_json",
