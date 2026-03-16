@@ -258,3 +258,66 @@ pub fn run_inference(text: &str) -> Result<String, String> {
     eprintln!("[jolly] Returning: {:?}", content);
     Ok(content)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn split_empty() {
+        assert!(split_sentences("").is_empty());
+    }
+
+    #[test]
+    fn split_no_punctuation() {
+        let result = split_sentences("hello world");
+        assert_eq!(result, vec![("hello world", "")]);
+    }
+
+    #[test]
+    fn split_single_sentence() {
+        let result = split_sentences("Hello world.");
+        assert_eq!(result, vec![("Hello world.", "")]);
+    }
+
+    #[test]
+    fn split_two_sentences() {
+        let result = split_sentences("First. Second.");
+        assert_eq!(result, vec![("First.", " "), ("Second.", "")]);
+    }
+
+    #[test]
+    fn split_preserves_newlines() {
+        let result = split_sentences("First.\n\nSecond.");
+        assert_eq!(result, vec![("First.", "\n\n"), ("Second.", "")]);
+    }
+
+    #[test]
+    fn split_mixed_punctuation() {
+        let result = split_sentences("Really? Yes! Done.");
+        assert_eq!(
+            result,
+            vec![("Really?", " "), ("Yes!", " "), ("Done.", "")]
+        );
+    }
+
+    #[test]
+    fn split_no_trailing_whitespace() {
+        // No whitespace after last punctuation — no split
+        let result = split_sentences("One.Two");
+        assert_eq!(result, vec![("One.Two", "")]);
+    }
+
+    #[test]
+    fn split_multiple_spaces() {
+        let result = split_sentences("First.  Second.");
+        assert_eq!(result, vec![("First.", "  "), ("Second.", "")]);
+    }
+
+    #[test]
+    fn split_trailing_whitespace_multi_sentence() {
+        // Trailing whitespace after last punctuation in multi-sentence input
+        let result = split_sentences("First. Second. ");
+        assert_eq!(result, vec![("First.", " "), ("Second.", " ")]);
+    }
+}
