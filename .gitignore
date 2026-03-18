@@ -21,3 +21,16 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Docs
+docs/
+
+# Claude
+.claude/
+CLAUDE.md
+
+# Playwright
+.playwright/
+
+# Superpowers
+.superpowers/
