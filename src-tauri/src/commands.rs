@@ -9,6 +9,7 @@ use tauri_plugin_store::StoreExt;
 use crate::inference::download::{
     download_model, get_model_state, DownloadManager, DownloadState,
 };
+use crate::inference::harper::HarperProvider;
 use crate::inference::local::LocalProvider;
 use crate::inference::model_manager::models_dir;
 use crate::inference::openrouter::OpenRouterProvider;
@@ -47,42 +48,68 @@ fn get_use_openrouter(app: &AppHandle) -> bool {
         .unwrap_or(false)
 }
 
+/// Check if the user has toggled "use Harper" in settings.
+fn get_use_harper(app: &AppHandle) -> bool {
+    app.store("settings.json")
+        .ok()
+        .and_then(|store| store.get("useHarper"))
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false)
+}
+
 #[tauri::command]
 pub async fn correct_text(app: AppHandle, text: String) -> Result<String, String> {
     if text.trim().is_empty() {
         return Ok(String::new());
     }
 
+    let use_harper = get_use_harper(&app);
     let use_openrouter = get_use_openrouter(&app);
-    let has_local = get_active_model_id(&app).is_some()
-        && crate::inference::local::is_model_loaded();
+    let active_model = get_active_model_id(&app);
+    let has_local = active_model.is_some() && crate::inference::local::is_model_loaded();
 
-    // Use local inference only if a model is loaded AND user hasn't toggled OpenRouter
-    let use_local = has_local && !use_openrouter;
+    // Priority 1: Harper (lightweight, instant)
+    if use_harper {
+        eprintln!("[jolly] Using Harper grammar checker");
+        let harper = HarperProvider::new();
+        return harper.correct_text(&text).await.map_err(|e| {
+            eprintln!("[jolly] Harper error: {}", e);
+            "harper_failed".to_string()
+        });
+    }
 
-    if use_local {
+    // Priority 2: Local model (loaded and not overridden by OpenRouter)
+    if has_local && !use_openrouter {
         eprintln!("[jolly] Using local inference");
         let local = LocalProvider::new();
-        local.correct_text(&text).await.map_err(|e| {
+        return local.correct_text(&text).await.map_err(|e| {
             eprintln!("[jolly] Local inference error: {}", e);
             "local_inference_failed".to_string()
-        })
-    } else if !use_openrouter && !has_local && get_active_model_id(&app).is_some() {
-        // User selected a model but it's not loaded
-        Err("model_not_loaded".to_string())
-    } else {
+        });
+    }
+
+    // Priority 3: Model selected but not loaded
+    if !use_openrouter && !has_local && active_model.is_some() {
+        return Err("model_not_loaded".to_string());
+    }
+
+    // Priority 4: OpenRouter
+    if use_openrouter {
         eprintln!("[jolly] Using OpenRouter API");
         let api_key = get_api_key(&app)?;
         let openrouter = OpenRouterProvider::new(api_key);
-        openrouter.correct_text(&text).await.map_err(|e| {
+        return openrouter.correct_text(&text).await.map_err(|e| {
             eprintln!("[jolly] OpenRouter error: {}", e);
             if e.contains("401") || e.contains("403") {
                 "bad_api_key".to_string()
             } else {
                 "api_failed".to_string()
             }
-        })
+        });
     }
+
+    // Priority 5: Nothing configured
+    Err("no_provider_configured".to_string())
 }
 
 // ── Download management commands ────────────────────────────────
