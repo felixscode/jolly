@@ -21,6 +21,7 @@ function createSettingsStore() {
 	let themeMode = $state<'system' | 'light' | 'dark'>('system');
 	let activeModelId = $state<string | null>(null);
 	let useOpenRouter = $state(false);
+	let useHarper = $state(false);
 	let correctionHistory = $state<string[]>([]);
 
 	// Models — populated from backend
@@ -46,6 +47,7 @@ function createSettingsStore() {
 				((await store.get('themeMode')) as 'system' | 'light' | 'dark' | null) ?? 'system';
 			activeModelId = ((await store.get('activeModelId')) as string | null) ?? null;
 			useOpenRouter = ((await store.get('useOpenRouter')) as boolean | null) ?? false;
+			useHarper = ((await store.get('useHarper')) as boolean | null) ?? false;
 			correctionHistory = ((await store.get('correctionHistory')) as string[] | null) ?? [];
 		} catch (e) {
 			console.warn('Failed to load settings from store:', e);
@@ -160,9 +162,30 @@ function createSettingsStore() {
 		try {
 			const store = await getStore();
 			await store.set('useOpenRouter', value);
+			// Mutual exclusion: OpenRouter ON → Harper OFF
+			if (value && useHarper) {
+				useHarper = false;
+				await store.set('useHarper', false);
+			}
 			await store.save();
 		} catch (e) {
 			console.error('Failed to save OpenRouter preference:', e);
+		}
+	}
+
+	async function setUseHarper(value: boolean) {
+		useHarper = value;
+		try {
+			const store = await getStore();
+			await store.set('useHarper', value);
+			// Mutual exclusion: Harper ON → OpenRouter OFF
+			if (value && useOpenRouter) {
+				useOpenRouter = false;
+				await store.set('useOpenRouter', false);
+			}
+			await store.save();
+		} catch (e) {
+			console.error('Failed to save Harper preference:', e);
 		}
 	}
 
@@ -258,6 +281,9 @@ function createSettingsStore() {
 		get useOpenRouter() {
 			return useOpenRouter;
 		},
+		get useHarper() {
+			return useHarper;
+		},
 		get availableModels() {
 			return availableModels;
 		},
@@ -286,6 +312,7 @@ function createSettingsStore() {
 		setThemeMode,
 		setActiveModel,
 		setUseOpenRouter,
+		setUseHarper,
 		startDownload,
 		cancelDownload,
 		deleteModel,
