@@ -1,4 +1,4 @@
-import adapterAuto from '@sveltejs/adapter-auto';
+import adapterCloudflare from '@sveltejs/adapter-cloudflare';
 import adapterStatic from '@sveltejs/adapter-static';
 
 const isTauri = !!process.env.TAURI_ENV_PLATFORM;
@@ -6,7 +6,7 @@ const isTauri = !!process.env.TAURI_ENV_PLATFORM;
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
 	kit: {
-		adapter: isTauri ? adapterStatic({ fallback: 'index.html' }) : adapterAuto()
+		adapter: isTauri ? adapterStatic({ fallback: 'index.html' }) : adapterCloudflare()
 	}
 };
 
