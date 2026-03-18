@@ -20,12 +20,8 @@ jobs:
 
       - run: npm run build
 
-      - uses: appleboy/scp-action@v0.1.7
+      - uses: cloudflare/wrangler-action@v3
         with:
-          host: ${{ secrets.HETZNER_HOST }}
-          username: ${{ secrets.HETZNER_USER }}
-          key: ${{ secrets.HETZNER_SSH_KEY }}
-          source: build/*
-          target: /var/www/jolly/
-          strip_components: 1
-          overwrite: true
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy build --project-name=jolly
