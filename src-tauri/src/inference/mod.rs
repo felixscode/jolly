@@ -1,4 +1,5 @@
 pub mod download;
+pub mod harper;
 pub mod local;
 pub mod model_manager;
 pub mod openrouter;
