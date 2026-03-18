@@ -208,7 +208,7 @@
 			<h3 class="text-sm font-bold text-[#423f37] dark:text-[#e8e8e3]">Downloaded Models</h3>
 			{#if downloadedModels.length === 0}
 				<p class="mt-2 text-xs text-gray-400 dark:text-[#e8e8e3]/50">No models downloaded yet</p>
-			{:else if !settings.useOpenRouter}
+			{:else if !settings.useOpenRouter && !settings.useHarper}
 				<div class="mt-2 space-y-1">
 					{#each downloadedModels as model}
 						<div
@@ -260,7 +260,7 @@
 				</p>
 			{:else}
 				<p class="mt-2 text-xs text-gray-400 dark:text-[#e8e8e3]/50">
-					Disabled while OpenRouter is active
+					Disabled while {settings.useHarper ? 'Harper' : 'OpenRouter'} is active
 				</p>
 			{/if}
 			{#if switchedModelName}
@@ -268,6 +268,34 @@
 					Switched to {switchedModelName}
 				</p>
 			{/if}
+		</section>
+
+		<!-- Section: Harper (Lightweight) -->
+		<section>
+			<div class="flex items-center justify-between">
+				<h3 class="text-sm font-bold text-[#423f37] dark:text-[#e8e8e3]">
+					Harper (Lightweight)
+				</h3>
+				<button
+					onclick={() => settings.setUseHarper(!settings.useHarper)}
+					class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors {settings.useHarper
+						? 'bg-[#960200] dark:bg-[#ffd046]'
+						: 'bg-gray-300 dark:bg-white/20'}"
+					role="switch"
+					aria-checked={settings.useHarper}
+					aria-label="Toggle Harper"
+				>
+					<span
+						class="inline-block h-4 w-4 rounded-full bg-white transition-transform {settings.useHarper
+							? 'translate-x-6'
+							: 'translate-x-1'}"
+					></span>
+				</button>
+			</div>
+			<p class="mt-1 text-xs text-gray-400 dark:text-[#e8e8e3]/50">
+				Fast grammar & spelling correction. No downloads, no API key — works instantly. English
+				only.
+			</p>
 		</section>
 
 		<!-- Section 4: OpenRouter -->
