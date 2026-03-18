@@ -37,9 +37,15 @@ fn harper_correct(text: &str) -> Result<String, String> {
 
     let mut chars: Vec<char> = text.chars().collect();
 
+    let mut last_start = chars.len();
     for lint in &lints {
         if let Some(suggestion) = lint.suggestions.first() {
+            // Skip if this lint overlaps with the previously applied one
+            if lint.span.end > last_start {
+                continue;
+            }
             suggestion.apply(lint.span, &mut chars);
+            last_start = lint.span.start;
         }
     }
 
