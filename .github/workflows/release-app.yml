@@ -6,7 +6,30 @@ on:
       - 'app-v*'
 
 jobs:
+  build-frontend:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+        env:
+          TAURI_ENV_PLATFORM: linux
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-assets
+          path: build
+          retention-days: 1
+
   build-macos:
+    needs: [build-frontend]
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,6 +40,11 @@ jobs:
           cache: npm
 
       - run: npm ci
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: frontend-assets
+          path: build
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -32,6 +60,7 @@ jobs:
           path: src-tauri/target/release/bundle/dmg/*.dmg
 
   build-windows:
+    needs: [build-frontend]
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -42,6 +71,11 @@ jobs:
           cache: npm
 
       - run: npm ci
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: frontend-assets
+          path: build
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -62,6 +96,7 @@ jobs:
           path: src-tauri/target/release/bundle/nsis/*.exe
 
   build-linux:
+    needs: [build-frontend]
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
@@ -72,6 +107,11 @@ jobs:
           cache: npm
 
       - run: npm ci
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: frontend-assets
+          path: build
 
       - uses: dtolnay/rust-toolchain@stable
 
