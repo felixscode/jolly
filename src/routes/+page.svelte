@@ -4,7 +4,6 @@
 	import { harperCorrect } from '$lib/harper-web';
 
 	let isDark = $state(false);
-
 	onMount(() => {
 		const observer = new MutationObserver(() => {
 			isDark = document.documentElement.classList.contains('dark');
@@ -18,19 +17,19 @@
 </script>
 
 <div
-	class="mx-auto flex max-w-4xl flex-col overflow-x-hidden px-6"
-	style="height: calc(100svh - 116px - 117px);"
+	class="mx-auto flex max-w-4xl flex-col overflow-x-hidden px-4 md:px-6"
+	style="min-height: calc(100svh - 116px - 117px);"
 >
 	<!-- Hero -->
-	<div class="grid flex-1 grid-cols-2 items-center gap-12">
+	<div class="grid flex-1 grid-cols-1 items-center gap-6 md:grid-cols-2 md:gap-12">
 		<!-- Left: copy -->
-		<div>
+		<div class="text-center md:text-left">
 			<p
 				class="mb-2 text-xs font-semibold tracking-widest text-[#960200] uppercase dark:text-[#ffd046]"
 			>
 				Your spell check parrot
 			</p>
-			<h1 class="mb-3 text-4xl leading-tight font-extrabold text-[#423f37] dark:text-[#e8e8e3]">
+			<h1 class="mb-3 text-3xl leading-tight font-extrabold text-[#423f37] md:text-4xl dark:text-[#e8e8e3]">
 				Catch Typos<br /> Private and Fun
 			</h1>
 			<p class="mb-5 text-sm leading-relaxed text-gray-500 dark:text-gray-400">
@@ -59,20 +58,20 @@
 	<hr class="border-gray-200 dark:border-gray-700" />
 
 	<!-- Feature strip -->
-	<div class="grid grid-cols-3 gap-12 py-6">
-		<div>
+	<div class="grid grid-cols-1 gap-6 py-4 sm:grid-cols-3 sm:gap-12 sm:py-6">
+		<div class="text-center sm:text-left">
 			<h2 class="mb-1 text-lg font-bold text-[#423f37] dark:text-[#e8e8e3]">Local</h2>
 			<p class="text-sm leading-relaxed text-gray-500 dark:text-gray-400">
 				Runs entirely on your machine. Nothing leaves your computer — no cloud, no account required.
 			</p>
 		</div>
-		<div>
+		<div class="text-center sm:text-left">
 			<h2 class="mb-1 text-lg font-bold text-[#423f37] dark:text-[#e8e8e3]">Quiet</h2>
 			<p class="text-sm leading-relaxed text-gray-500 dark:text-gray-400">
 				No notifications, no interruptions. Jolly sits there silently, waiting for your typo.
 			</p>
 		</div>
-		<div>
+		<div class="text-center sm:text-left">
 			<h2 class="mb-1 text-lg font-bold text-[#423f37] dark:text-[#e8e8e3]">Free</h2>
 			<p class="text-sm leading-relaxed text-gray-500 dark:text-gray-400">
 				Open source and free forever. Download it, use it, read the source code if you're curious.

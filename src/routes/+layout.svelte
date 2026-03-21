@@ -59,7 +59,7 @@
 		</main>
 		<footer class="mt-auto py-8">
 			<div
-				class="mx-auto max-w-4xl border-t border-gray-100 px-6 pt-8 text-center dark:border-gray-700"
+				class="mx-auto max-w-4xl border-t border-gray-100 px-4 pt-8 text-center md:px-6 dark:border-gray-700"
 			>
 				<a
 					href="https://github.com/felixscode/jolly"

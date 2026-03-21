@@ -8,21 +8,21 @@
 	} = $props();
 </script>
 
-<nav class="px-6 py-4">
+<nav class="px-4 py-4 md:px-6">
 	<div class="mx-auto flex max-w-4xl items-center justify-between">
 		<a href="/">
-			<img src="/jolly_heading.svg" alt="Jolly" class="h-21" />
+			<img src="/jolly_heading.svg" alt="Jolly" class="h-14 md:h-21" />
 		</a>
-		<div class="flex items-center gap-8">
+		<div class="flex items-center gap-4 md:gap-8">
 			<a
 				href="/download"
-				class="text-base font-bold text-[#423f37] transition-colors hover:text-[#960200] dark:text-[#e8e8e3] dark:hover:text-[#ffd046]"
+				class="text-sm font-bold md:text-base text-[#423f37] transition-colors hover:text-[#960200] dark:text-[#e8e8e3] dark:hover:text-[#ffd046]"
 			>
 				Download
 			</a>
 			<a
 				href="/about"
-				class="text-base font-bold text-[#423f37] transition-colors hover:text-[#960200] dark:text-[#e8e8e3] dark:hover:text-[#ffd046]"
+				class="text-sm font-bold md:text-base text-[#423f37] transition-colors hover:text-[#960200] dark:text-[#e8e8e3] dark:hover:text-[#ffd046]"
 			>
 				About
 			</a>

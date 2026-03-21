@@ -359,7 +359,7 @@
 				/>
 
 				<!-- Layered bird poses -->
-				<div class="relative h-44 w-36">
+				<div class="relative h-32 w-28 md:h-44 md:w-36">
 					<img
 						src="/jolly_normal.svg"
 						alt="Jolly"
