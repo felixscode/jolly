@@ -13,3 +13,9 @@ export type DownloadState =
 	| { state: 'downloaded' };
 
 export type ModelWithState = ModelEntry & DownloadState;
+
+export interface CustomModel {
+	id: string;
+	name: string;
+	path: string;
+}
