@@ -3,10 +3,15 @@ name = "jolly"
 version = "0.1.0"
 edition = "2021"
 license = "GPL-3.0-only"
+default-run = "jolly"
 
 [lib]
 name = "jolly_lib"
 crate-type = ["lib", "cdylib", "staticlib"]
+
+[[bin]]
+name = "jolly"
+path = "src/main.rs"
 
 [[bin]]
 name = "benchmark"
