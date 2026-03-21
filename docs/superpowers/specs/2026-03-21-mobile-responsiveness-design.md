@@ -26,6 +26,7 @@ Using Tailwind's default breakpoints:
 - Gap: `gap-4 md:gap-8`
 - Text size: `text-sm md:text-base`
 - Padding: `px-4 md:px-6`
+- Logo height: `h-14 md:h-21` (scales down from ~84px to ~56px on mobile)
 - Links remain visible at all sizes (no hamburger menu)
 
 ### Homepage (`src/routes/+page.svelte`)
@@ -45,7 +46,11 @@ Using Tailwind's default breakpoints:
 
 **General:**
 - Container padding: `px-4 md:px-6`
-- Min-height adjusted to avoid overflow on small screens
+- The homepage currently uses a hardcoded inline `height: calc(100svh - 116px - 117px)` which assumes fixed navbar/footer heights. On mobile, content will overflow this rigid container. Change to `min-height` instead of `height` so content can grow naturally, and use responsive values or remove the calc entirely on mobile in favor of `min-h-svh` with auto-sizing.
+
+**BirdScene container:**
+- The BirdScene has a tree branch image that is `135rem` (~2160px) wide with `max-width: none`. The existing `overflow-x-hidden` on the homepage container will clip this on mobile, which is acceptable. Verify that `overflow-x-hidden` is present on the page wrapper (it is on the homepage; add to other pages if the BirdScene appears there).
+- Scale the BirdScene wrapper on mobile: reduce `h-44 w-36` to smaller values (e.g., `h-32 w-28 md:h-44 md:w-36`).
 
 ### About Page (`src/routes/about/+page.svelte`)
 
@@ -86,5 +91,5 @@ Using Tailwind's default breakpoints:
 
 - **App page** (`src/routes/app/+page.svelte`) — Tauri desktop only, no mobile users
 - **Settings/History panels** — desktop app only
-- **BirdScene internals** — animation offsets stay as-is; only the container sizing changes
+- **BirdScene internals** — animation offsets and bubble positions stay as-is; the container sizing and bird image dimensions get responsive variants. The wide branch image will be clipped by `overflow-x-hidden` on mobile, which is acceptable.
 - Hamburger menu — user prefers visible links that shrink to fit
