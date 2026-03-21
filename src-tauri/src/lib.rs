@@ -70,6 +70,8 @@ pub fn run() {
             commands::cancel_download,
             commands::delete_model,
             commands::activate_model,
+            commands::import_custom_model,
+            commands::validate_custom_models,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

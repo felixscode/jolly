@@ -1,5 +1,6 @@
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use uuid::Uuid;
 
 use tauri::AppHandle;
 use tauri::Manager;
@@ -123,6 +124,14 @@ pub struct ModelWithState {
     pub download_state: DownloadState,
 }
 
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CustomModelEntry {
+    pub id: String,
+    pub name: String,
+    pub path: String,
+}
+
 #[tauri::command]
 pub async fn list_available_models(app: AppHandle) -> Result<Vec<ModelWithState>, String> {
     let app_data = app.path().app_data_dir().map_err(|e| e.to_string())?;
@@ -238,4 +247,54 @@ pub async fn delete_model(app: AppHandle, model_id: String) -> Result<(), String
     let _ = std::fs::remove_file(&meta);
 
     Ok(())
+}
+
+#[tauri::command]
+pub async fn import_custom_model(app: AppHandle) -> Result<Option<CustomModelEntry>, String> {
+    use tauri_plugin_dialog::DialogExt;
+
+    let file_path = tokio::task::spawn_blocking(move || {
+        app.dialog()
+            .file()
+            .add_filter("GGUF Models", &["gguf"])
+            .blocking_pick_file()
+    })
+    .await
+    .map_err(|e| format!("Dialog task failed: {}", e))?;
+
+    let file_path = match file_path {
+        Some(f) => f.into_path().map_err(|e| e.to_string())?,
+        None => return Ok(None), // User cancelled
+    };
+
+    // Server-side extension validation (dialog filters can be bypassed on some Linux DEs)
+    let ext = file_path
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("");
+    if !ext.eq_ignore_ascii_case("gguf") {
+        return Err("Selected file is not a .gguf model".to_string());
+    }
+
+    let name = file_path
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("Unknown Model")
+        .to_string();
+
+    let id = format!("custom-{}", Uuid::new_v4());
+
+    Ok(Some(CustomModelEntry {
+        id,
+        name,
+        path: file_path.to_string_lossy().to_string(),
+    }))
+}
+
+#[tauri::command]
+pub async fn validate_custom_models(paths: Vec<String>) -> Result<Vec<String>, String> {
+    Ok(paths
+        .into_iter()
+        .filter(|p| std::path::Path::new(p).exists())
+        .collect())
 }
