@@ -9,12 +9,13 @@ Allow users to import custom `.gguf` model files from their local filesystem via
 
 ## Requirements
 
-- User can import one or more custom `.gguf` models via a native OS file dialog
+- User can import custom `.gguf` models one at a time via a native OS file dialog (single-select)
+- Importing the same file path twice is rejected (deduplication by path)
 - Imported models are referenced by absolute path — no file copying
 - Model display name is derived from the filename (strip `.gguf` extension)
 - Custom models appear in the same radio list as downloaded registry models
 - Custom models can be removed (removes the reference, not the file on disk)
-- Stale references (file moved/deleted) are silently pruned at startup
+- Stale references (file moved/deleted) are silently pruned at startup; if the pruned model was active, `activeModelId` is also cleared
 - Custom models can be selected as the active model, same as registry models
 
 ## Data Model
@@ -23,7 +24,7 @@ Allow users to import custom `.gguf` model files from their local filesystem via
 
 ```typescript
 interface CustomModel {
-  id: string;    // "custom-<timestamp>"
+  id: string;    // "custom-<uuid_v4>"
   name: string;  // derived from filename, e.g. "My-Model-Q4_K_M"
   path: string;  // absolute path to the .gguf file
 }
@@ -47,31 +48,50 @@ pub struct CustomModelEntry {
 
 ### New dependency
 
-Add `tauri-plugin-dialog` to `Cargo.toml` and initialize in `lib.rs`.
+Add `tauri-plugin-dialog` and `uuid` (with `v4` feature) to `Cargo.toml`. Initialize dialog plugin in `lib.rs`.
 
 ### New Tauri commands
 
 #### `import_custom_model`
 
-- Takes no arguments
+```rust
+#[tauri::command]
+pub async fn import_custom_model(app: AppHandle) -> Result<Option<CustomModelEntry>, String>
+```
+
 - Opens a native file dialog filtered to `.gguf` files via `tauri-plugin-dialog`
 - Returns `Option<CustomModelEntry>` — the new entry if a file was selected, `null` if the user cancelled
-- Generates the ID as `custom-<unix_timestamp_millis>`
+- Generates the ID as `custom-<uuid_v4>` to avoid any collision risk
 - Derives the name by stripping the `.gguf` extension from the filename
+- Validates that the selected file has a `.gguf` extension server-side (dialog filters can be bypassed on some Linux DEs)
 
 #### `validate_custom_models`
+
+```rust
+#[tauri::command]
+pub async fn validate_custom_models(paths: Vec<String>) -> Result<Vec<String>, String>
+```
 
 - Takes `paths: Vec<String>`
 - Returns `Vec<String>` — only the paths that still exist on disk
 - Called at startup to prune stale entries
 
-### Modified: `model_manager::resolve_model_path`
+### No changes to `model_manager::resolve_model_path`
 
-Add a new parameter `custom_path: Option<&str>`. If the model ID starts with `custom-` and `custom_path` is provided, use that path directly instead of looking up in the static registry.
+Custom models have a known absolute path — callers branch _before_ calling `resolve_model_path`. If the ID starts with `custom-`, the path is looked up from the store and used directly as a `PathBuf`. The existing `resolve_model_path` function is only called for registry model IDs.
 
 ### Modified: `commands::correct_text`
 
-When `activeModelId` starts with `custom-`, read `customModels` from the store to find the matching path. Pass the path to `resolve_model_path` via the new `custom_path` parameter.
+When `activeModelId` starts with `custom-`, read `customModels` from the store to find the matching path. Use the path directly instead of going through `resolve_model_path`.
+
+Store array deserialization pattern:
+
+```rust
+let custom_models: Vec<CustomModelEntry> = store
+    .get("customModels")
+    .map(|v| serde_json::from_value(v.clone()).unwrap_or_default())
+    .unwrap_or_default();
+```
 
 ### Modified: `commands::activate_model`
 
@@ -88,13 +108,15 @@ At startup, if `activeModelId` starts with `custom-`, read `customModels` from t
 New state and methods:
 
 - `customModels: CustomModel[]` — loaded from store in `loadAll()`
-- `importCustomModel()` — calls `import_custom_model` Tauri command, appends result to `customModels`, saves to store
-- `removeCustomModel(id: string)` — removes from `customModels`, saves to store, clears `activeModelId` if it was the removed model
-- `validateCustomModels()` — called during `loadAll()`, sends all paths to `validate_custom_models` backend command, removes entries whose paths no longer exist, saves to store if any were pruned
+- `importCustomModel()` — calls `import_custom_model` Tauri command. Before appending, checks if `customModels` already contains an entry with the same `path` — if so, rejects the duplicate. Otherwise appends and saves to store.
+- `removeCustomModel(id: string)` — removes from `customModels`, saves to store. If the removed model was active, clears `activeModelId`.
+- `validateCustomModels()` — called during `loadAll()`, sends all paths to `validate_custom_models` backend command, removes entries whose paths no longer exist, saves to store if any were pruned. If `activeModelId` pointed to a pruned custom model, also clears `activeModelId`.
 
 New getter:
 
 - `get customModels()` — exposes the reactive state
+
+Note: The native file dialog is opened from the Rust command, not from JavaScript. No `@tauri-apps/plugin-dialog` npm package is needed.
 
 ### Settings UI (`Settings.svelte`)
 
@@ -109,7 +131,7 @@ Placed between the "Local AI Models" (download) section and the "Downloaded Mode
 #### Modified "Downloaded Models" section
 
 - Custom models appear in the same radio list as downloaded registry models
-- Custom models show: radio button, derived name, and a trash icon button to remove the reference
+- Custom models show: radio button, derived name, a path subtitle/tooltip for disambiguation, and a trash icon button to remove the reference
 - Custom models are distinguished from registry models only by the trash icon behavior — removing a custom model removes the reference; deleting a registry model deletes the file
 
 ## Tauri Capabilities
@@ -132,10 +154,9 @@ Add to `lib.rs` plugin chain:
 
 | File | Change |
 |------|--------|
-| `src-tauri/Cargo.toml` | Add `tauri-plugin-dialog` dependency |
+| `src-tauri/Cargo.toml` | Add `tauri-plugin-dialog` and `uuid` dependencies |
 | `src-tauri/src/lib.rs` | Init dialog plugin, update `load_local_model` for custom models |
 | `src-tauri/src/commands.rs` | Add `import_custom_model`, `validate_custom_models`, update `correct_text`, `activate_model` |
-| `src-tauri/src/inference/model_manager.rs` | Add `custom_path` parameter to `resolve_model_path` |
 | `src-tauri/capabilities/default.json` | Add `dialog:allow-open` permission |
 | `src/lib/types/models.ts` | Add `CustomModel` interface |
 | `src/lib/stores/settings.svelte.ts` | Add custom model state and methods |
@@ -147,4 +168,5 @@ Add to `lib.rs` plugin chain:
 - Copying files into the models directory
 - Custom display names (uses filename)
 - Import/export of settings
-- Validation of `.gguf` file contents (if the file exists and has `.gguf` extension, it's accepted)
+- Validation of `.gguf` file contents beyond extension check
+- Multi-file selection in the dialog (single file at a time)
