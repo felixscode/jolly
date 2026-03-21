@@ -56,6 +56,7 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_keyring::init())
+        .plugin(tauri_plugin_dialog::init())
         .manage(Arc::new(Mutex::new(DownloadManager::new())))
         .setup(|app| {
             load_local_model(app.handle());
