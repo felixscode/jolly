@@ -30,9 +30,11 @@
 
 	async function handleModelSwitch(modelId: string) {
 		const model = settings.availableModels.find((m) => m.id === modelId);
+		const custom = settings.customModels.find((m) => m.id === modelId);
 		await settings.setActiveModel(modelId);
-		if (model) {
-			switchedModelName = model.name;
+		const name = model?.name ?? custom?.name;
+		if (name) {
+			switchedModelName = name;
 			setTimeout(() => {
 				switchedModelName = null;
 			}, 2000);
@@ -203,10 +205,24 @@
 			{/if}
 		</section>
 
+		<!-- Section: Import Custom Model -->
+		<section>
+			<h3 class="text-sm font-bold text-[#423f37] dark:text-[#e8e8e3]">Import Model</h3>
+			<p class="mt-1 text-xs text-gray-400 dark:text-[#e8e8e3]/50">
+				Use your own GGUF model file from disk.
+			</p>
+			<button
+				onclick={() => settings.importCustomModel()}
+				class="mt-2 rounded-md border-2 border-[#960200] bg-transparent px-4 py-2 text-sm font-medium text-[#423f37] transition-colors hover:bg-[#ffd046] hover:text-[#960200] dark:border-[#ffd046] dark:text-[#e8e8e3] dark:hover:bg-[#960200] dark:hover:text-[#ffd046]"
+			>
+				Import .gguf
+			</button>
+		</section>
+
 		<!-- Section 3: Downloaded Models -->
 		<section>
 			<h3 class="text-sm font-bold text-[#423f37] dark:text-[#e8e8e3]">Downloaded Models</h3>
-			{#if downloadedModels.length === 0}
+			{#if downloadedModels.length === 0 && settings.customModels.length === 0}
 				<p class="mt-2 text-xs text-gray-400 dark:text-[#e8e8e3]/50">No models downloaded yet</p>
 			{:else if !settings.useOpenRouter && !settings.useHarper}
 				<div class="mt-2 space-y-1">
@@ -234,6 +250,53 @@
 								onclick={() => settings.deleteModel(model.id)}
 								class="rounded p-1 text-gray-300 transition-colors hover:text-red-500 dark:text-[#e8e8e3]/30 dark:hover:text-red-400"
 								aria-label="Delete {model.name}"
+							>
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									width="14"
+									height="14"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								>
+									<polyline points="3 6 5 6 21 6" />
+									<path
+										d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+									/>
+								</svg>
+							</button>
+						</div>
+					{/each}
+					{#each settings.customModels as model}
+						<div
+							class="flex items-center gap-2 rounded-md px-3 py-2 transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
+						>
+							<label class="flex flex-1 cursor-pointer items-center gap-3">
+								<input
+									type="radio"
+									name="active-model"
+									value={model.id}
+									checked={settings.activeModelId === model.id}
+									onchange={() => handleModelSwitch(model.id)}
+									class="h-4 w-4 accent-[#960200] dark:accent-[#ffd046]"
+								/>
+								<span class="text-sm text-[#423f37] dark:text-[#e8e8e3]">
+									<span class="font-medium">{model.name}</span>
+									<span
+										class="block truncate text-xs text-gray-400 dark:text-[#e8e8e3]/40"
+										title={model.path}
+									>
+										{model.path}
+									</span>
+								</span>
+							</label>
+							<button
+								onclick={() => settings.removeCustomModel(model.id)}
+								class="rounded p-1 text-gray-300 transition-colors hover:text-red-500 dark:text-[#e8e8e3]/30 dark:hover:text-red-400"
+								aria-label="Remove {model.name}"
 							>
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
