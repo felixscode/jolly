@@ -34,14 +34,44 @@ fn load_local_model(app: &tauri::AppHandle) {
         .and_then(|store| store.get("activeModelId"))
         .and_then(|v| v.as_str().map(|s| s.to_string()));
 
-    let model_path =
-        match model_manager::resolve_model_path(&models_path, active_model_id.as_deref()) {
+    let model_path = if let Some(ref id) = active_model_id {
+        if id.starts_with("custom-") {
+            // Custom model: read path using shared helper
+            let path_str = commands::get_custom_model_path(app, id);
+            match path_str {
+                Some(p) => {
+                    let path = std::path::PathBuf::from(&p);
+                    if !path.exists() {
+                        println!("[jolly] Custom model file not found: {}", p);
+                        return;
+                    }
+                    path
+                }
+                None => {
+                    println!("[jolly] Custom model ID not found in settings: {}", id);
+                    return;
+                }
+            }
+        } else {
+            // Registry model: use resolve_model_path
+            match model_manager::resolve_model_path(&models_path, active_model_id.as_deref()) {
+                Ok(p) => p,
+                Err(e) => {
+                    println!("[jolly] No local model available: {}", e);
+                    return;
+                }
+            }
+        }
+    } else {
+        // No active model set: try fallback resolution
+        match model_manager::resolve_model_path(&models_path, None) {
             Ok(p) => p,
             Err(e) => {
                 println!("[jolly] No local model available: {}", e);
                 return;
             }
-        };
+        }
+    };
 
     match inference::local::init_model(&model_path) {
         Ok(()) => println!("[jolly] Local model loaded: {:?}", model_path),

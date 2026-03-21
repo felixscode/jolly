@@ -132,6 +132,19 @@ pub struct CustomModelEntry {
     pub path: String,
 }
 
+/// Look up a custom model's file path from the settings store.
+pub(crate) fn get_custom_model_path(app: &AppHandle, model_id: &str) -> Option<String> {
+    let store = app.store("settings.json").ok()?;
+    let custom_models: Vec<CustomModelEntry> = store
+        .get("customModels")
+        .and_then(|v| serde_json::from_value(v.clone()).ok())
+        .unwrap_or_default();
+    custom_models
+        .into_iter()
+        .find(|m| m.id == model_id)
+        .map(|m| m.path)
+}
+
 #[tauri::command]
 pub async fn list_available_models(app: AppHandle) -> Result<Vec<ModelWithState>, String> {
     let app_data = app.path().app_data_dir().map_err(|e| e.to_string())?;
@@ -210,15 +223,24 @@ pub async fn cancel_download(
 
 #[tauri::command]
 pub async fn activate_model(app: AppHandle, model_id: String) -> Result<(), String> {
-    let model = registry::find_model(&model_id).ok_or("Unknown model ID")?;
-
-    let app_data = app.path().app_data_dir().map_err(|e| e.to_string())?;
-    let models_path = models_dir(&app_data)?;
-    let model_path = models_path.join(model.file_name);
-
-    if !model_path.exists() {
-        return Err(format!("Model file not found: {}", model.file_name));
-    }
+    let model_path = if model_id.starts_with("custom-") {
+        let path_str = get_custom_model_path(&app, &model_id)
+            .ok_or("Custom model not found in settings")?;
+        let path = std::path::PathBuf::from(&path_str);
+        if !path.exists() {
+            return Err(format!("Custom model file not found: {}", path_str));
+        }
+        path
+    } else {
+        let model = registry::find_model(&model_id).ok_or("Unknown model ID")?;
+        let app_data = app.path().app_data_dir().map_err(|e| e.to_string())?;
+        let models_path = models_dir(&app_data)?;
+        let path = models_path.join(model.file_name);
+        if !path.exists() {
+            return Err(format!("Model file not found: {}", model.file_name));
+        }
+        path
+    };
 
     tokio::task::spawn_blocking(move || {
         crate::inference::local::swap_model(&model_path)
