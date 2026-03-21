@@ -61,9 +61,9 @@
 
 <svelte:window on:click={() => (linuxOpen = false)} />
 
-<div class="mx-auto flex max-w-4xl flex-col justify-center px-6" style="min-height: calc(100svh - 116px - 117px);">
+<div class="mx-auto flex max-w-4xl flex-col justify-center px-4 md:px-6" style="min-height: calc(100svh - 116px - 117px);">
 	<!-- Header: Jolly drops in from top with speech bubble -->
-	<div class="-mt-8 mb-12 flex items-center justify-center">
+	<div class="-mt-4 mb-6 flex items-center justify-center sm:-mt-8 sm:mb-12">
 		<div
 			class="relative h-28 w-24"
 			style="
@@ -121,10 +121,10 @@
 		</div>
 	</div>
 
-	<hr class="mb-12 border-gray-200 dark:border-gray-700" />
+	<hr class="mb-6 border-gray-200 sm:mb-12 dark:border-gray-700" />
 
 	<!-- Platform grid -->
-	<div class="grid grid-cols-3 gap-12">
+	<div class="grid grid-cols-1 gap-6 sm:grid-cols-3 sm:gap-12">
 		<div class="flex flex-col items-center text-center">
 			<h2 class="mb-3 text-2xl font-bold text-[#423f37] dark:text-[#e8e8e3]">Windows</h2>
 			<p class="mb-8 text-sm leading-relaxed text-gray-500 dark:text-gray-400">
@@ -202,7 +202,7 @@
 		</div>
 	</div>
 
-	<hr class="mt-12 mb-12 border-gray-200 dark:border-gray-700" />
+	<hr class="mt-6 mb-6 border-gray-200 sm:mt-12 sm:mb-12 dark:border-gray-700" />
 
 	<div class="mx-auto max-w-2xl text-center">
 		<p class="text-sm leading-relaxed text-gray-400 dark:text-gray-500">

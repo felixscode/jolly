@@ -53,9 +53,9 @@
 	);
 </script>
 
-<div class="mx-auto max-w-4xl px-6 pt-16 pb-24">
+<div class="mx-auto max-w-4xl px-4 pt-8 pb-12 md:px-6 md:pt-16 md:pb-24">
 	<!-- Header: Jolly flies in horizontally from the right -->
-	<div class="mb-16 flex items-center justify-center">
+	<div class="mb-8 flex items-center justify-center md:mb-16">
 		<div
 			class="relative h-28 w-24"
 			style="
@@ -94,10 +94,10 @@
 		</div>
 	</div>
 
-	<hr class="mb-16 border-gray-200 dark:border-gray-700" />
+	<hr class="mb-8 border-gray-200 md:mb-16 dark:border-gray-700" />
 
 	<!-- 4-section grid -->
-	<div class="grid grid-cols-2 gap-16">
+	<div class="grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-16">
 		<div>
 			<h2 class="mb-3 text-2xl font-bold text-[#423f37] dark:text-[#e8e8e3]">How it works</h2>
 			<p class="leading-relaxed text-gray-500 dark:text-gray-400">
@@ -134,7 +134,7 @@
 		</div>
 	</div>
 
-	<hr class="mt-16 mb-16 border-gray-200 dark:border-gray-700" />
+	<hr class="mt-8 mb-8 border-gray-200 md:mt-16 md:mb-16 dark:border-gray-700" />
 
 	<!-- Personal note -->
 	<div class="mx-auto max-w-2xl text-center">
