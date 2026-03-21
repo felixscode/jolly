@@ -1,4 +1,4 @@
-import type { ModelWithState } from '$lib/types/models';
+import type { ModelWithState, CustomModel } from '$lib/types/models';
 
 // Lazy-load Tauri plugins to avoid errors when running outside Tauri.
 let _store: any = null;
@@ -36,6 +36,9 @@ function createSettingsStore() {
 	} | null>(null);
 	let downloadError = $state<string | null>(null);
 
+	// Custom imported models — persisted in store
+	let customModels = $state<CustomModel[]>([]);
+
 	// Event listener cleanup functions
 	let unlisteners: (() => void)[] = [];
 
@@ -49,6 +52,7 @@ function createSettingsStore() {
 			useOpenRouter = ((await store.get('useOpenRouter')) as boolean | null) ?? false;
 			useHarper = ((await store.get('useHarper')) as boolean | null) ?? false;
 			correctionHistory = ((await store.get('correctionHistory')) as string[] | null) ?? [];
+			customModels = ((await store.get('customModels')) as CustomModel[] | null) ?? [];
 		} catch (e) {
 			console.warn('Failed to load settings from store:', e);
 		}
@@ -68,6 +72,9 @@ function createSettingsStore() {
 		// Load models from backend
 		await refreshModels();
 
+		// Validate custom model paths (prune stale references)
+		await validateCustomModels();
+
 		// Subscribe to download events (once)
 		if (unlisteners.length === 0) {
 			await subscribeToEvents();
@@ -81,6 +88,68 @@ function createSettingsStore() {
 			downloadedModelIds = await invoke<string[]>('list_downloaded_models');
 		} catch (e) {
 			console.warn('Failed to load models from backend:', e);
+		}
+	}
+
+	async function validateCustomModels() {
+		if (customModels.length === 0) return;
+		try {
+			const invoke = await getInvoke();
+			const validPaths = await invoke<string[]>('validate_custom_models', {
+				paths: customModels.map((m) => m.path)
+			});
+			const validSet = new Set(validPaths);
+			const staleModels = customModels.filter((m) => !validSet.has(m.path));
+			if (staleModels.length > 0) {
+				customModels = customModels.filter((m) => validSet.has(m.path));
+				// If active model was stale, clear selection
+				if (activeModelId && staleModels.some((m) => m.id === activeModelId)) {
+					activeModelId = null;
+					const store = await getStore();
+					await store.set('activeModelId', null);
+				}
+				const store = await getStore();
+				await store.set('customModels', customModels);
+				await store.save();
+			}
+		} catch (e) {
+			console.warn('Failed to validate custom models:', e);
+		}
+	}
+
+	async function importCustomModel() {
+		try {
+			const invoke = await getInvoke();
+			const entry = await invoke<CustomModel | null>('import_custom_model');
+			if (!entry) return; // User cancelled
+
+			// Deduplicate by path
+			if (customModels.some((m) => m.path === entry.path)) {
+				return; // Already imported
+			}
+
+			customModels = [...customModels, entry];
+			const store = await getStore();
+			await store.set('customModels', customModels);
+			await store.save();
+		} catch (e) {
+			console.error('Failed to import custom model:', e);
+		}
+	}
+
+	async function removeCustomModel(id: string) {
+		customModels = customModels.filter((m) => m.id !== id);
+		try {
+			const store = await getStore();
+			await store.set('customModels', customModels);
+			// If the removed model was active, clear selection
+			if (activeModelId === id) {
+				activeModelId = null;
+				await store.set('activeModelId', null);
+			}
+			await store.save();
+		} catch (e) {
+			console.error('Failed to remove custom model:', e);
 		}
 	}
 
@@ -305,6 +374,9 @@ function createSettingsStore() {
 		get correctionHistory() {
 			return correctionHistory;
 		},
+		get customModels() {
+			return customModels;
+		},
 		loadAll,
 		addToHistory,
 		clearHistory,
@@ -317,6 +389,8 @@ function createSettingsStore() {
 		cancelDownload,
 		deleteModel,
 		refreshModels,
+		importCustomModel,
+		removeCustomModel,
 		initSystemDarkListener,
 		cleanup
 	};
