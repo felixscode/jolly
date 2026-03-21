@@ -1,6 +1,7 @@
 <script lang="ts">
 	import BirdScene from '$lib/components/BirdScene.svelte';
 	import { onMount } from 'svelte';
+	import { harperCorrect } from '$lib/harper-web';
 
 	let isDark = $state(false);
 
@@ -13,16 +14,7 @@
 		return () => observer.disconnect();
 	});
 
-	async function webCorrect(text: string): Promise<string> {
-		const res = await fetch('/api/correct', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ text })
-		});
-		if (!res.ok) throw new Error(`API error ${res.status}`);
-		const { correctedText } = await res.json();
-		return correctedText;
-	}
+
 </script>
 
 <div
@@ -56,12 +48,12 @@
 
 		<!-- Right: character scene -->
 		<div class="flex items-center justify-center overflow-visible">
-			<BirdScene onCorrect={webCorrect} />
+			<BirdScene onCorrect={harperCorrect} />
 		</div>
 	</div>
 
 	<p class="py-2 text-xs text-gray-400 dark:text-gray-500">
-		* The web demo uses a free public AI — do not paste sensitive or private data.
+		* The web demo uses Harper for English spelling and grammar only.
 	</p>
 
 	<hr class="border-gray-200 dark:border-gray-700" />
