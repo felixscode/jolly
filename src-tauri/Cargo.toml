@@ -34,7 +34,7 @@ reqwest = { version = "0.12", features = ["json", "stream"] }
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "sync", "fs"] }
 tokio-util = { version = "0.7", features = ["rt"] }
 sha2 = "0.10"
-mistralrs = { version = "0.7" }
+llama-cpp-2 = { version = "0.1.139", features = ["sampler"] }
 async-trait = "0.1"
 dirs-next = "2"
 regex = "1"
@@ -44,5 +44,5 @@ harper-core = "1"
 tempfile = "3"
 
 [features]
-metal = ["mistralrs/metal"]
-cuda = ["mistralrs/cuda"]
+metal = ["llama-cpp-2/metal"]
+vulkan = ["llama-cpp-2/vulkan"]
