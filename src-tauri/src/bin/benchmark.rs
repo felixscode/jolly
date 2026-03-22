@@ -3,8 +3,11 @@ use std::io::Write;
 use std::path::PathBuf;
 use std::time::Instant;
 
+use jolly_lib::inference::harper::HarperProvider;
 use jolly_lib::inference::local;
+use jolly_lib::inference::openrouter::OpenRouterProvider;
 use jolly_lib::inference::registry::MODELS;
+use jolly_lib::inference::LLMProvider;
 
 struct TestCase {
     id: usize,
@@ -111,40 +114,119 @@ fn escape_csv(s: &str) -> String {
     format!("\"{}\"", escaped)
 }
 
-fn main() {
+/// Write a single benchmark result row to the CSV.
+fn write_result(
+    csv: &mut fs::File,
+    case: &TestCase,
+    model_id: &str,
+    model_name: &str,
+    output: &str,
+    elapsed_ms: u128,
+    current_rss: f64,
+) {
+    let trimmed = output.trim();
+    let exact_match = trimmed == case.expected.trim();
+    let similarity = word_similarity(case.expected, trimmed);
+    eprintln!(
+        "  [{:2}] {:2} {:6} {:>5}ms sim={:.2} {} | {}",
+        case.id,
+        case.language,
+        case.category,
+        elapsed_ms,
+        similarity,
+        if exact_match { "PASS" } else { "FAIL" },
+        &output.chars().take(60).collect::<String>(),
+    );
+    writeln!(
+        csv,
+        "{},{},{},{},{},{},{:.2},{},{:.0},{},{},{}",
+        case.id,
+        case.language,
+        case.category,
+        model_id,
+        escape_csv(model_name),
+        exact_match,
+        similarity,
+        elapsed_ms,
+        current_rss,
+        escape_csv(case.input),
+        escape_csv(case.expected),
+        escape_csv(output),
+    )
+    .unwrap();
+}
+
+/// Write an error row to the CSV.
+fn write_error(
+    csv: &mut fs::File,
+    case: &TestCase,
+    model_id: &str,
+    model_name: &str,
+    error: &str,
+    elapsed_ms: u128,
+    current_rss: f64,
+) {
+    eprintln!(
+        "  [{:2}] {:2} {:6} ERROR: {}",
+        case.id, case.language, case.category, error
+    );
+    writeln!(
+        csv,
+        "{},{},{},{},{},false,0.00,{},{:.0},{},{},{}",
+        case.id,
+        case.language,
+        case.category,
+        model_id,
+        escape_csv(model_name),
+        elapsed_ms,
+        current_rss,
+        escape_csv(case.input),
+        escape_csv(case.expected),
+        escape_csv(&format!("ERROR: {}", error)),
+    )
+    .unwrap();
+}
+
+/// Benchmark an async LLMProvider against all test cases.
+async fn bench_provider(
+    csv: &mut fs::File,
+    cases: &[TestCase],
+    provider: &dyn LLMProvider,
+    model_id: &str,
+    model_name: &str,
+) {
+    for case in cases {
+        let start = Instant::now();
+        let result = provider.correct_text(case.input).await;
+        let elapsed_ms = start.elapsed().as_millis();
+        let current_rss = rss_mb();
+
+        match result {
+            Ok(output) => write_result(csv, case, model_id, model_name, &output, elapsed_ms, current_rss),
+            Err(e) => write_error(csv, case, model_id, model_name, &e, elapsed_ms, current_rss),
+        }
+    }
+}
+
+#[tokio::main]
+async fn main() {
+    // Load .env from project root (one level up from src-tauri/)
+    let env_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../.env");
+    if let Ok(contents) = fs::read_to_string(&env_path) {
+        for line in contents.lines() {
+            let line = line.trim();
+            if line.is_empty() || line.starts_with('#') {
+                continue;
+            }
+            if let Some((key, value)) = line.split_once('=') {
+                std::env::set_var(key.trim(), value.trim());
+            }
+        }
+        eprintln!("Loaded .env from {}", env_path.display());
+    }
+
     let cases = test_cases();
     eprintln!("Loaded {} test cases", cases.len());
-
-    // Find models directory
-    let models_dir = dirs_next::data_dir()
-        .unwrap_or_else(|| PathBuf::from("/home/dev/.local/share"))
-        .join("com.jolly.desktop/models");
-
-    if !models_dir.exists() {
-        eprintln!("Models directory not found: {}", models_dir.display());
-        eprintln!("Download models through the Jolly app first.");
-        std::process::exit(1);
-    }
-
-    // Find downloaded models
-    let downloaded: Vec<_> = MODELS
-        .iter()
-        .filter(|m| models_dir.join(m.file_name).exists())
-        .collect();
-
-    if downloaded.is_empty() {
-        eprintln!("No downloaded models found in {}", models_dir.display());
-        eprintln!("Available models:");
-        for m in MODELS {
-            eprintln!("  - {} ({})", m.name, m.file_name);
-        }
-        std::process::exit(1);
-    }
-
-    eprintln!("Found {} downloaded models:", downloaded.len());
-    for m in &downloaded {
-        eprintln!("  - {} ({})", m.name, m.file_name);
-    }
 
     // Open CSV output
     let csv_path = PathBuf::from("benchmark_results.csv");
@@ -155,93 +237,81 @@ fn main() {
     )
     .unwrap();
 
-    let rss_before_models = rss_mb();
-    eprintln!("Baseline RSS: {:.0} MB", rss_before_models);
+    let rss_before = rss_mb();
+    eprintln!("Baseline RSS: {:.0} MB", rss_before);
 
-    // Run benchmark for each model
-    for model in &downloaded {
-        let model_path = models_dir.join(model.file_name);
-        eprintln!("\n=== Loading model: {} ===", model.name);
+    // ── 1. Harper ────────────────────────────────────────────────
+    eprintln!("\n=== Harper ===");
+    let harper = HarperProvider::new();
+    bench_provider(&mut csv, &cases, &harper, "harper", "Harper").await;
 
-        let load_start = Instant::now();
-        if let Err(e) = local::init_model(&model_path, model.id) {
-            eprintln!("FAILED to load {}: {}", model.name, e);
-            continue;
+    // ── 2. OpenRouter ────────────────────────────────────────────
+    match std::env::var("OPENROUTER_API_KEY") {
+        Ok(api_key) if !api_key.is_empty() => {
+            eprintln!("\n=== OpenRouter (gpt-4o-mini) ===");
+            let openrouter = OpenRouterProvider::new(api_key);
+            bench_provider(&mut csv, &cases, &openrouter, "openrouter-gpt4o-mini", "OpenRouter gpt-4o-mini").await;
         }
-        let rss_after_load = rss_mb();
-        eprintln!(
-            "Model loaded in {:.1}s | RSS: {:.0} MB (+{:.0} MB)",
-            load_start.elapsed().as_secs_f64(),
-            rss_after_load,
-            rss_after_load - rss_before_models,
-        );
+        _ => {
+            eprintln!("\n=== OpenRouter: SKIPPED (no OPENROUTER_API_KEY) ===");
+        }
+    }
 
-        for case in &cases {
-            let start = Instant::now();
-            let result = local::run_inference(case.input);
-            let elapsed_ms = start.elapsed().as_millis();
-            let current_rss = rss_mb();
+    // ── 3. Local models ──────────────────────────────────────────
+    let models_dir = dirs_next::data_dir()
+        .unwrap_or_else(|| PathBuf::from("/home/dev/.local/share"))
+        .join("com.jolly.desktop/models");
 
-            match result {
-                Ok(output) => {
-                    let trimmed = output.trim();
-                    let exact_match = trimmed == case.expected.trim();
-                    let similarity = word_similarity(case.expected, trimmed);
-                    eprintln!(
-                        "  [{:2}] {:2} {:6} {:>5}ms sim={:.2} {} | {}",
-                        case.id,
-                        case.language,
-                        case.category,
-                        elapsed_ms,
-                        similarity,
-                        if exact_match { "PASS" } else { "FAIL" },
-                        &output.chars().take(60).collect::<String>(),
-                    );
-                    writeln!(
-                        csv,
-                        "{},{},{},{},{},{},{:.2},{},{:.0},{},{},{}",
-                        case.id,
-                        case.language,
-                        case.category,
-                        model.id,
-                        escape_csv(model.name),
-                        exact_match,
-                        similarity,
-                        elapsed_ms,
-                        current_rss,
-                        escape_csv(case.input),
-                        escape_csv(case.expected),
-                        escape_csv(&output),
-                    )
-                    .unwrap();
+    if !models_dir.exists() {
+        eprintln!("\nModels directory not found: {}", models_dir.display());
+        eprintln!("Skipping local model benchmarks.");
+    } else {
+        let downloaded: Vec<_> = MODELS
+            .iter()
+            .filter(|m| models_dir.join(m.file_name).exists())
+            .collect();
+
+        if downloaded.is_empty() {
+            eprintln!("\nNo downloaded models found in {}", models_dir.display());
+        } else {
+            eprintln!("\nFound {} downloaded models:", downloaded.len());
+            for m in &downloaded {
+                eprintln!("  - {} ({})", m.name, m.file_name);
+            }
+
+            for model in &downloaded {
+                let model_path = models_dir.join(model.file_name);
+                eprintln!("\n=== Loading model: {} ===", model.name);
+
+                let load_start = Instant::now();
+                if let Err(e) = local::init_model(&model_path, model.id) {
+                    eprintln!("FAILED to load {}: {}", model.name, e);
+                    continue;
                 }
-                Err(e) => {
-                    eprintln!(
-                        "  [{:2}] {:2} {:6} ERROR: {}",
-                        case.id, case.language, case.category, e
-                    );
-                    writeln!(
-                        csv,
-                        "{},{},{},{},{},false,0.00,{},{:.0},{},{},{}",
-                        case.id,
-                        case.language,
-                        case.category,
-                        model.id,
-                        escape_csv(model.name),
-                        elapsed_ms,
-                        current_rss,
-                        escape_csv(case.input),
-                        escape_csv(case.expected),
-                        escape_csv(&format!("ERROR: {}", e)),
-                    )
-                    .unwrap();
+                let rss_after_load = rss_mb();
+                eprintln!(
+                    "Model loaded in {:.1}s | RSS: {:.0} MB (+{:.0} MB)",
+                    load_start.elapsed().as_secs_f64(),
+                    rss_after_load,
+                    rss_after_load - rss_before,
+                );
+
+                for case in &cases {
+                    let start = Instant::now();
+                    let result = local::run_inference(case.input);
+                    let elapsed_ms = start.elapsed().as_millis();
+                    let current_rss = rss_mb();
+
+                    match result {
+                        Ok(output) => write_result(&mut csv, case, model.id, model.name, &output, elapsed_ms, current_rss),
+                        Err(e) => write_error(&mut csv, case, model.id, model.name, &e, elapsed_ms, current_rss),
+                    }
                 }
+
+                local::unload_model();
+                eprintln!("Model unloaded | RSS: {:.0} MB", rss_mb());
             }
         }
-
-        // Unload model before loading next one
-        local::unload_model();
-        eprintln!("Model unloaded | RSS: {:.0} MB", rss_mb());
     }
 
     csv.flush().unwrap();
