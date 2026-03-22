@@ -12,8 +12,6 @@
 		observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 		return () => observer.disconnect();
 	});
-
-
 </script>
 
 <div
@@ -29,7 +27,9 @@
 			>
 				Your spell check parrot
 			</p>
-			<h1 class="mb-3 text-3xl leading-tight font-extrabold text-[#423f37] md:text-4xl dark:text-[#e8e8e3]">
+			<h1
+				class="mb-3 text-3xl leading-tight font-extrabold text-[#423f37] md:text-4xl dark:text-[#e8e8e3]"
+			>
 				Catch Typos<br /> Private and Fun
 			</h1>
 			<p class="mb-5 text-sm leading-relaxed text-gray-500 dark:text-gray-400">
@@ -46,13 +46,18 @@
 		</div>
 
 		<!-- Right: character scene -->
-		<div class="flex items-center justify-center overflow-visible">
+		<div class="flex items-center justify-center overflow-visible pt-20 pb-24 md:pt-0 md:pb-0">
 			<BirdScene onCorrect={harperCorrect} />
 		</div>
 	</div>
 
-	<p class="py-2 text-xs text-gray-400 dark:text-gray-500">
-		* The web demo uses Harper for English spelling and grammar only.
+	<p class="relative z-10 py-2 text-xs text-gray-400 dark:text-gray-500">
+		* This is a web demo using <a
+			href="https://github.com/Automattic/harper"
+			target="_blank"
+			rel="noopener noreferrer"
+			class="underline hover:text-[#960200] dark:hover:text-[#ffd046]">Harper</a
+		> for English spelling and grammar. Its webassembly - nothing leaves your machine.
 	</p>
 
 	<hr class="border-gray-200 dark:border-gray-700" />
@@ -74,7 +79,7 @@
 		<div class="text-center sm:text-left">
 			<h2 class="mb-1 text-lg font-bold text-[#423f37] dark:text-[#e8e8e3]">Free</h2>
 			<p class="text-sm leading-relaxed text-gray-500 dark:text-gray-400">
-				Open source and free forever. Download it, use it, read the source code if you're curious.
+				Open source and free. Download it, use it, read the source code if you're curious.
 			</p>
 		</div>
 	</div>

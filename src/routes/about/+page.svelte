@@ -15,7 +15,9 @@
 		}, 150);
 
 		// Kick off fly-in transition
-		setTimeout(() => { flyingIn = false; }, 50);
+		setTimeout(() => {
+			flyingIn = false;
+		}, 50);
 
 		// Land after flight
 		setTimeout(() => {
@@ -43,13 +45,14 @@
 		}
 		setTimeout(scheduleBlink, 3300);
 
-		return () => { mounted = false; clearInterval(flyInterval); };
+		return () => {
+			mounted = false;
+			clearInterval(flyInterval);
+		};
 	});
 
 	const pose = $derived(
-		flying
-			? flyFrame === 1 ? 'fly1' : 'fly2'
-			: blinking ? 'blink' : 'normal'
+		flying ? (flyFrame === 1 ? 'fly1' : 'fly2') : blinking ? 'blink' : 'normal'
 	);
 </script>
 
@@ -97,13 +100,13 @@
 	<hr class="mb-8 border-gray-200 md:mb-16 dark:border-gray-700" />
 
 	<!-- 4-section grid -->
-	<div class="grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-16">
+	<div class="grid grid-cols-1 gap-8 text-center md:grid-cols-2 md:gap-16 md:text-left">
 		<div>
 			<h2 class="mb-3 text-2xl font-bold text-[#423f37] dark:text-[#e8e8e3]">How it works</h2>
 			<p class="leading-relaxed text-gray-500 dark:text-gray-400">
 				Jolly runs locally on your PC. If you feel like a text needs spell checking, just copy it
 				and hit Enter. Jolly reads your clipboard, passes it through a local LLM, and pastes the
-				corrected text back.
+				corrected text back. Your machine is slow? Use API keys or conventional grammar checking.
 			</p>
 		</div>
 
@@ -111,24 +114,47 @@
 			<h2 class="mb-3 text-2xl font-bold text-[#423f37] dark:text-[#e8e8e3]">Why it exists</h2>
 			<p class="leading-relaxed text-gray-500 dark:text-gray-400">
 				Spell checkers are annoying — squiggly lines and too much clicking. Nowadays I tend to just
-				paste text into an AI with the prompt "fix spelling." A lot of times I feel uneasy about
-				my mails and notes being collected by LLM providers. So why not do it locally and make it fun?
+				paste text into an AI with the prompt "fix spelling." A lot of times I feel uneasy about my
+				mails and notes being collected by LLM providers. So why not do it locally and make it fun?
 			</p>
 		</div>
 
 		<div>
 			<h2 class="mb-3 text-2xl font-bold text-[#423f37] dark:text-[#e8e8e3]">Under the hood</h2>
 			<p class="leading-relaxed text-gray-500 dark:text-gray-400">
-				Built with <a href="https://github.com/sveltejs/kit" target="_blank" rel="noopener noreferrer" class="underline hover:text-[#960200] dark:hover:text-[#ffd046]">SvelteKit</a>, Tailwind, <a href="https://github.com/tauri-apps/tauri" target="_blank" rel="noopener noreferrer" class="underline hover:text-[#960200] dark:hover:text-[#ffd046]">Tauri</a>, and <a href="https://github.com/EricLBuehler/mistral.rs" target="_blank" rel="noopener noreferrer" class="underline hover:text-[#960200] dark:hover:text-[#ffd046]">mistral.rs</a> — in Rust and TypeScript. You can select
-				and download your favourite model in the app. If your machine doesn't allow local AI inference,
-				you can also use your API keys. Everything runs locally — nothing leaves your machine.
+				Built with <a
+					href="https://github.com/sveltejs/kit"
+					target="_blank"
+					rel="noopener noreferrer"
+					class="underline hover:text-[#960200] dark:hover:text-[#ffd046]">SvelteKit</a
+				>, Tailwind,
+				<a
+					href="https://github.com/tauri-apps/tauri"
+					target="_blank"
+					rel="noopener noreferrer"
+					class="underline hover:text-[#960200] dark:hover:text-[#ffd046]">Tauri</a
+				>, and
+				<a
+					href="https://github.com/ggerganov/llama.cpp"
+					target="_blank"
+					rel="noopener noreferrer"
+					class="underline hover:text-[#960200] dark:hover:text-[#ffd046]">llama.cpp</a
+				>
+				— in Rust and TypeScript. You can select and download your favourite model in the app. If your
+				machine doesn't allow local AI inference, you can also use your API keys. Jolly misuses
+				<a
+					href="https://github.com/Automattic/harper"
+					target="_blank"
+					rel="noopener noreferrer"
+					class="underline hover:text-[#960200] dark:hover:text-[#ffd046]">Harper</a
+				> by just picking the most likely fix. Everything runs locally — nothing leaves your machine.
 			</p>
 		</div>
 
 		<div>
 			<h2 class="mb-3 text-2xl font-bold text-[#423f37] dark:text-[#e8e8e3]">Open source</h2>
 			<p class="leading-relaxed text-gray-500 dark:text-gray-400">
-				Free to download, free to use. No account, no subscription. Read the source if you're
+				Free to download, free to use, free to clone, free to improve. Read the source if you're
 				curious.
 			</p>
 		</div>
@@ -140,8 +166,12 @@
 	<div class="mx-auto max-w-2xl text-center">
 		<h2 class="mb-4 text-2xl font-bold text-[#423f37] dark:text-[#e8e8e3]">Made to learn</h2>
 		<p class="mb-4 leading-relaxed text-gray-500 dark:text-gray-400">
-			Jolly started as a way to get to grips with frontend development — routing, components,
-			styling, all of it. SvelteKit and Tailwind made that a lot less painful than expected.
+			Jolly started as a way to get to grips with frontend development. Inkscape, SvelteKit and
+			Tailwind made that a brezze. Spell checking is a piece of cake for the big boy LLMs. Running
+			locally in a reasonable inference time on the other hand, is quite a challenge. For one-shot
+			spell checking, without clicking on lints, LLMs show superior results at a high price. On the
+			other hand, conventional grammar checkers are super fast and work just as well (mostly). AI is
+			amazing but is it always the best choice?
 		</p>
 		<p class="leading-relaxed text-gray-500 dark:text-gray-400">
 			The source is open. If something looks wrong or could be better, pull requests are welcome.
