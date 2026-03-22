@@ -189,7 +189,11 @@
 			}
 		}
 
-		async function handleCorrection(text: string) {
+		async function handleCorrection(
+			text: string,
+			clipboardWrite?: Promise<void>,
+			resolveClip?: (v: string) => void
+		) {
 			if (scene !== 'idle' && scene !== 'hovering' && scene !== 'greeting') return;
 			clearTimeout(greetingTimer);
 			scene = 'correcting';
@@ -200,10 +204,13 @@
 			} else {
 				try {
 					const correctedText = await onCorrect(text);
-					try {
+					// Resolve the deferred clipboard write if available (web),
+					// otherwise fall back to direct writeClipboard (Tauri).
+					if (resolveClip && clipboardWrite) {
+						resolveClip(correctedText);
+						await clipboardWrite;
+					} else {
 						await writeClipboard(correctedText);
-					} catch {
-						// Web: clipboard write may fail after async gap; show result instead
 					}
 					quoteText = pickQuote();
 				} catch (err) {
@@ -260,7 +267,24 @@
 				console.error('Clipboard read failed:', err);
 				return;
 			}
-			handleCorrection(text);
+
+			// On web, clipboard.writeText() fails after an async gap (user gesture
+			// expires). Use ClipboardItem with a deferred promise so the write is
+			// initiated synchronously within the gesture, but content resolves later.
+			let resolveClip!: (v: string) => void;
+			let clipboardWrite: Promise<void> | undefined;
+			try {
+				const deferred = new Promise<string>((r) => { resolveClip = r; });
+				clipboardWrite = navigator.clipboard.write([
+					new ClipboardItem({
+						'text/plain': deferred.then((t) => new Blob([t], { type: 'text/plain' }))
+					})
+				]);
+			} catch {
+				// ClipboardItem with promise not supported; fall back in handleCorrection
+			}
+
+			handleCorrection(text, clipboardWrite, resolveClip);
 		}
 
 		let deadTimer: ReturnType<typeof setTimeout> | undefined;
