@@ -416,7 +416,8 @@ fn run_parallel_inference(texts: Vec<String>) -> Result<Vec<String>, String> {
         .new_context(backend, ctx_params)
         .map_err(|e| format!("Failed to create parallel context: {}", e))?;
 
-    // Feed all prompt tokens into one batch
+    // Feed all prompt tokens into one batch.
+    // n_seq_max=1 because each token belongs to exactly one sequence.
     let mut batch = LlamaBatch::new(total_prompt_tokens.max(512), 1);
 
     for seq in seqs.iter_mut().filter(|s| !s.done) {
@@ -451,7 +452,9 @@ fn run_parallel_inference(texts: Vec<String>) -> Result<Vec<String>, String> {
 
             if model.is_eog_token(token) {
                 seq.done = true;
-                let _ = ctx.clear_kv_cache_seq(Some(seq.seq_id as u32), None, None);
+                if let Err(e) = ctx.clear_kv_cache_seq(Some(seq.seq_id as u32), None, None) {
+                    eprintln!("[jolly] Failed to clear KV cache for seq {}: {}", seq.seq_id, e);
+                }
                 continue;
             }
 
