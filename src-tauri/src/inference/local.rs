@@ -126,7 +126,7 @@ impl LocalProvider {
 impl LLMProvider for LocalProvider {
     async fn correct_text(&self, text: &str) -> Result<String, String> {
         let text = text.to_string();
-        tauri::async_runtime::spawn_blocking(move || {
+        tokio::task::spawn_blocking(move || {
             let parts = split_sentences(&text);
 
             // Fast path: 0 or 1 sentences — no splitting needed
@@ -187,6 +187,27 @@ impl LLMProvider for LocalProvider {
     }
 }
 
+/// Trim runaway generation: if the output is much longer than the input,
+/// the model is looping. Return only the first meaningful block.
+fn trim_runaway(output: &str, input: &str) -> String {
+    let max_len = input.len() * 2 + 100;
+    if output.len() <= max_len {
+        return output.to_string();
+    }
+    // Take the first paragraph (up to double newline) or first line
+    if let Some(pos) = output.find("\n\n") {
+        if pos > 0 {
+            return output[..pos].to_string();
+        }
+    }
+    if let Some(pos) = output.find('\n') {
+        if pos > 0 {
+            return output[..pos].to_string();
+        }
+    }
+    output[..max_len].to_string()
+}
+
 /// Runs inference synchronously. Called inside spawn_blocking.
 pub fn run_inference(text: &str) -> Result<String, String> {
     eprintln!("[jolly] run_inference called with: {:?}", text);
@@ -205,6 +226,7 @@ pub fn run_inference(text: &str) -> Result<String, String> {
     // llama.cpp's built-in template engine doesn't support GRMR's Jinja
     // template, so we format it manually.
     let is_grmr = model_id.starts_with("grmr-");
+    let input_len = text.len();
 
     let formatted = if is_grmr {
         format!("text\n{}\ncorrected\n", text)
@@ -296,9 +318,17 @@ pub fn run_inference(text: &str) -> Result<String, String> {
         output.push_str(&piece);
 
         // GRMR models may loop into another text/corrected pair instead of
-        // emitting EOS. Stop as soon as we see the "text\n" tag reappear.
-        if is_grmr && output.contains("\ntext\n") {
-            output = output.split("\ntext\n").next().unwrap_or("").to_string();
+        // emitting EOS. Stop on "text\n" or "corrected\n" tags reappearing.
+        if is_grmr {
+            if let Some(pos) = output.find("\ntext\n").or_else(|| output.find("\ncorrected\n")) {
+                output.truncate(pos);
+                break;
+            }
+        }
+
+        // Stop runaway generation: output should never be much longer than input
+        if output.len() > input_len * 2 + 100 {
+            output = trim_runaway(&output, text);
             break;
         }
 
@@ -354,6 +384,7 @@ fn run_parallel_inference(texts: Vec<String>) -> Result<Vec<String>, String> {
         decoder: encoding_rs::Decoder,
         i_batch: i32,
         original_text: String,
+        input_len: usize,
     }
 
     let mut seqs: Vec<SeqState> = texts
@@ -395,6 +426,7 @@ fn run_parallel_inference(texts: Vec<String>) -> Result<Vec<String>, String> {
                 decoder: encoding_rs::UTF_8.new_decoder(),
                 i_batch: 0,
                 original_text: text.clone(),
+                input_len: text.len(),
             })
         })
         .collect::<Result<Vec<_>, String>>()?;
@@ -487,8 +519,20 @@ fn run_parallel_inference(texts: Vec<String>) -> Result<Vec<String>, String> {
             seq.last_token = token;
 
             // GRMR stop: new text/corrected pair starting
-            if is_grmr && seq.output.contains("\ntext\n") {
-                seq.output = seq.output.split("\ntext\n").next().unwrap_or("").to_string();
+            if is_grmr {
+                if let Some(pos) = seq.output.find("\ntext\n").or_else(|| seq.output.find("\ncorrected\n")) {
+                    seq.output.truncate(pos);
+                    seq.done = true;
+                    if let Err(e) = ctx.clear_kv_cache_seq(Some(seq.seq_id as u32), None, None) {
+                        eprintln!("[jolly] Failed to clear KV cache for seq {}: {}", seq.seq_id, e);
+                    }
+                    continue;
+                }
+            }
+
+            // Stop runaway generation
+            if seq.output.len() > seq.input_len * 2 + 100 {
+                seq.output = trim_runaway(&seq.output, &seq.original_text);
                 seq.done = true;
                 if let Err(e) = ctx.clear_kv_cache_seq(Some(seq.seq_id as u32), None, None) {
                     eprintln!("[jolly] Failed to clear KV cache for seq {}: {}", seq.seq_id, e);

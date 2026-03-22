@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use std::time::Instant;
 
 use jolly_lib::inference::harper::HarperProvider;
-use jolly_lib::inference::local;
+use jolly_lib::inference::local::{self, LocalProvider};
 use jolly_lib::inference::openrouter::OpenRouterProvider;
 use jolly_lib::inference::registry::MODELS;
 use jolly_lib::inference::LLMProvider;
@@ -228,8 +228,8 @@ async fn main() {
     let cases = test_cases();
     eprintln!("Loaded {} test cases", cases.len());
 
-    // Open CSV output
-    let csv_path = PathBuf::from("benchmark_results.csv");
+    // Open CSV output (repo root, one level up from src-tauri/)
+    let csv_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../benchmark_results.csv");
     let mut csv = fs::File::create(&csv_path).expect("Failed to create CSV file");
     writeln!(
         csv,
@@ -279,6 +279,8 @@ async fn main() {
                 eprintln!("  - {} ({})", m.name, m.file_name);
             }
 
+            let local_provider = LocalProvider::new();
+
             for model in &downloaded {
                 let model_path = models_dir.join(model.file_name);
                 eprintln!("\n=== Loading model: {} ===", model.name);
@@ -296,17 +298,7 @@ async fn main() {
                     rss_after_load - rss_before,
                 );
 
-                for case in &cases {
-                    let start = Instant::now();
-                    let result = local::run_inference(case.input);
-                    let elapsed_ms = start.elapsed().as_millis();
-                    let current_rss = rss_mb();
-
-                    match result {
-                        Ok(output) => write_result(&mut csv, case, model.id, model.name, &output, elapsed_ms, current_rss),
-                        Err(e) => write_error(&mut csv, case, model.id, model.name, &e, elapsed_ms, current_rss),
-                    }
-                }
+                bench_provider(&mut csv, &cases, &local_provider, model.id, model.name).await;
 
                 local::unload_model();
                 eprintln!("Model unloaded | RSS: {:.0} MB", rss_mb());
