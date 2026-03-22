@@ -1,18 +1,38 @@
+use std::num::NonZeroU32;
 use std::path::Path;
 use std::sync::{LazyLock, RwLock};
 
 use regex::Regex;
 
 use async_trait::async_trait;
-use mistralrs::{
-    GgufModelBuilder, Model, TextMessageRole, TextMessages,
-};
+use llama_cpp_2::context::params::LlamaContextParams;
+use llama_cpp_2::llama_backend::LlamaBackend;
+use llama_cpp_2::llama_batch::LlamaBatch;
+use llama_cpp_2::model::params::LlamaModelParams;
+use llama_cpp_2::model::{AddBos, LlamaChatMessage, LlamaChatTemplate, LlamaModel};
+use llama_cpp_2::sampling::LlamaSampler;
 
 use super::LLMProvider;
 use super::SYSTEM_PROMPT;
 
+/// Llama.cpp backend handle. Initialized once on first use.
+static BACKEND: LazyLock<LlamaBackend> = LazyLock::new(|| {
+    LlamaBackend::init().expect("Failed to initialize llama backend")
+});
+
+/// Wrapper around a loaded LlamaModel.
+struct LoadedModel {
+    model: LlamaModel,
+}
+
+// SAFETY: LlamaModel is internally a pointer to a C struct that llama.cpp
+// documents as thread-safe for concurrent reads (inference). All mutation
+// (load/swap) goes through the RwLock write guard.
+unsafe impl Send for LoadedModel {}
+unsafe impl Sync for LoadedModel {}
+
 /// Global model handle. RwLock so models can be swapped at runtime.
-static MODEL: RwLock<Option<Model>> = RwLock::new(None);
+static MODEL: RwLock<Option<LoadedModel>> = RwLock::new(None);
 
 /// Number of sentences per LLM call. Increase for speed, decrease for quality.
 const SENTENCES_PER_BATCH: usize = 1;
@@ -22,89 +42,40 @@ static SENTENCE_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"[.!?]\s+").unwrap());
 
 /// Initialize and load a GGUF model from the given path.
-/// Call this once during app startup. For subsequent model changes use `swap_model`.
 pub fn init_model(model_path: &Path) -> Result<(), String> {
     swap_model(model_path)
 }
 
 /// Load a new model, replacing any currently loaded model.
-/// Unloads the old model first to free memory before loading the new one.
 pub fn swap_model(model_path: &Path) -> Result<(), String> {
-    // Drop the old model first to free memory
+    let backend = &*BACKEND;
+
+    // Drop the old model first to free VRAM
     {
         let mut slot = MODEL.write().map_err(|e| format!("Model lock poisoned: {}", e))?;
         *slot = None;
     }
 
-    // GgufModelBuilder expects (model_dir, [file_names])
-    let dir = model_path
-        .parent()
-        .ok_or_else(|| format!("Invalid model path: {}", model_path.display()))?
-        .to_string_lossy()
-        .to_string();
-    let file_name = model_path
-        .file_name()
-        .ok_or_else(|| format!("No file name in path: {}", model_path.display()))?
-        .to_string_lossy()
-        .to_string();
-
-    // Build model synchronously using a temporary tokio runtime
-    // (this function is called from spawn_blocking)
-    let rt = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .map_err(|e| format!("Failed to create runtime: {}", e))?;
-
-    // Try default device (GPU if compiled with cuda/metal).
-    // mistralrs may panic on CUDA driver mismatch, so catch that.
-    let gpu_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        rt.block_on(async {
-            GgufModelBuilder::new(&dir, vec![&file_name])
-                .with_logging()
-                .build()
-                .await
-        })
-    }));
-
-    let model = match gpu_result {
-        Ok(Ok(m)) => {
-            eprintln!("[jolly] Model loaded with default device (GPU if available)");
-            m
-        }
-        Ok(Err(e)) => {
-            eprintln!("[jolly] GPU init failed: {e}");
-            eprintln!("[jolly] Falling back to CPU inference");
-            rt.block_on(async {
-                GgufModelBuilder::new(&dir, vec![&file_name])
-                    .with_logging()
-                    .with_force_cpu()
-                    .build()
-                    .await
-            })
-            .map_err(|e| format!("Failed to load model on CPU: {}", e))?
-        }
-        Err(panic_info) => {
-            let msg = panic_info
-                .downcast_ref::<String>()
-                .map(|s| s.as_str())
-                .or_else(|| panic_info.downcast_ref::<&str>().copied())
-                .unwrap_or("unknown panic");
-            eprintln!("[jolly] GPU init panicked: {msg}");
-            eprintln!("[jolly] Falling back to CPU inference");
-            rt.block_on(async {
-                GgufModelBuilder::new(&dir, vec![&file_name])
-                    .with_logging()
-                    .with_force_cpu()
-                    .build()
-                    .await
-            })
-            .map_err(|e| format!("Failed to load model on CPU: {}", e))?
+    // Try GPU first (n_gpu_layers = 999 offloads all layers to Vulkan/Metal)
+    let model = {
+        let params = LlamaModelParams::default().with_n_gpu_layers(999);
+        match LlamaModel::load_from_file(backend, model_path, &params) {
+            Ok(m) => {
+                eprintln!("[jolly] Model loaded with GPU acceleration (Vulkan/Metal)");
+                m
+            }
+            Err(e) => {
+                eprintln!("[jolly] GPU init failed: {e}");
+                eprintln!("[jolly] Falling back to CPU inference");
+                let cpu_params = LlamaModelParams::default().with_n_gpu_layers(0);
+                LlamaModel::load_from_file(backend, model_path, &cpu_params)
+                    .map_err(|e| format!("Failed to load model on CPU: {}", e))?
+            }
         }
     };
 
     let mut slot = MODEL.write().map_err(|e| format!("Model lock poisoned: {}", e))?;
-    *slot = Some(model);
-
+    *slot = Some(LoadedModel { model });
     Ok(())
 }
 
