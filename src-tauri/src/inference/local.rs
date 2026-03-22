@@ -134,45 +134,53 @@ impl LLMProvider for LocalProvider {
                 return run_inference(&text);
             }
 
-            let num_batches = parts.len().div_ceil(SENTENCES_PER_BATCH);
+            // Group sentences into chunks of SENTENCES_PER_BATCH
+            let chunks: Vec<String> = parts
+                .chunks(SENTENCES_PER_BATCH)
+                .map(|batch| {
+                    batch
+                        .iter()
+                        .map(|(sentence, _)| *sentence)
+                        .collect::<Vec<_>>()
+                        .join(" ")
+                })
+                .collect();
+
             eprintln!(
-                "[jolly] Splitting text into {} sentences ({} batches at SENTENCES_PER_BATCH={})",
+                "[jolly] Processing {} sentences in {} chunks (batch size {})",
                 parts.len(),
-                num_batches,
+                chunks.len(),
                 SENTENCES_PER_BATCH,
             );
 
-            let mut corrected_parts: Vec<String> = Vec::new();
-
-            for batch in parts.chunks(SENTENCES_PER_BATCH) {
-                let batch_text: String = batch
-                    .iter()
-                    .map(|(sentence, _)| *sentence)
-                    .collect::<Vec<_>>()
-                    .join(" ");
-                let corrected = run_inference(&batch_text)?;
-                corrected_parts.push(corrected);
+            // Process chunks in rounds of MAX_PARALLEL via continuous batching
+            // Falls back to sequential run_inference if parallel context creation fails
+            let mut results: Vec<String> = Vec::new();
+            for round in chunks.chunks(MAX_PARALLEL) {
+                match run_parallel_inference(round.to_vec()) {
+                    Ok(round_results) => results.extend(round_results),
+                    Err(e) => {
+                        eprintln!("[jolly] Parallel inference failed: {}, falling back to sequential", e);
+                        for chunk in round {
+                            results.push(run_inference(chunk)?);
+                        }
+                    }
+                }
             }
 
-            // Reassemble using original separators between batches.
-            // Each batch's trailing separator comes from its last sentence's
-            // original separator — this is the whitespace that sat between
-            // this batch's end and the next batch's start in the input.
-            // Note: when SENTENCES_PER_BATCH > 1, separators *within* a batch
-            // are replaced by a single space (the join above). Only inter-batch
-            // separators are preserved exactly.
-            let mut result = String::new();
-            for (i, corrected) in corrected_parts.iter().enumerate() {
-                result.push_str(corrected);
+            // Reassemble using original separators between chunks
+            let mut output = String::new();
+            for (i, corrected) in results.iter().enumerate() {
+                output.push_str(corrected);
                 let batch_end_idx =
                     ((i + 1) * SENTENCES_PER_BATCH).min(parts.len()) - 1;
                 let (_, sep) = parts[batch_end_idx];
                 if !sep.is_empty() {
-                    result.push_str(sep);
+                    output.push_str(sep);
                 }
             }
 
-            Ok(result)
+            Ok(output)
         })
         .await
         .map_err(|e| format!("Inference task failed: {}", e))?
