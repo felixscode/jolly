@@ -188,46 +188,101 @@ impl LLMProvider for LocalProvider {
 pub fn run_inference(text: &str) -> Result<String, String> {
     eprintln!("[jolly] run_inference called with: {:?}", text);
 
+    let backend = &*BACKEND;
+
     let model_guard = MODEL
         .read()
         .map_err(|e| format!("Model lock poisoned: {}", e))?;
-    let model = model_guard
+    let loaded = model_guard
         .as_ref()
         .ok_or("Local model not loaded. Download a model in Settings.")?;
 
-    let messages = TextMessages::new()
-        .add_message(
-            TextMessageRole::User,
-            format!("{}\n\n{}", SYSTEM_PROMPT, text),
-        );
+    // Format prompt using the model's built-in chat template
+    let prompt = format!("{}\n\n{}", SYSTEM_PROMPT, text);
+    let formatted = match loaded.model.chat_template(None) {
+        Ok(tmpl) => {
+            let msg = LlamaChatMessage::new(
+                "user".to_string(),
+                prompt.clone(),
+            ).map_err(|e| format!("Failed to create chat message: {}", e))?;
+            loaded
+                .model
+                .apply_chat_template(&tmpl, &[msg], true)
+                .map_err(|e| format!("Failed to apply chat template: {}", e))?
+        }
+        Err(_) => {
+            eprintln!("[jolly] No chat template found, using raw prompt");
+            prompt
+        }
+    };
 
-    // Use a temporary runtime for the async send_chat_request
-    let rt = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .map_err(|e| format!("Failed to create runtime: {}", e))?;
+    // Create context for this inference call
+    let ctx_params = LlamaContextParams::default()
+        .with_n_ctx(Some(NonZeroU32::new(2048).unwrap()));
+    let mut ctx = loaded
+        .model
+        .new_context(backend, ctx_params)
+        .map_err(|e| format!("Failed to create context: {}", e))?;
 
-    let response = rt
-        .block_on(model.send_chat_request(messages))
-        .map_err(|e| {
-            eprintln!("[jolly] Inference error: {}", e);
-            format!("Inference failed: {}", e)
-        })?;
+    // Tokenize
+    let tokens = loaded
+        .model
+        .str_to_token(&formatted, AddBos::Always)
+        .map_err(|e| format!("Failed to tokenize: {}", e))?;
 
-    eprintln!("[jolly] Response choices: {}", response.choices.len());
-    let content = response
-        .choices
-        .first()
-        .and_then(|c| {
-            eprintln!("[jolly] Choice content: {:?}", c.message.content);
-            c.message.content.as_deref()
-        })
-        .unwrap_or("")
-        .trim()
-        .to_string();
+    eprintln!("[jolly] Input tokens: {}", tokens.len());
 
-    eprintln!("[jolly] Returning: {:?}", content);
-    Ok(content)
+    // Feed tokens into context
+    let mut batch = LlamaBatch::new(tokens.len().max(512), 1);
+    let last_index = (tokens.len() - 1) as i32;
+    for (i, token) in (0_i32..).zip(tokens.iter()) {
+        let is_last = i == last_index;
+        batch
+            .add(*token, i, &[0], is_last)
+            .map_err(|e| format!("Failed to add token to batch: {}", e))?;
+    }
+    ctx.decode(&mut batch)
+        .map_err(|e| format!("Failed to decode prompt: {}", e))?;
+
+    // Sample tokens until EOS or max length
+    let mut sampler = LlamaSampler::chain_simple([
+        LlamaSampler::temp(0.1),
+        LlamaSampler::top_p(0.9, 1),
+        LlamaSampler::greedy(),
+    ]);
+
+    let max_tokens: i32 = 1024;
+    let mut n_cur = tokens.len() as i32;
+    let mut output = String::new();
+
+    for _ in 0..max_tokens {
+        let token = sampler.sample(&ctx, batch.n_tokens() - 1);
+        sampler.accept(token);
+
+        if loaded.model.is_eog_token(token) {
+            break;
+        }
+
+        // Detokenize this token
+        let piece = loaded
+            .model
+            .token_to_str(token, llama_cpp_2::model::Special::Tokenize)
+            .map_err(|e| format!("Failed to detokenize: {}", e))?;
+        output.push_str(&piece);
+
+        // Feed token back for next iteration
+        batch.clear();
+        batch
+            .add(token, n_cur, &[0], true)
+            .map_err(|e| format!("Failed to add token to batch: {}", e))?;
+        ctx.decode(&mut batch)
+            .map_err(|e| format!("Failed to decode: {}", e))?;
+        n_cur += 1;
+    }
+
+    let result = output.trim().to_string();
+    eprintln!("[jolly] Returning: {:?}", result);
+    Ok(result)
 }
 
 #[cfg(test)]
