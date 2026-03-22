@@ -20,19 +20,10 @@ static BACKEND: LazyLock<LlamaBackend> = LazyLock::new(|| {
     LlamaBackend::init().expect("Failed to initialize llama backend")
 });
 
-/// Wrapper around a loaded LlamaModel.
-struct LoadedModel {
-    model: LlamaModel,
-}
-
-// SAFETY: LlamaModel is internally a pointer to a C struct that llama.cpp
-// documents as thread-safe for concurrent reads (inference). All mutation
-// (load/swap) goes through the RwLock write guard.
-unsafe impl Send for LoadedModel {}
-unsafe impl Sync for LoadedModel {}
-
 /// Global model handle. RwLock so models can be swapped at runtime.
-static MODEL: RwLock<Option<LoadedModel>> = RwLock::new(None);
+/// Note: swap_model takes a write lock; run_inference takes a read lock.
+/// Model swaps block until in-flight inferences complete.
+static MODEL: RwLock<Option<LlamaModel>> = RwLock::new(None);
 
 /// Number of sentences per LLM call. Increase for speed, decrease for quality.
 const SENTENCES_PER_BATCH: usize = 1;
@@ -75,7 +66,7 @@ pub fn swap_model(model_path: &Path) -> Result<(), String> {
     };
 
     let mut slot = MODEL.write().map_err(|e| format!("Model lock poisoned: {}", e))?;
-    *slot = Some(LoadedModel { model });
+    *slot = Some(model);
     Ok(())
 }
 
@@ -139,7 +130,7 @@ impl LLMProvider for LocalProvider {
                 return run_inference(&text);
             }
 
-            let num_batches = (parts.len() + SENTENCES_PER_BATCH - 1) / SENTENCES_PER_BATCH;
+            let num_batches = parts.len().div_ceil(SENTENCES_PER_BATCH);
             eprintln!(
                 "[jolly] Splitting text into {} sentences ({} batches at SENTENCES_PER_BATCH={})",
                 parts.len(),
@@ -193,20 +184,19 @@ pub fn run_inference(text: &str) -> Result<String, String> {
     let model_guard = MODEL
         .read()
         .map_err(|e| format!("Model lock poisoned: {}", e))?;
-    let loaded = model_guard
+    let model = model_guard
         .as_ref()
         .ok_or("Local model not loaded. Download a model in Settings.")?;
 
     // Format prompt using the model's built-in chat template
     let prompt = format!("{}\n\n{}", SYSTEM_PROMPT, text);
-    let formatted = match loaded.model.chat_template(None) {
+    let formatted = match model.chat_template(None) {
         Ok(tmpl) => {
             let msg = LlamaChatMessage::new(
                 "user".to_string(),
                 prompt.clone(),
             ).map_err(|e| format!("Failed to create chat message: {}", e))?;
-            loaded
-                .model
+            model
                 .apply_chat_template(&tmpl, &[msg], true)
                 .map_err(|e| format!("Failed to apply chat template: {}", e))?
         }
@@ -216,21 +206,36 @@ pub fn run_inference(text: &str) -> Result<String, String> {
         }
     };
 
+    // Context and generation limits
+    let n_ctx: u32 = 2048;
+    let max_tokens: i32 = 1024;
+
     // Create context for this inference call
     let ctx_params = LlamaContextParams::default()
-        .with_n_ctx(Some(NonZeroU32::new(2048).unwrap()));
-    let mut ctx = loaded
-        .model
+        .with_n_ctx(NonZeroU32::new(n_ctx));
+    let mut ctx = model
         .new_context(backend, ctx_params)
         .map_err(|e| format!("Failed to create context: {}", e))?;
 
     // Tokenize
-    let tokens = loaded
-        .model
+    let tokens = model
         .str_to_token(&formatted, AddBos::Always)
         .map_err(|e| format!("Failed to tokenize: {}", e))?;
 
     eprintln!("[jolly] Input tokens: {}", tokens.len());
+
+    if tokens.is_empty() {
+        return Ok(String::new());
+    }
+
+    // Ensure prompt fits in context window
+    if tokens.len() as u32 >= n_ctx {
+        return Err(format!(
+            "Input too long: {} tokens exceeds context window of {}",
+            tokens.len(),
+            n_ctx
+        ));
+    }
 
     // Feed tokens into context
     let mut batch = LlamaBatch::new(tokens.len().max(512), 1);
@@ -251,7 +256,6 @@ pub fn run_inference(text: &str) -> Result<String, String> {
         LlamaSampler::greedy(),
     ]);
 
-    let max_tokens: i32 = 1024;
     let mut n_cur = tokens.len() as i32;
     let mut output = String::new();
     let mut decoder = encoding_rs::UTF_8.new_decoder();
@@ -260,13 +264,12 @@ pub fn run_inference(text: &str) -> Result<String, String> {
         let token = sampler.sample(&ctx, batch.n_tokens() - 1);
         sampler.accept(token);
 
-        if loaded.model.is_eog_token(token) {
+        if model.is_eog_token(token) {
             break;
         }
 
         // Detokenize this token
-        let piece = loaded
-            .model
+        let piece = model
             .token_to_piece(token, &mut decoder, true, None)
             .map_err(|e| format!("Failed to detokenize: {}", e))?;
         output.push_str(&piece);
