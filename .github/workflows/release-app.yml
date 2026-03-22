@@ -34,7 +34,7 @@ jobs:
     env:
       MACOSX_DEPLOYMENT_TARGET: '10.15'
       CFLAGS: '--target=arm64-apple-macosx10.15'
-      CXXFLAGS: '--target=arm64-apple-macosx10.15'
+      CXXFLAGS: '--target=arm64-apple-macosx10.15 -std=c++17'
     steps:
       - uses: actions/checkout@v4
 
