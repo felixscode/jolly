@@ -14,6 +14,8 @@ Notthing leafs your Device
 
 <img src="static/jolly_normal.svg" width="120" alt="Jolly" />
 
+<img src="static/jolly_animation.gif" width="600" alt="Jolly Demo" />
+
 [Features](#features) | [Installation](#installation) | [Benchmarks](#benchmarks) | [Models](#available-models) | [Development](#development) | [Tech Stack](#tech-stack)
 
 </div>
@@ -120,6 +122,16 @@ npx tauri dev
 - [Svelte](https://github.com/sveltejs/svelte) — reactive UI framework
 - [mistral.rs](https://github.com/EricLBuehler/mistral.rs) — local LLM inference engine
 - [Harper](https://github.com/Automattic/harper) — grammar checker
+
+## Screenshots
+
+<div align="center">
+<img src="static/jollyhome.png" width="600" alt="Jolly Home" />
+<br/><br/>
+<img src="static/jollyhistory.png" width="600" alt="Jolly History" />
+<br/><br/>
+<img src="static/jollysettings.png" width="600" alt="Jolly Settings" />
+</div>
 
 ## License
 
