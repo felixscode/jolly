@@ -138,79 +138,116 @@ Note: The chat template wraps user text with special tokens. Since each sequence
 
 **Revised approach (Option A):**
 
+**API notes for implementer:**
+- `with_n_ctx()` takes `Option<NonZeroU32>` — use `NonZeroU32::new(value)`
+- `with_n_seq_max()` takes `u32` — cast `n_parallel as u32`
+- `batch.add()` returns `Result<(), BatchAddError>` — must handle with `.map_err()?`
+- `ctx.decode()` takes `&mut LlamaBatch` — both `ctx` and `batch` must be `mut`
+- `LlamaSampler::chain_simple([...])` is the correct constructor, not `chain(...)`
+- `top_p` second arg is `usize`, not `i32`
+- The `RwLockReadGuard` holding the model must outlive the `LlamaContext` (which borrows `&'a self` from the model). Keep the guard alive for the entire function scope.
+
 ```
 fn run_parallel_inference(texts: Vec<String>) -> Result<Vec<String>, String> {
-    let n_parallel = texts.len().min(MAX_PARALLEL)
-    let model = MODEL.read()...
+    let n_parallel = texts.len().min(MAX_PARALLEL) as u32
+    let model_guard = MODEL.read().map_err(|e| ...)?
+    let model = model_guard.as_ref().ok_or("Model not loaded")?
 
-    // Create context
+    // Create context sized for all sequences
+    let total_ctx = PER_SEQ_CTX * n_parallel
     let ctx_params = LlamaContextParams::default()
-        .with_n_ctx(PER_SEQ_CTX * n_parallel)
+        .with_n_ctx(NonZeroU32::new(total_ctx))
         .with_n_seq_max(n_parallel)
         .with_n_batch(512)
-        .with_n_threads(num_cpus)
-        .with_n_threads_batch(num_cpus)
-    let ctx = model.new_context(backend, ctx_params)
+        .with_n_threads(num_cpus as i32)
+        .with_n_threads_batch(num_cpus as i32)
+    let mut ctx = model.new_context(backend, ctx_params)
+        .map_err(|e| ...)?
 
     // Tokenize all sequences independently
     let mut seqs: Vec<SeqState> = texts.iter().enumerate().map(|(i, text)| {
         let prompt = format!("{}\n\n{}", SYSTEM_PROMPT, text)
         let formatted = apply_chat_template_or_raw(model, prompt)
-        let tokens = model.str_to_token(formatted, AddBos::Always)
-        SeqState {
+        let tokens = model.str_to_token(&formatted, AddBos::Always)?
+        Ok(SeqState {
             seq_id: i as i32,
             tokens,
-            n_past: 0,
+            last_token: LlamaToken(0),  // set during generation
+            n_past: 0i32,
             output: String::new(),
             done: false,
-            sampler: chain(temp(0.1), top_p(0.9, 1), greedy()),
-            decoder: UTF_8.new_decoder(),
-            i_batch: 0,
+            sampler: LlamaSampler::chain_simple([
+                LlamaSampler::temp(0.1),
+                LlamaSampler::top_p(0.9, 1usize),
+                LlamaSampler::greedy(),
+            ]),
+            decoder: encoding_rs::UTF_8.new_decoder(),
+            i_batch: 0i32,
             original_text: text.clone(),
-        }
-    }).collect()
+        })
+    }).collect::<Result<Vec<_>, String>>()?
 
     // Guard: skip sequences whose prompt exceeds PER_SEQ_CTX
-    for seq in &mut seqs:
-        if seq.tokens.len() >= PER_SEQ_CTX:
+    for seq in &mut seqs {
+        if seq.tokens.len() as u32 >= PER_SEQ_CTX {
             seq.done = true  // will return original text
+        }
+    }
 
     // Feed all prompt tokens into one batch
-    let max_prompt_tokens = seqs.iter().map(|s| s.tokens.len()).sum()
-    let batch = LlamaBatch::new(max_prompt_tokens.max(512), n_parallel)
-    for seq in &mut seqs:
-        if seq.done: continue
-        for (pos, tok) in seq.tokens.iter().enumerate():
+    let max_prompt_tokens: usize = seqs.iter().map(|s| s.tokens.len()).sum()
+    let mut batch = LlamaBatch::new(max_prompt_tokens.max(512), n_parallel as i32)
+    for seq in &mut seqs {
+        if seq.done { continue }
+        for (pos, tok) in seq.tokens.iter().enumerate() {
             let is_last = pos == seq.tokens.len() - 1
-            batch.add(tok, pos, &[seq.seq_id], is_last)
+            batch.add(*tok, pos as i32, &[seq.seq_id], is_last)
+                .map_err(|e| format!("Failed to add token: {}", e))?
+        }
         seq.n_past = seq.tokens.len() as i32
+    }
 
-    ctx.decode(&batch)
+    ctx.decode(&mut batch)
+        .map_err(|e| format!("Failed to decode prompt: {}", e))?
 
-    // Generation loop (same as above)
-    for _ in 0..MAX_TOKENS:
-        for seq in seqs.filter(!done):
+    // Generation loop
+    for _ in 0..MAX_TOKENS {
+        // Sample one token per active sequence
+        for seq in seqs.iter_mut().filter(|s| !s.done) {
             let token = seq.sampler.sample(&ctx, seq.i_batch)
             seq.sampler.accept(token)
-            if model.is_eog_token(token):
+            if model.is_eog_token(token) {
                 seq.done = true
+                // Free KV cache for this sequence
+                ctx.clear_kv_cache_seq(Some(seq.seq_id as u32), None, None)
+                    .map_err(|e| ...)?
                 continue
-            seq.output += model.token_to_piece(token, &mut seq.decoder)
+            }
+            let piece = model.token_to_piece(token, &mut seq.decoder, true, None)
+                .map_err(|e| ...)?
+            seq.output.push_str(&piece)
+            seq.last_token = token
+        }
 
-        if all done: break
+        if seqs.iter().all(|s| s.done) { break }
 
+        // Feed sampled tokens back as next batch
         batch.clear()
-        for seq in seqs.filter(!done):
-            seq.i_batch = batch.n_tokens()
+        for seq in seqs.iter_mut().filter(|s| !s.done) {
+            seq.i_batch = batch.n_tokens() - 1  // will be 0-indexed after add
             batch.add(seq.last_token, seq.n_past, &[seq.seq_id], true)
+                .map_err(|e| ...)?
             seq.n_past += 1
-        ctx.decode(&batch)
+        }
+        ctx.decode(&mut batch)
+            .map_err(|e| format!("Failed to decode: {}", e))?
+    }
 
     // Return results: use output if non-empty, else original text
-    seqs.map(|s| {
-        let trimmed = s.output.trim()
-        if trimmed.is_empty() { s.original_text } else { trimmed.to_string() }
-    })
+    Ok(seqs.into_iter().map(|s| {
+        let trimmed = s.output.trim().to_string()
+        if trimmed.is_empty() { s.original_text } else { trimmed }
+    }).collect())
 }
 ```
 
@@ -238,8 +275,12 @@ async fn correct_text(&self, text: &str) -> Result<String, String> {
             parts.len(), chunks.len()
         );
 
-        // Process all chunks in parallel via continuous batching
-        let results = run_parallel_inference(chunks)?;
+        // Process chunks in rounds of MAX_PARALLEL via continuous batching
+        let mut results: Vec<String> = Vec::new();
+        for round in chunks.chunks(MAX_PARALLEL) {
+            let round_results = run_parallel_inference(round.to_vec())?;
+            results.extend(round_results);
+        }
 
         // Reassemble with original separators
         let mut output = String::new();
@@ -260,38 +301,39 @@ async fn correct_text(&self, text: &str) -> Result<String, String> {
 
 **`SENTENCES_PER_BATCH`:** Bump from 1 to 4. With continuous batching, fewer chunks means fewer parallel sequences which means simpler batch management. 4 sentences per chunk balances quality (model sees enough context) with parallelism (a 20-sentence text = 5 parallel sequences).
 
-### Overflow handling for large texts
-
-If text produces more than `MAX_PARALLEL` (8) chunks, process in rounds:
-
-```
-let all_chunks = ...;  // e.g., 15 chunks
-let mut all_results = Vec::new();
-for round in all_chunks.chunks(MAX_PARALLEL) {
-    let round_results = run_parallel_inference(round.to_vec())?;
-    all_results.extend(round_results);
-}
-```
-
 ### Async Model Loading
 
 **Change in `lib.rs`:**
 
+Read settings on the main thread (guaranteed safe), then spawn the blocking model load on a background thread:
+
 ```rust
 .setup(|app| {
-    let handle = app.handle().clone();
-    std::thread::spawn(move || {
-        load_local_model(&handle);
-        let _ = handle.emit("model-loaded", ());
-    });
+    // Read settings on main thread (store access requires setup to have run)
+    let model_path = resolve_model_path_from_settings(app.handle());
+
+    if let Some(path) = model_path {
+        let handle = app.handle().clone();
+        std::thread::spawn(move || {
+            match inference::local::init_model(&path) {
+                Ok(()) => {
+                    eprintln!("[jolly] Local model loaded: {:?}", path);
+                    let _ = handle.emit("model-loaded", ());
+                }
+                Err(e) => eprintln!("[jolly] Failed to load local model: {}", e),
+            }
+        });
+    }
     Ok(())
 })
 ```
 
-- `load_local_model()` runs on a background thread, not blocking `setup()`
+- Settings read happens synchronously in `setup()` (thread-safe, fast)
+- Only the slow `init_model()` call runs on a background thread
 - Emits `model-loaded` event when done — frontend can listen and update UI
-- `correct_text` already handles the "model not loaded" case gracefully (returns `model_not_loaded` error)
+- `correct_text` already handles the "model not loaded" case (returns `model_not_loaded` error)
 - No changes needed to `commands.rs`
+- **Note:** During the async loading window, pressing Enter will show the existing "model not loaded" error. The first inference after startup may also briefly block if it races with the final moments of model loading (the read lock waits for the write lock in `swap_model` to release). This is benign.
 
 **Frontend:** The frontend already shows an appropriate error when no model is loaded. Optionally, listen for `model-loaded` to show a subtle indicator, but not required for MVP.
 
