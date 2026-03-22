@@ -200,7 +200,11 @@
 			} else {
 				try {
 					const correctedText = await onCorrect(text);
-					await writeClipboard(correctedText);
+					try {
+						await writeClipboard(correctedText);
+					} catch {
+						// Web: clipboard write may fail after async gap; show result instead
+					}
 					quoteText = pickQuote();
 				} catch (err) {
 					console.error('Correction failed:', err);
