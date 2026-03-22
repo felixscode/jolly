@@ -9,7 +9,7 @@ use llama_cpp_2::context::params::LlamaContextParams;
 use llama_cpp_2::llama_backend::LlamaBackend;
 use llama_cpp_2::llama_batch::LlamaBatch;
 use llama_cpp_2::model::params::LlamaModelParams;
-use llama_cpp_2::model::{AddBos, LlamaChatMessage, LlamaChatTemplate, LlamaModel};
+use llama_cpp_2::model::{AddBos, LlamaChatMessage, LlamaModel};
 use llama_cpp_2::sampling::LlamaSampler;
 
 use super::LLMProvider;
@@ -254,6 +254,7 @@ pub fn run_inference(text: &str) -> Result<String, String> {
     let max_tokens: i32 = 1024;
     let mut n_cur = tokens.len() as i32;
     let mut output = String::new();
+    let mut decoder = encoding_rs::UTF_8.new_decoder();
 
     for _ in 0..max_tokens {
         let token = sampler.sample(&ctx, batch.n_tokens() - 1);
@@ -266,7 +267,7 @@ pub fn run_inference(text: &str) -> Result<String, String> {
         // Detokenize this token
         let piece = loaded
             .model
-            .token_to_str(token, llama_cpp_2::model::Special::Tokenize)
+            .token_to_piece(token, &mut decoder, true, None)
             .map_err(|e| format!("Failed to detokenize: {}", e))?;
         output.push_str(&piece);
 
