@@ -10,6 +10,18 @@
 	let showBubble = $state(false);
 	let bubbleTimer: ReturnType<typeof setTimeout> | undefined;
 
+	const FALLBACK_URL = 'https://github.com/felixscode/jolly/releases/latest';
+
+	let loading = $state(true);
+	let version = $state('');
+	let urls = $state<Record<string, string>>({
+		'.exe': FALLBACK_URL,
+		'.dmg': FALLBACK_URL,
+		'.AppImage': FALLBACK_URL,
+		'.deb': FALLBACK_URL,
+		'.rpm': FALLBACK_URL
+	});
+
 	function triggerYeahh() {
 		showBubble = true;
 		clearTimeout(bubbleTimer);
@@ -18,6 +30,29 @@
 
 	onMount(() => {
 		let mounted = true;
+
+		// Fetch latest release assets
+		fetch('https://api.github.com/repos/felixscode/jolly/releases/latest')
+			.then((r) => r.json())
+			.then((release) => {
+				if (!mounted) return;
+				version = (release.tag_name ?? '').replace(/^app-/, '');
+				for (const asset of release.assets ?? []) {
+					const name: string = asset.name;
+					const url: string = asset.browser_download_url;
+					if (name.endsWith('.exe')) urls['.exe'] = url;
+					else if (name.endsWith('.dmg')) urls['.dmg'] = url;
+					else if (name.endsWith('.AppImage')) urls['.AppImage'] = url;
+					else if (name.endsWith('.deb')) urls['.deb'] = url;
+					else if (name.endsWith('.rpm')) urls['.rpm'] = url;
+				}
+			})
+			.catch(() => {
+				// keep fallback URLs
+			})
+			.finally(() => {
+				if (mounted) loading = false;
+			});
 
 		const flyInterval = setInterval(() => {
 			flyFrame = flyFrame === 1 ? 2 : 1;
@@ -131,9 +166,9 @@
 				Windows 10 or later. 64-bit.
 			</p>
 			<a
-				href="#"
+				href={urls['.exe']}
 				onclick={triggerYeahh}
-				class="mt-auto inline-block rounded-lg border-4 border-[#960200] bg-transparent px-5 py-2.5 text-sm font-bold text-[#423f37] transition-colors hover:bg-[#ffd046] hover:text-[#960200] dark:border-[#ffd046] dark:text-[#e8e8e3] dark:hover:bg-[#960200] dark:hover:text-[#ffd046]"
+				class="mt-auto inline-block rounded-lg border-4 border-[#960200] bg-transparent px-5 py-2.5 text-sm font-bold text-[#423f37] transition-colors hover:bg-[#ffd046] hover:text-[#960200] dark:border-[#ffd046] dark:text-[#e8e8e3] dark:hover:bg-[#960200] dark:hover:text-[#ffd046] {loading ? 'pointer-events-none opacity-50' : ''}"
 			>
 				Download .exe
 			</a>
@@ -145,9 +180,9 @@
 				macOS 12 or later. Apple Silicon &amp; Intel.
 			</p>
 			<a
-				href="#"
+				href={urls['.dmg']}
 				onclick={triggerYeahh}
-				class="mt-auto inline-block rounded-lg border-4 border-[#960200] bg-transparent px-5 py-2.5 text-sm font-bold text-[#423f37] transition-colors hover:bg-[#ffd046] hover:text-[#960200] dark:border-[#ffd046] dark:text-[#e8e8e3] dark:hover:bg-[#960200] dark:hover:text-[#ffd046]"
+				class="mt-auto inline-block rounded-lg border-4 border-[#960200] bg-transparent px-5 py-2.5 text-sm font-bold text-[#423f37] transition-colors hover:bg-[#ffd046] hover:text-[#960200] dark:border-[#ffd046] dark:text-[#e8e8e3] dark:hover:bg-[#960200] dark:hover:text-[#ffd046] {loading ? 'pointer-events-none opacity-50' : ''}"
 			>
 				Download .dmg
 			</a>
@@ -189,7 +224,7 @@
 					>
 						{#each ['.AppImage', '.deb', '.rpm'] as fmt}
 							<a
-								href="#"
+								href={urls[fmt]}
 								class="block px-5 py-2.5 text-sm font-medium whitespace-nowrap text-[#423f37] hover:bg-[#423f37] hover:text-white dark:text-[#e8e8e3] dark:hover:bg-[#e8e8e3] dark:hover:text-[#2b2a2a]"
 								onclick={(e) => { e.stopPropagation(); triggerYeahh(); }}
 							>
@@ -202,15 +237,4 @@
 		</div>
 	</div>
 
-	<hr class="mt-6 mb-6 border-gray-200 sm:mt-12 sm:mb-12 dark:border-gray-700" />
-
-	<div class="mx-auto max-w-2xl text-center">
-		<p class="text-sm leading-relaxed text-gray-400 dark:text-gray-500">
-			All releases are open source and available on <a
-				href="https://github.com/felixscode/jolly"
-				class="font-medium text-[#423f37] transition-colors hover:text-[#960200] dark:text-[#e8e8e3] dark:hover:text-[#ffd046]"
-				>GitHub</a
-			>. If your platform isn't listed, build from source — it's straightforward.
-		</p>
-	</div>
 </div>

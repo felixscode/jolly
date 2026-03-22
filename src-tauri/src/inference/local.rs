@@ -24,7 +24,7 @@ static BACKEND: LazyLock<LlamaBackend> = LazyLock::new(|| {
 /// Global model handle. RwLock so models can be swapped at runtime.
 /// Note: swap_model takes a write lock; run_inference takes a read lock.
 /// Model swaps block until in-flight inferences complete.
-static MODEL: RwLock<Option<LlamaModel>> = RwLock::new(None);
+static MODEL: RwLock<Option<(LlamaModel, String)>> = RwLock::new(None);
 
 /// Number of sentences per LLM call. Increase for speed, decrease for quality.
 const SENTENCES_PER_BATCH: usize = 4;
@@ -37,12 +37,12 @@ static SENTENCE_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"[.!?]\s+").unwrap());
 
 /// Initialize and load a GGUF model from the given path.
-pub fn init_model(model_path: &Path) -> Result<(), String> {
-    swap_model(model_path)
+pub fn init_model(model_path: &Path, model_id: &str) -> Result<(), String> {
+    swap_model(model_path, model_id)
 }
 
 /// Load a new model, replacing any currently loaded model.
-pub fn swap_model(model_path: &Path) -> Result<(), String> {
+pub fn swap_model(model_path: &Path, model_id: &str) -> Result<(), String> {
     let backend = &*BACKEND;
 
     // Drop the old model first to free VRAM
@@ -70,7 +70,7 @@ pub fn swap_model(model_path: &Path) -> Result<(), String> {
     };
 
     let mut slot = MODEL.write().map_err(|e| format!("Model lock poisoned: {}", e))?;
-    *slot = Some(model);
+    *slot = Some((model, model_id.to_string()));
     Ok(())
 }
 
@@ -83,7 +83,7 @@ pub fn unload_model() {
 
 /// Check if a model is loaded and ready for inference.
 pub fn is_model_loaded() -> bool {
-    MODEL.read().map(|m| m.is_some()).unwrap_or(false)
+    MODEL.read().map(|slot| slot.is_some()).unwrap_or(false)
 }
 
 /// Split text into (sentence, trailing_separator) pairs.
@@ -196,25 +196,34 @@ pub fn run_inference(text: &str) -> Result<String, String> {
     let model_guard = MODEL
         .read()
         .map_err(|e| format!("Model lock poisoned: {}", e))?;
-    let model = model_guard
+    let (model, model_id) = model_guard
         .as_ref()
         .ok_or("Local model not loaded. Download a model in Settings.")?;
 
-    // Format prompt using the model's built-in chat template
-    let prompt = format!("{}\n\n{}", SYSTEM_PROMPT, text);
-    let formatted = match model.chat_template(None) {
-        Ok(tmpl) => {
-            let msg = LlamaChatMessage::new(
-                "user".to_string(),
-                prompt.clone(),
-            ).map_err(|e| format!("Failed to create chat message: {}", e))?;
-            model
-                .apply_chat_template(&tmpl, &[msg], true)
-                .map_err(|e| format!("Failed to apply chat template: {}", e))?
-        }
-        Err(_) => {
-            eprintln!("[jolly] No chat template found, using raw prompt");
-            prompt
+    // GRMR models use a custom template: <bos>text\n{input}\ncorrected\n
+    // They don't need a system prompt — just the raw text.
+    // llama.cpp's built-in template engine doesn't support GRMR's Jinja
+    // template, so we format it manually.
+    let is_grmr = model_id.starts_with("grmr-");
+
+    let formatted = if is_grmr {
+        format!("text\n{}\ncorrected\n", text)
+    } else {
+        let prompt = format!("{}\n\n{}", SYSTEM_PROMPT, text);
+        match model.chat_template(None) {
+            Ok(tmpl) => {
+                let msg = LlamaChatMessage::new(
+                    "user".to_string(),
+                    prompt.clone(),
+                ).map_err(|e| format!("Failed to create chat message: {}", e))?;
+                model
+                    .apply_chat_template(&tmpl, &[msg], true)
+                    .map_err(|e| format!("Failed to apply chat template: {}", e))?
+            }
+            Err(_) => {
+                eprintln!("[jolly] No chat template found, using raw prompt");
+                prompt
+            }
         }
     };
 
@@ -286,6 +295,13 @@ pub fn run_inference(text: &str) -> Result<String, String> {
             .map_err(|e| format!("Failed to detokenize: {}", e))?;
         output.push_str(&piece);
 
+        // GRMR models may loop into another text/corrected pair instead of
+        // emitting EOS. Stop as soon as we see the "text\n" tag reappear.
+        if is_grmr && output.contains("\ntext\n") {
+            output = output.split("\ntext\n").next().unwrap_or("").to_string();
+            break;
+        }
+
         // Feed token back for next iteration
         batch.clear();
         batch
@@ -317,12 +333,14 @@ fn run_parallel_inference(texts: Vec<String>) -> Result<Vec<String>, String> {
     let model_guard = MODEL
         .read()
         .map_err(|e| format!("Model lock poisoned: {}", e))?;
-    let model = model_guard
+    let (model, model_id) = model_guard
         .as_ref()
         .ok_or("Local model not loaded. Download a model in Settings.")?;
 
+    let is_grmr = model_id.starts_with("grmr-");
+
     // Get the chat template once (shared across all sequences)
-    let chat_template = model.chat_template(None).ok();
+    let chat_template = if is_grmr { None } else { model.chat_template(None).ok() };
 
     // Tokenize all sequences independently
     struct SeqState {
@@ -342,16 +360,20 @@ fn run_parallel_inference(texts: Vec<String>) -> Result<Vec<String>, String> {
         .iter()
         .enumerate()
         .map(|(i, text)| {
-            let prompt = format!("{}\n\n{}", SYSTEM_PROMPT, text);
-            let formatted = match &chat_template {
-                Some(tmpl) => {
-                    let msg = LlamaChatMessage::new("user".to_string(), prompt.clone())
-                        .map_err(|e| format!("Failed to create chat message: {}", e))?;
-                    model
-                        .apply_chat_template(tmpl, &[msg], true)
-                        .map_err(|e| format!("Failed to apply chat template: {}", e))?
+            let formatted = if is_grmr {
+                format!("text\n{}\ncorrected\n", text)
+            } else {
+                let prompt = format!("{}\n\n{}", SYSTEM_PROMPT, text);
+                match &chat_template {
+                    Some(tmpl) => {
+                        let msg = LlamaChatMessage::new("user".to_string(), prompt.clone())
+                            .map_err(|e| format!("Failed to create chat message: {}", e))?;
+                        model
+                            .apply_chat_template(tmpl, &[msg], true)
+                            .map_err(|e| format!("Failed to apply chat template: {}", e))?
+                    }
+                    None => prompt,
                 }
-                None => prompt,
             };
 
             let tokens = model
@@ -463,6 +485,16 @@ fn run_parallel_inference(texts: Vec<String>) -> Result<Vec<String>, String> {
                 .map_err(|e| format!("Failed to detokenize seq {}: {}", seq.seq_id, e))?;
             seq.output.push_str(&piece);
             seq.last_token = token;
+
+            // GRMR stop: new text/corrected pair starting
+            if is_grmr && seq.output.contains("\ntext\n") {
+                seq.output = seq.output.split("\ntext\n").next().unwrap_or("").to_string();
+                seq.done = true;
+                if let Err(e) = ctx.clear_kv_cache_seq(Some(seq.seq_id as u32), None, None) {
+                    eprintln!("[jolly] Failed to clear KV cache for seq {}: {}", seq.seq_id, e);
+                }
+                continue;
+            }
         }
 
         if seqs.iter().all(|s| s.done) {

@@ -243,7 +243,7 @@ pub async fn activate_model(app: AppHandle, model_id: String) -> Result<(), Stri
     };
 
     tokio::task::spawn_blocking(move || {
-        crate::inference::local::swap_model(&model_path)
+        crate::inference::local::swap_model(&model_path, &model_id)
     })
     .await
     .map_err(|e| format!("Task failed: {}", e))?

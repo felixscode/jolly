@@ -2,6 +2,7 @@
 
 
 # Jolly
+<img src="static/jolly_normal.svg" width="120" alt="Jolly" />
 
 [![Deploy Website](https://github.com/felixscode/jolly/actions/workflows/deploy-web.yml/badge.svg)](https://github.com/felixscode/jolly/actions/workflows/deploy-web.yml)
 [![Release Desktop App](https://github.com/felixscode/jolly/actions/workflows/release-app.yml/badge.svg)](https://github.com/felixscode/jolly/actions/workflows/release-app.yml)
@@ -18,7 +19,6 @@
 Copy Enter Paste! Jolly read from your clipboard and applies changes so you can paste it back.
 Nothing leaves your device.
 
-<img src="static/jolly_normal.svg" width="120" alt="Jolly" />
 
 [Features](#features) | [Installation](#installation) | [Benchmarks](#benchmarks) | [Models](#available-models) | [Development](#development) | [Tech Stack](#tech-stack)
 
@@ -65,25 +65,28 @@ npm install
 npx tauri build
 ```
 
-#### GPU Acceleration (optional)
+#### GPU Acceleration
 
-**CUDA (NVIDIA):**
-```sh
-npx tauri build -- --features cuda
-```
-Requires CUDA Toolkit on `PATH` and GPU with compute capability >= 6.0.
+Thanks to amazing lamacpp and vulcan Jolly detects GPU availability at runtime. If initialization fails, it silently falls back to CPU. It uses vulcan for win,linux and metal for mac.
 
-**Metal (macOS):**
-```sh
-npx tauri build -- --features metal
-```
+## Available Models
 
-Jolly detects GPU availability at runtime. If initialization fails, it silently falls back to CPU.
+The [GRMR](https://huggingface.co/qingy2024/GRMR-V3-G4B-GGUF) models are specifically fine-tuned for grammar correction — they take text in and return corrected text with minimal over-editing. The other models (Qwen, Mistral) are general-purpose instruction-following LLMs prompted to fix spelling and grammar.
+
+| Model | Size | Quantization |
+|-------|------|--------------|
+| GRMR 2B Instruct | 1.7 GB | Q4_K_M |
+| GRMR V3 G4B | 1.7 GB | Q2_K |
+| GRMR V3 G4B | 2.5 GB | Q4_K_M |
+| GRMR V3 G4B | 4.1 GB | Q8_0 |
+| Qwen3 1.7B | 1.3 GB | Q4_K_M |
+| Qwen3.5 4B | 2.9 GB | Q4_K_M |
+| Mistral 7B Instruct v0.3 | 4.7 GB | Q4_K_M |
 
 ## Benchmarks
 
 Tested across 8 cases (short, medium, email) in English and German.
-Inference on CPU — times will be significantly faster with CUDA or Metal.
+Inference on CPU — times will be significantly faster with a gpu.
 
 | Model | Params | Size | Accuracy | Similarity | Avg Latency |
 |-------|--------|------|----------|------------|-------------|
@@ -93,20 +96,9 @@ Inference on CPU — times will be significantly faster with CUDA or Metal.
 
 > Run benchmarks yourself: `cargo run --bin benchmark` from `src-tauri/`.
 
-## Available Models
-
-| Model | Size | Quantization |
-|-------|------|--------------|
-| Qwen 2.5 1.5B Instruct | 1.0 GB | Q4_K_M |
-| Qwen 2.5 3B Instruct | 2.0 GB | Q4_K_M |
-| Phi 3.5 Mini Instruct | 2.6 GB | Q4_K_M |
-| Gemma 2 2B IT | 1.8 GB | Q4_K_M |
-| Mistral 7B Instruct v0.3 | 4.7 GB | Q4_K_M |
-
 Models are downloaded on demand from Hugging Face and cached locally.
 
 [!TIP] you can add any gguf model via the settings in app.  
-
 
 
 ## Acknowledgements
@@ -116,6 +108,7 @@ Models are downloaded on demand from Hugging Face and cached locally.
 - [Svelte](https://github.com/sveltejs/svelte) — reactive UI framework
 - [llama.cpp](https://github.com/ggerganov/llama.cpp) — local LLM inference engine
 - [Harper](https://github.com/Automattic/harper) — grammar checker
+- [GRMR](https://huggingface.co/qingy2024) - grammer finetuned models
 
 ## Screenshots
 

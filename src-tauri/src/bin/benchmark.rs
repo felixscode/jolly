@@ -164,7 +164,7 @@ fn main() {
         eprintln!("\n=== Loading model: {} ===", model.name);
 
         let load_start = Instant::now();
-        if let Err(e) = local::init_model(&model_path) {
+        if let Err(e) = local::init_model(&model_path, model.id) {
             eprintln!("FAILED to load {}: {}", model.name, e);
             continue;
         }
