@@ -53,6 +53,8 @@ jobs:
           workspaces: src-tauri
 
       - run: npx tauri build --features metal
+        env:
+          MACOSX_DEPLOYMENT_TARGET: '10.15'
 
       - uses: actions/upload-artifact@v4
         with:
