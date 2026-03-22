@@ -11,6 +11,7 @@ use llama_cpp_2::llama_batch::LlamaBatch;
 use llama_cpp_2::model::params::LlamaModelParams;
 use llama_cpp_2::model::{AddBos, LlamaChatMessage, LlamaModel};
 use llama_cpp_2::sampling::LlamaSampler;
+use llama_cpp_2::token::LlamaToken;
 
 use super::LLMProvider;
 use super::SYSTEM_PROMPT;
@@ -26,7 +27,10 @@ static BACKEND: LazyLock<LlamaBackend> = LazyLock::new(|| {
 static MODEL: RwLock<Option<LlamaModel>> = RwLock::new(None);
 
 /// Number of sentences per LLM call. Increase for speed, decrease for quality.
-const SENTENCES_PER_BATCH: usize = 1;
+const SENTENCES_PER_BATCH: usize = 4;
+const MAX_PARALLEL: usize = 8;
+const PER_SEQ_CTX: u32 = 2048;
+const MAX_GEN_TOKENS: i32 = 1024;
 
 /// Regex matching sentence-ending punctuation followed by whitespace.
 static SENTENCE_RE: LazyLock<Regex> =
@@ -287,6 +291,198 @@ pub fn run_inference(text: &str) -> Result<String, String> {
     let result = output.trim().to_string();
     eprintln!("[jolly] Returning: {:?}", result);
     Ok(result)
+}
+
+/// Processes multiple text chunks simultaneously using continuous batching.
+/// Each text gets its own sequence ID within a single LlamaContext.
+/// Returns corrected text for each input, in the same order.
+fn run_parallel_inference(texts: Vec<String>) -> Result<Vec<String>, String> {
+    let n_parallel = texts.len().min(MAX_PARALLEL);
+    eprintln!(
+        "[jolly] run_parallel_inference: {} texts, {} parallel sequences",
+        texts.len(),
+        n_parallel
+    );
+
+    let backend = &*BACKEND;
+
+    let model_guard = MODEL
+        .read()
+        .map_err(|e| format!("Model lock poisoned: {}", e))?;
+    let model = model_guard
+        .as_ref()
+        .ok_or("Local model not loaded. Download a model in Settings.")?;
+
+    // Get the chat template once (shared across all sequences)
+    let chat_template = model.chat_template(None).ok();
+
+    // Tokenize all sequences independently
+    struct SeqState {
+        seq_id: i32,
+        tokens: Vec<LlamaToken>,
+        last_token: LlamaToken,
+        n_past: i32,
+        output: String,
+        done: bool,
+        sampler: LlamaSampler,
+        decoder: encoding_rs::Decoder,
+        i_batch: i32,
+        original_text: String,
+    }
+
+    let mut seqs: Vec<SeqState> = texts
+        .iter()
+        .enumerate()
+        .map(|(i, text)| {
+            let prompt = format!("{}\n\n{}", SYSTEM_PROMPT, text);
+            let formatted = match &chat_template {
+                Some(tmpl) => {
+                    let msg = LlamaChatMessage::new("user".to_string(), prompt.clone())
+                        .map_err(|e| format!("Failed to create chat message: {}", e))?;
+                    model
+                        .apply_chat_template(tmpl, &[msg], true)
+                        .map_err(|e| format!("Failed to apply chat template: {}", e))?
+                }
+                None => prompt,
+            };
+
+            let tokens = model
+                .str_to_token(&formatted, AddBos::Always)
+                .map_err(|e| format!("Failed to tokenize seq {}: {}", i, e))?;
+
+            Ok(SeqState {
+                seq_id: i as i32,
+                tokens,
+                last_token: LlamaToken::new(0),
+                n_past: 0,
+                output: String::new(),
+                done: false,
+                sampler: LlamaSampler::chain_simple([
+                    LlamaSampler::temp(0.1),
+                    LlamaSampler::top_p(0.9, 1),
+                    LlamaSampler::greedy(),
+                ]),
+                decoder: encoding_rs::UTF_8.new_decoder(),
+                i_batch: 0,
+                original_text: text.clone(),
+            })
+        })
+        .collect::<Result<Vec<_>, String>>()?;
+
+    // Guard: skip sequences whose prompt exceeds PER_SEQ_CTX
+    for seq in &mut seqs {
+        if seq.tokens.len() as u32 >= PER_SEQ_CTX {
+            eprintln!(
+                "[jolly] Seq {} prompt too long ({} tokens), returning original",
+                seq.seq_id,
+                seq.tokens.len()
+            );
+            seq.done = true;
+        }
+    }
+
+    // If all sequences are done (all too long), return originals
+    if seqs.iter().all(|s| s.done) {
+        return Ok(seqs.into_iter().map(|s| s.original_text).collect());
+    }
+
+    // Create context sized for all active sequences
+    let n_active = seqs.iter().filter(|s| !s.done).count() as u32;
+    let total_ctx = PER_SEQ_CTX.saturating_mul(n_active);
+    let n_threads = std::thread::available_parallelism()
+        .map(|n| n.get() as i32)
+        .unwrap_or(4);
+
+    // n_batch must be >= total prompt tokens so we can decode all prompts at once.
+    // For the generation phase, each decode only has n_active tokens (one per seq).
+    let total_prompt_tokens: usize = seqs.iter().filter(|s| !s.done).map(|s| s.tokens.len()).sum();
+    let n_batch = total_prompt_tokens.max(512) as u32;
+
+    let ctx_params = LlamaContextParams::default()
+        .with_n_ctx(NonZeroU32::new(total_ctx))
+        .with_n_seq_max(n_active)
+        .with_n_batch(n_batch)
+        .with_n_threads(n_threads)
+        .with_n_threads_batch(n_threads);
+    let mut ctx = model
+        .new_context(backend, ctx_params)
+        .map_err(|e| format!("Failed to create parallel context: {}", e))?;
+
+    // Feed all prompt tokens into one batch
+    let mut batch = LlamaBatch::new(total_prompt_tokens.max(512), 1);
+
+    for seq in seqs.iter_mut().filter(|s| !s.done) {
+        let last_pos = (seq.tokens.len() - 1) as i32;
+        for (pos, tok) in seq.tokens.iter().enumerate() {
+            let is_last = pos as i32 == last_pos;
+            batch
+                .add(*tok, pos as i32, &[seq.seq_id], is_last)
+                .map_err(|e| format!("Failed to add prompt token: {}", e))?;
+        }
+        seq.n_past = seq.tokens.len() as i32;
+    }
+
+    ctx.decode(&mut batch)
+        .map_err(|e| format!("Failed to decode prompts: {}", e))?;
+
+    // Set initial i_batch for sampling (each seq samples from its last prompt token)
+    // The batch was filled sequentially: seq0 tokens then seq1 tokens etc.
+    // Each seq's last token is at the cumulative offset.
+    let mut offset = 0i32;
+    for seq in seqs.iter_mut().filter(|s| !s.done) {
+        seq.i_batch = offset + (seq.tokens.len() as i32 - 1);
+        offset += seq.tokens.len() as i32;
+    }
+
+    // Generation loop
+    for _ in 0..MAX_GEN_TOKENS {
+        // Sample one token per active sequence
+        for seq in seqs.iter_mut().filter(|s| !s.done) {
+            let token = seq.sampler.sample(&ctx, seq.i_batch);
+            seq.sampler.accept(token);
+
+            if model.is_eog_token(token) {
+                seq.done = true;
+                let _ = ctx.clear_kv_cache_seq(Some(seq.seq_id as u32), None, None);
+                continue;
+            }
+
+            let piece = model
+                .token_to_piece(token, &mut seq.decoder, true, None)
+                .map_err(|e| format!("Failed to detokenize seq {}: {}", seq.seq_id, e))?;
+            seq.output.push_str(&piece);
+            seq.last_token = token;
+        }
+
+        if seqs.iter().all(|s| s.done) {
+            break;
+        }
+
+        // Feed sampled tokens back as next batch
+        batch.clear();
+        for seq in seqs.iter_mut().filter(|s| !s.done) {
+            seq.i_batch = batch.n_tokens();
+            batch
+                .add(seq.last_token, seq.n_past, &[seq.seq_id], true)
+                .map_err(|e| format!("Failed to add gen token: {}", e))?;
+            seq.n_past += 1;
+        }
+        ctx.decode(&mut batch)
+            .map_err(|e| format!("Failed to decode generation step: {}", e))?;
+    }
+
+    // Return results: use output if non-empty, else original text
+    Ok(seqs
+        .into_iter()
+        .map(|s| {
+            let trimmed = s.output.trim().to_string();
+            if trimmed.is_empty() {
+                s.original_text
+            } else {
+                trimmed
+            }
+        })
+        .collect())
 }
 
 #[cfg(test)]
