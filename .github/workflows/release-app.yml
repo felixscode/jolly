@@ -138,6 +138,7 @@ jobs:
             librsvg2-dev \
             libssl-dev \
             libvulkan-dev \
+            glslc \
             patchelf
 
       - run: npx tauri build --features vulkan
