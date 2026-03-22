@@ -8,25 +8,35 @@
 [![License](https://img.shields.io/github/license/felixscode/jolly)](https://github.com/felixscode/jolly)
 [![Release](https://img.shields.io/github/v/release/felixscode/jolly)](https://github.com/felixscode/jolly/releases)
 
+![Rust](https://img.shields.io/badge/Rust-2021-b7410e?logo=rust&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6?logo=typescript&logoColor=white)
+![Svelte](https://img.shields.io/badge/SvelteKit-5-ff3e00?logo=svelte&logoColor=white)
+![Tailwind](https://img.shields.io/badge/Tailwind-4-06b6d4?logo=tailwindcss&logoColor=white)
+![Tauri](https://img.shields.io/badge/Tauri-2-24c8d8?logo=tauri&logoColor=white)
+
 **Local-first spell checker powered by on-device LLMs.**
 Copy Enter Paste! Jolly read from your clipboard and applies changes so you can paste it back.
-Notthing leafs your Device
+Nothing leaves your device.
 
 <img src="static/jolly_normal.svg" width="120" alt="Jolly" />
-
-<img src="static/jolly_animation.gif" width="600" alt="Jolly Demo" />
 
 [Features](#features) | [Installation](#installation) | [Benchmarks](#benchmarks) | [Models](#available-models) | [Development](#development) | [Tech Stack](#tech-stack)
 
 </div>
+
+## About
+
+Spell checkers are annoying — squiggly lines and too much clicking. Pasting text into an AI with "fix spelling" works, but sending your mails and notes to LLM providers feels uneasy. Jolly does it locally and makes it fun.
+
+Copy text, hit Enter, paste it back — corrected. Jolly reads your clipboard, passes it through a local LLM, and writes the result back. If your machine doesn't support local inference, you can use API keys or conventional grammar checking via [Harper](https://github.com/Automattic/harper). Everything runs on your device.
+
+Built with SvelteKit, Tailwind, Tauri, and lama.cpp in Rust and TypeScript. Jolly started as a way to learn frontend development and explore the trade-offs between local LLM inference and conventional grammar checkers. On one a "simple" task
+
 ## Features
 
 - **Privacy-first**: All inference runs locally — nothing leaves your machine
-- **One-step correction**: Copy, press Enter, paste — corrected text is in your clipboard
-- **Multiple models**: Choose from on-device LLMs, downloaded on demand
-- **API fallback**: Falls back to OpenRouter API if local inference isn't available or too slow
-
-> **Tip:** If Jolly feels slow on your machine, consider switching to [Harper](https://github.com/Automattic/harper) for instant grammar checking or [OpenRouter](https://openrouter.ai/) for fast cloud-based inference.
+- **One-shot correction**: Copy, press Enter, paste — corrected text is in your clipboard
+- **Multiple ways**: Choose from on-device LLMs, Openrouter via Api Call or Harper 
 
 ## Installation
 
@@ -45,7 +55,7 @@ Download the latest release for your platform from [GitHub Releases](https://git
 
 **Prerequisites:**
 - [Node.js](https://nodejs.org/) >= 18
-- [Rust](https://rustup.rs/) (2021 edition)
+- [Rust](https://rustup.rs/) 
 - [Tauri CLI](https://v2.tauri.app/start/prerequisites/) system dependencies
 
 ```sh
@@ -80,7 +90,7 @@ Inference on CPU — times will be significantly faster with CUDA or Metal.
 | **Qwen 2.5 3B** | 3B | 2.0 GB | **72%** | **99%** | 7.2s |
 | Qwen 2.5 1.5B | 1.5B | 1.0 GB | 58% | 79% | 4.6s |
 
-> **Note:** Phi 3.5 Mini, Gemma 2 2B, and Mistral 7B are available in-app but not yet benchmarked.
+
 > Run benchmarks yourself: `cargo run --bin benchmark` from `src-tauri/`.
 
 ## Available Models
@@ -95,24 +105,8 @@ Inference on CPU — times will be significantly faster with CUDA or Metal.
 
 Models are downloaded on demand from Hugging Face and cached locally.
 
-## Development
+[!TIP] you can add any gguf model via the settings in app.  
 
-```sh
-npm install
-npx tauri dev
-```
-
-### Commands
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start dev server |
-| `npm run build` | Production build (web) |
-| `npx tauri dev` | Desktop dev mode |
-| `npx tauri build` | Desktop production build |
-| `npm run check` | Type checking |
-| `npm run lint` | Format check |
-| `npm run format` | Auto-format |
 
 
 ## Acknowledgements
@@ -120,17 +114,15 @@ npx tauri dev
 - [Tauri](https://github.com/tauri-apps/tauri) — desktop app framework
 - [Rust](https://www.rust-lang.org/) — systems programming language
 - [Svelte](https://github.com/sveltejs/svelte) — reactive UI framework
-- [mistral.rs](https://github.com/EricLBuehler/mistral.rs) — local LLM inference engine
+- [llama.cpp](https://github.com/ggerganov/llama.cpp) — local LLM inference engine
 - [Harper](https://github.com/Automattic/harper) — grammar checker
 
 ## Screenshots
 
 <div align="center">
-<img src="static/jollyhome.png" width="600" alt="Jolly Home" />
-<br/><br/>
-<img src="static/jollyhistory.png" width="600" alt="Jolly History" />
-<br/><br/>
-<img src="static/jollysettings.png" width="600" alt="Jolly Settings" />
+<img src="static/jollyhistory.png" width="32%" alt="Jolly History" />
+<img src="static/jollyhome.png" width="32%" alt="Jolly Home" />
+<img src="static/jollysettings.png" width="32%" alt="Jolly Settings" />
 </div>
 
 ## License
