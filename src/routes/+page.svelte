@@ -1,10 +1,14 @@
 <script lang="ts">
 	import BirdScene from '$lib/components/BirdScene.svelte';
 	import { onMount } from 'svelte';
-	import { harperCorrect } from '$lib/harper-web';
 
 	let isDark = $state(false);
-	onMount(() => {
+	let correctFn = $state<(text: string) => Promise<string>>(async (t) => t);
+
+	onMount(async () => {
+		const { harperCorrect } = await import('$lib/harper-web');
+		correctFn = harperCorrect;
+
 		const observer = new MutationObserver(() => {
 			isDark = document.documentElement.classList.contains('dark');
 		});
@@ -47,7 +51,7 @@
 
 		<!-- Right: character scene -->
 		<div class="flex items-center justify-center overflow-visible pt-20 pb-24 md:pt-0 md:pb-0">
-			<BirdScene onCorrect={harperCorrect} />
+			<BirdScene onCorrect={correctFn} />
 		</div>
 	</div>
 
