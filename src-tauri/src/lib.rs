@@ -38,42 +38,42 @@ fn resolve_startup_model(app: &tauri::AppHandle) -> Option<(std::path::PathBuf, 
         .and_then(|v| v.as_str().map(|s| s.to_string()));
 
     if let Some(ref id) = active_model_id {
-        let prompt_template = registry::find_model(id).and_then(|m| m.prompt_template);
         if id.starts_with("custom-") {
             let path_str = commands::get_custom_model_path(app, id);
             match path_str {
                 Some(p) => {
                     let path = std::path::PathBuf::from(&p);
                     if path.exists() {
-                        Some((path, id.clone(), None))
-                    } else {
-                        eprintln!("[jolly] Custom model file not found: {}", p);
-                        None
+                        return Some((path, id.clone(), None));
                     }
+                    eprintln!("[jolly] Custom model file not found: {}", p);
                 }
                 None => {
                     eprintln!("[jolly] Custom model ID not found in settings: {}", id);
-                    None
                 }
             }
+        } else if let Some(model) = registry::find_model(id) {
+            let path = models_path.join(model.file_name);
+            if path.exists() {
+                return Some((path, id.clone(), model.prompt_template));
+            }
+            eprintln!("[jolly] Model file not found: {}", model.file_name);
         } else {
-            match model_manager::resolve_model_path(&models_path, active_model_id.as_deref()) {
-                Ok(p) => Some((p, id.clone(), prompt_template)),
-                Err(e) => {
-                    eprintln!("[jolly] No local model available: {}", e);
-                    None
-                }
-            }
-        }
-    } else {
-        match model_manager::resolve_model_path(&models_path, None) {
-            Ok(p) => Some((p, String::new(), None)),
-            Err(e) => {
-                eprintln!("[jolly] No local model available: {}", e);
-                None
-            }
+            eprintln!("[jolly] Active model '{}' no longer in registry, ignoring", id);
         }
     }
+
+    // Fallback: try to find any registry model that's downloaded
+    for model in registry::MODELS {
+        let path = models_path.join(model.file_name);
+        if path.exists() {
+            eprintln!("[jolly] Falling back to downloaded model: {}", model.name);
+            return Some((path, model.id.to_string(), model.prompt_template));
+        }
+    }
+
+    eprintln!("[jolly] No local models available");
+    None
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
