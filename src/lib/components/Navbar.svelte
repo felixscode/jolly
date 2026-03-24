@@ -21,6 +21,12 @@
 				Download
 			</a>
 			<a
+				href="/benchmark"
+				class="text-sm font-bold md:text-base text-[#423f37] transition-colors hover:text-[#960200] dark:text-[#e8e8e3] dark:hover:text-[#ffd046]"
+			>
+				Benchmark
+			</a>
+			<a
 				href="/about"
 				class="text-sm font-bold md:text-base text-[#423f37] transition-colors hover:text-[#960200] dark:text-[#e8e8e3] dark:hover:text-[#ffd046]"
 			>
