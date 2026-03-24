@@ -31,19 +31,114 @@ fn rss_mb() -> f64 {
         .unwrap_or(0.0)
 }
 
-/// Word-level similarity: proportion of expected words present in output.
-/// Returns a score from 0.0 to 1.0.
-fn word_similarity(expected: &str, output: &str) -> f64 {
-    let expected_words: Vec<&str> = expected.split_whitespace().collect();
-    if expected_words.is_empty() {
-        return if output.trim().is_empty() { 1.0 } else { 0.0 };
+/// An error span: a contiguous region where input differs from expected.
+struct ErrorSpan {
+    /// Context window: a few chars before/after the fix from expected,
+    /// used to verify the fix appears in the right location in output.
+    context: String,
+}
+
+/// Find error spans by computing the Levenshtein edit matrix between input and expected,
+/// then grouping contiguous edits into spans with surrounding context.
+fn find_error_spans(input: &str, expected: &str) -> Vec<ErrorSpan> {
+    let a: Vec<char> = input.chars().collect();
+    let b: Vec<char> = expected.chars().collect();
+    let n = a.len();
+    let m = b.len();
+
+    // Build DP matrix
+    let mut dp = vec![vec![0u32; m + 1]; n + 1];
+    for i in 0..=n { dp[i][0] = i as u32; }
+    for j in 0..=m { dp[0][j] = j as u32; }
+    for i in 1..=n {
+        for j in 1..=m {
+            if a[i - 1] == b[j - 1] {
+                dp[i][j] = dp[i - 1][j - 1];
+            } else {
+                dp[i][j] = 1 + dp[i - 1][j - 1].min(dp[i - 1][j]).min(dp[i][j - 1]);
+            }
+        }
     }
-    let output_lower = output.to_lowercase();
-    let matched = expected_words
-        .iter()
-        .filter(|w| output_lower.contains(&w.to_lowercase()))
-        .count();
-    matched as f64 / expected_words.len() as f64
+
+    // Backtrace to find edit operations
+    // 'M' = match, 'S' = substitute, 'D' = delete from input, 'I' = insert into input
+    let mut ops: Vec<char> = Vec::new();
+    let (mut i, mut j) = (n, m);
+    while i > 0 || j > 0 {
+        if i > 0 && j > 0 && a[i - 1] == b[j - 1] {
+            ops.push('M');
+            i -= 1;
+            j -= 1;
+        } else if i > 0 && j > 0 && dp[i][j] == dp[i - 1][j - 1] + 1 {
+            ops.push('S');
+            i -= 1;
+            j -= 1;
+        } else if i > 0 && dp[i][j] == dp[i - 1][j] + 1 {
+            ops.push('D');
+            i -= 1;
+        } else {
+            ops.push('I');
+            j -= 1;
+        }
+    }
+    ops.reverse();
+
+    // Group contiguous non-match ops into spans, tracking positions in expected
+    let mut spans = Vec::new();
+    let mut in_error = false;
+    let mut span_start_b = 0usize; // start position in expected
+    let mut bj = 0usize; // current position in expected
+
+    for op in &ops {
+        match op {
+            'M' => {
+                if in_error {
+                    // Grab context: 3 chars before + fix + 3 chars after from expected
+                    let ctx_start = span_start_b.saturating_sub(3);
+                    let ctx_end = (bj + 3).min(m);
+                    let context: String = b[ctx_start..ctx_end].iter().collect();
+                    spans.push(ErrorSpan { context });
+                    in_error = false;
+                }
+                bj += 1;
+            }
+            'S' | 'I' => {
+                if !in_error {
+                    span_start_b = bj;
+                    in_error = true;
+                }
+                bj += 1;
+            }
+            'D' => {
+                if !in_error {
+                    span_start_b = bj;
+                    in_error = true;
+                }
+            }
+            _ => {}
+        }
+    }
+    if in_error {
+        let ctx_start = span_start_b.saturating_sub(3);
+        let ctx_end = (bj + 3).min(m);
+        let context: String = b[ctx_start..ctx_end].iter().collect();
+        spans.push(ErrorSpan { context });
+    }
+
+    spans
+}
+
+/// Count how many error spans (from input→expected diff) are fixed in the output.
+/// Uses context windows (fix + surrounding chars) to avoid false positives.
+/// Returns (fixed, total).
+fn count_errors_fixed(input: &str, expected: &str, output: &str) -> (usize, usize) {
+    let spans = find_error_spans(input, expected);
+    let total = spans.len();
+    if total == 0 {
+        return (0, 0);
+    }
+    let fixed = spans.iter().filter(|s| output.contains(&s.context)).count();
+    (fixed, total)
 }
 
 fn test_cases() -> Vec<TestCase> {
@@ -126,27 +221,28 @@ fn write_result(
 ) {
     let trimmed = output.trim();
     let exact_match = trimmed == case.expected.trim();
-    let similarity = word_similarity(case.expected, trimmed);
+    let (fixed, total) = count_errors_fixed(case.input, case.expected, trimmed);
     eprintln!(
-        "  [{:2}] {:2} {:6} {:>5}ms sim={:.2} {} | {}",
+        "  [{:2}] {:2} {:6} {:>5}ms fixed={}/{} {} | {}",
         case.id,
         case.language,
         case.category,
         elapsed_ms,
-        similarity,
+        fixed,
+        total,
         if exact_match { "PASS" } else { "FAIL" },
         &output.chars().take(60).collect::<String>(),
     );
     writeln!(
         csv,
-        "{},{},{},{},{},{},{:.2},{},{:.0},{},{},{}",
+        "{},{},{},{},{},{},{},{},{:.0},{},{},{}",
         case.id,
         case.language,
         case.category,
         model_id,
         escape_csv(model_name),
         exact_match,
-        similarity,
+        format!("{}/{}", fixed, total),
         elapsed_ms,
         current_rss,
         escape_csv(case.input),
@@ -166,18 +262,20 @@ fn write_error(
     elapsed_ms: u128,
     current_rss: f64,
 ) {
+    let (_, total) = count_errors_fixed(case.input, case.expected, "");
     eprintln!(
         "  [{:2}] {:2} {:6} ERROR: {}",
         case.id, case.language, case.category, error
     );
     writeln!(
         csv,
-        "{},{},{},{},{},false,0.00,{},{:.0},{},{},{}",
+        "{},{},{},{},{},false,0/{},{},{:.0},{},{},{}",
         case.id,
         case.language,
         case.category,
         model_id,
         escape_csv(model_name),
+        total,
         elapsed_ms,
         current_rss,
         escape_csv(case.input),
@@ -233,7 +331,7 @@ async fn main() {
     let mut csv = fs::File::create(&csv_path).expect("Failed to create CSV file");
     writeln!(
         csv,
-        "test_id,language,category,model_id,model_name,exact_match,similarity,time_ms,rss_mb,input,expected,output"
+        "test_id,language,category,model_id,model_name,exact_match,errors_fixed,time_ms,rss_mb,input,expected,output"
     )
     .unwrap();
 
@@ -286,7 +384,7 @@ async fn main() {
                 eprintln!("\n=== Loading model: {} ===", model.name);
 
                 let load_start = Instant::now();
-                if let Err(e) = local::init_model(&model_path, model.id) {
+                if let Err(e) = local::init_model(&model_path, model.id, model.prompt_template) {
                     eprintln!("FAILED to load {}: {}", model.name, e);
                     continue;
                 }
@@ -308,4 +406,101 @@ async fn main() {
 
     csv.flush().unwrap();
     eprintln!("\n=== Results written to {} ===", csv_path.display());
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn error_spans_simple_typos() {
+        let spans = find_error_spans(
+            "I recieved your messege yesterday.",
+            "I received your message yesterday.",
+        );
+        // "recieved"→"received" and "messege"→"message"
+        assert_eq!(spans.len(), 2);
+        // Context includes surrounding chars from expected
+        assert!(spans.iter().any(|s| s.context.contains("eived")));
+        assert!(spans.iter().any(|s| s.context.contains("essage")));
+    }
+
+    #[test]
+    fn error_spans_umlaut() {
+        let spans = find_error_spans("Massnahmen", "Maßnahmen");
+        assert!(!spans.is_empty());
+        assert!(spans.iter().any(|s| s.context.contains('ß')));
+    }
+
+    #[test]
+    fn error_spans_identical() {
+        let spans = find_error_spans("Hello world.", "Hello world.");
+        assert_eq!(spans.len(), 0);
+    }
+
+    #[test]
+    fn count_fixed_all() {
+        let (fixed, total) = count_errors_fixed(
+            "I recieved your messege yesterday.",
+            "I received your message yesterday.",
+            "I received your message yesterday.",
+        );
+        assert_eq!(fixed, total);
+        assert!(total > 0);
+    }
+
+    #[test]
+    fn count_fixed_none() {
+        let (fixed, total) = count_errors_fixed(
+            "I recieved your messege yesterday.",
+            "I received your message yesterday.",
+            "I recieved your messege yesterday.", // unchanged
+        );
+        assert_eq!(fixed, 0);
+        assert!(total > 0);
+    }
+
+    #[test]
+    fn count_fixed_partial() {
+        let (fixed, total) = count_errors_fixed(
+            "I recieved your messege yesterday.",
+            "I received your message yesterday.",
+            "I received your messege yesterday.", // only first fixed
+        );
+        assert_eq!(fixed, 1);
+        assert_eq!(total, 2);
+    }
+
+    #[test]
+    fn count_fixed_german_umlauts() {
+        let (fixed, total) = count_errors_fixed(
+            "Die Regirung hat neue Massnahmen beschlosen.",
+            "Die Regierung hat neue Maßnahmen beschlossen.",
+            "Die Regierung hat neue Maßnahmen beschlossen.",
+        );
+        assert_eq!(fixed, total);
+        assert!(total >= 3); // Regirung→Regierung, ss→ß, osen→ossen
+    }
+
+    #[test]
+    fn count_fixed_comma_insertion() {
+        let (fixed, total) = count_errors_fixed(
+            "Hello world",
+            "Hello, world",
+            "Hello, world",
+        );
+        assert_eq!(total, 1);
+        assert_eq!(fixed, 1);
+    }
+
+    #[test]
+    fn count_fixed_space_removal() {
+        let (fixed, total) = count_errors_fixed(
+            "Hello  world",
+            "Hello world",
+            "Hello world",
+        );
+        assert_eq!(total, 1);
+        assert_eq!(fixed, 1);
+    }
 }

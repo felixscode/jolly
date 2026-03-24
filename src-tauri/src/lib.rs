@@ -10,10 +10,11 @@ pub mod inference;
 
 use inference::download::DownloadManager;
 use inference::model_manager;
+use inference::registry;
 
 /// Resolve the model path from settings. Runs on main thread (store access).
 /// Returns None if no model is configured or file doesn't exist.
-fn resolve_startup_model(app: &tauri::AppHandle) -> Option<(std::path::PathBuf, String)> {
+fn resolve_startup_model(app: &tauri::AppHandle) -> Option<(std::path::PathBuf, String, Option<&'static str>)> {
     let app_data = match app.path().app_data_dir() {
         Ok(d) => d,
         Err(e) => {
@@ -37,13 +38,14 @@ fn resolve_startup_model(app: &tauri::AppHandle) -> Option<(std::path::PathBuf, 
         .and_then(|v| v.as_str().map(|s| s.to_string()));
 
     if let Some(ref id) = active_model_id {
+        let prompt_template = registry::find_model(id).and_then(|m| m.prompt_template);
         if id.starts_with("custom-") {
             let path_str = commands::get_custom_model_path(app, id);
             match path_str {
                 Some(p) => {
                     let path = std::path::PathBuf::from(&p);
                     if path.exists() {
-                        Some((path, id.clone()))
+                        Some((path, id.clone(), None))
                     } else {
                         eprintln!("[jolly] Custom model file not found: {}", p);
                         None
@@ -56,7 +58,7 @@ fn resolve_startup_model(app: &tauri::AppHandle) -> Option<(std::path::PathBuf, 
             }
         } else {
             match model_manager::resolve_model_path(&models_path, active_model_id.as_deref()) {
-                Ok(p) => Some((p, id.clone())),
+                Ok(p) => Some((p, id.clone(), prompt_template)),
                 Err(e) => {
                     eprintln!("[jolly] No local model available: {}", e);
                     None
@@ -65,7 +67,7 @@ fn resolve_startup_model(app: &tauri::AppHandle) -> Option<(std::path::PathBuf, 
         }
     } else {
         match model_manager::resolve_model_path(&models_path, None) {
-            Ok(p) => Some((p, String::new())),
+            Ok(p) => Some((p, String::new(), None)),
             Err(e) => {
                 eprintln!("[jolly] No local model available: {}", e);
                 None
@@ -85,10 +87,10 @@ pub fn run() {
         .manage(Arc::new(Mutex::new(DownloadManager::new())))
         .setup(|app| {
             let startup_model = resolve_startup_model(app.handle());
-            if let Some((path, model_id)) = startup_model {
+            if let Some((path, model_id, prompt_template)) = startup_model {
                 let handle = app.handle().clone();
                 std::thread::spawn(move || {
-                    match inference::local::init_model(&path, &model_id) {
+                    match inference::local::init_model(&path, &model_id, prompt_template) {
                         Ok(()) => {
                             eprintln!("[jolly] Local model loaded: {:?}", path);
                             let _ = handle.emit("model-loaded", ());

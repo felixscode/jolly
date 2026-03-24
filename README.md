@@ -71,34 +71,43 @@ Thanks to amazing lamacpp and vulcan Jolly detects GPU availability at runtime. 
 
 ## Available Models
 
-The [GRMR](https://huggingface.co/qingy2024/GRMR-V3-G4B-GGUF) models are specifically fine-tuned for grammar correction — they take text in and return corrected text with minimal over-editing. The other models (Qwen, Mistral) are general-purpose instruction-following LLMs prompted to fix spelling and grammar.
+The [GRMR](https://huggingface.co/qingy2024) models are specifically fine-tuned for grammar correction — they take text in and return corrected text with minimal over-editing. The general-purpose models (Gemma, Mistral) are instruction-following LLMs prompted to fix spelling and grammar.
 
-| Model | Size | Quantization |
-|-------|------|--------------|
-| GRMR 2B Instruct | 1.7 GB | Q4_K_M |
-| GRMR V3 G4B | 1.7 GB | Q2_K |
-| GRMR V3 G4B | 2.5 GB | Q4_K_M |
-| GRMR V3 G4B | 4.1 GB | Q8_0 |
-| Qwen3 1.7B | 1.3 GB | Q4_K_M |
-| Qwen3.5 4B | 2.9 GB | Q4_K_M |
-| Mistral 7B Instruct v0.3 | 4.7 GB | Q4_K_M |
+| Model | Type | Size | Quantization |
+|-------|------|------|--------------|
+| GRMR V3 3B | Grammar-specialized | 2.0 GB | Q4_K_M |
+| GRMR V3 4B | Grammar-specialized | 2.5 GB | Q4_K_M |
+| Gemma 3 4B Instruct | General-purpose | 2.5 GB | Q4_K_M |
+| Mistral 7B Instruct v0.3 | General-purpose | 4.7 GB | Q4_K_M |
 
 ## Benchmarks
 
-Tested across 8 cases (short, medium, email) in English and German.
-Inference on CPU — times will be significantly faster with a gpu.
+Tested across 8 cases (short, medium, email) in English and German. Errors fixed measures how many spelling/grammar errors the model actually corrected out of 62 total. Inference on CPU — times will be significantly faster with a GPU.
 
-| Model | Params | Size | Accuracy | Similarity | Avg Latency |
-|-------|--------|------|----------|------------|-------------|
-| **Qwen 2.5 3B** | 3B | 2.0 GB | **72%** | **99%** | 7.2s |
-| Qwen 2.5 1.5B | 1.5B | 1.0 GB | 58% | 79% | 4.6s |
+| Model | Errors Fixed | Exact Match | Avg Latency |
+|-------|:------------:|:-----------:|------------:|
+| **OpenRouter gpt-4o-mini** | **62/62** | 6/8 | 1.5s |
+| **Mistral 7B Instruct v0.3** | **58/62** | 4/8 | 8.0s |
+| GRMR V3 4B | 54/62 | 3/8 | 4.2s |
+| GRMR V3 3B | 46/62 | 2/8 | 3.5s |
+| Gemma 3 4B Instruct | 44/62 | 1/8 | 4.6s |
+| Harper | 36/62 | 2/8 | 0.2s |
 
+**Which model should I use?**
 
-> Run benchmarks yourself: `cargo run --bin benchmark` from `src-tauri/`.
+- **Mistral 7B** is the best local model overall (58/62) and the only one that handles German well. It needs 4.7 GB of RAM and is the slowest local option.
+- **GRMR V3 4B** is the recommended tradeoff — fast, small (2.5 GB), and fixes 87% of errors. Best choice for English-only use.
+- **GRMR V3 3B** is similar but lighter (2.0 GB) at the cost of some accuracy.
+- **Gemma 3 4B** is a general-purpose model that works but can't match the grammar-specialized GRMR models.
+- **Harper** is instant (0.2s) but only supports English and misses more complex errors.
+- **OpenRouter** gives the best results but requires an API key and sends text to a remote server.
+
+> Run benchmarks yourself: `cargo run --release --bin benchmark` from `src-tauri/`.
 
 Models are downloaded on demand from Hugging Face and cached locally.
 
-[!TIP] you can add any gguf model via the settings in app.  
+> [!TIP]
+> You can add any GGUF model via the settings in app.
 
 
 ## Acknowledgements
@@ -108,7 +117,8 @@ Models are downloaded on demand from Hugging Face and cached locally.
 - [Svelte](https://github.com/sveltejs/svelte) — reactive UI framework
 - [llama.cpp](https://github.com/ggerganov/llama.cpp) — local LLM inference engine
 - [Harper](https://github.com/Automattic/harper) — grammar checker
-- [GRMR](https://huggingface.co/qingy2024) - grammer finetuned models
+- [GRMR](https://huggingface.co/qingy2024) — grammar fine-tuned models
+- [Gemma](https://ai.google.dev/gemma) — Google's open models
 
 ## Screenshots
 

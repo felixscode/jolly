@@ -9,7 +9,7 @@ use llama_cpp_2::context::params::LlamaContextParams;
 use llama_cpp_2::llama_backend::LlamaBackend;
 use llama_cpp_2::llama_batch::LlamaBatch;
 use llama_cpp_2::model::params::LlamaModelParams;
-use llama_cpp_2::model::{AddBos, LlamaChatMessage, LlamaModel};
+use llama_cpp_2::model::{AddBos, LlamaChatMessage, LlamaChatTemplate, LlamaModel};
 use llama_cpp_2::sampling::LlamaSampler;
 use llama_cpp_2::token::LlamaToken;
 
@@ -22,9 +22,10 @@ static BACKEND: LazyLock<LlamaBackend> = LazyLock::new(|| {
 });
 
 /// Global model handle. RwLock so models can be swapped at runtime.
+/// Stores (model, model_id, optional_prompt_template).
 /// Note: swap_model takes a write lock; run_inference takes a read lock.
 /// Model swaps block until in-flight inferences complete.
-static MODEL: RwLock<Option<(LlamaModel, String)>> = RwLock::new(None);
+static MODEL: RwLock<Option<(LlamaModel, String, Option<String>)>> = RwLock::new(None);
 
 /// Number of sentences per LLM call. Increase for speed, decrease for quality.
 const SENTENCES_PER_BATCH: usize = 4;
@@ -37,12 +38,12 @@ static SENTENCE_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"[.!?]\s+").unwrap());
 
 /// Initialize and load a GGUF model from the given path.
-pub fn init_model(model_path: &Path, model_id: &str) -> Result<(), String> {
-    swap_model(model_path, model_id)
+pub fn init_model(model_path: &Path, model_id: &str, prompt_template: Option<&str>) -> Result<(), String> {
+    swap_model(model_path, model_id, prompt_template)
 }
 
 /// Load a new model, replacing any currently loaded model.
-pub fn swap_model(model_path: &Path, model_id: &str) -> Result<(), String> {
+pub fn swap_model(model_path: &Path, model_id: &str, prompt_template: Option<&str>) -> Result<(), String> {
     let backend = &*BACKEND;
 
     // Drop the old model first to free VRAM
@@ -70,7 +71,7 @@ pub fn swap_model(model_path: &Path, model_id: &str) -> Result<(), String> {
     };
 
     let mut slot = MODEL.write().map_err(|e| format!("Model lock poisoned: {}", e))?;
-    *slot = Some((model, model_id.to_string()));
+    *slot = Some((model, model_id.to_string(), prompt_template.map(|s| s.to_string())));
     Ok(())
 }
 
@@ -187,10 +188,32 @@ impl LLMProvider for LocalProvider {
     }
 }
 
+/// Strip `<think>...</think>` blocks from model output.
+/// Some models (Qwen3, Qwen3.5) emit reasoning blocks before the answer.
+fn strip_think_tags(output: &str) -> String {
+    // Fast path: no think tags
+    if !output.contains("<think>") {
+        return output.to_string();
+    }
+    // Remove everything between <think> and </think> (inclusive)
+    let mut result = output.to_string();
+    while let Some(start) = result.find("<think>") {
+        if let Some(end) = result.find("</think>") {
+            let end = end + "</think>".len();
+            result = format!("{}{}", &result[..start], &result[end..]);
+        } else {
+            // Unclosed <think> — remove everything from <think> onward
+            result.truncate(start);
+            break;
+        }
+    }
+    result.trim().to_string()
+}
+
 /// Trim runaway generation: if the output is much longer than the input,
 /// the model is looping. Return only the first meaningful block.
 fn trim_runaway(output: &str, input: &str) -> String {
-    let max_len = input.len() * 2 + 100;
+    let max_len = input.len() + 200;
     if output.len() <= max_len {
         return output.to_string();
     }
@@ -208,6 +231,94 @@ fn trim_runaway(output: &str, input: &str) -> String {
     output[..max_len].to_string()
 }
 
+/// Detect whether a chat template is GRMR-style (uses "corrected" turn tag).
+fn is_grmr_template(template: &LlamaChatTemplate) -> bool {
+    template.to_str().map_or(false, |s| s.contains("corrected"))
+}
+
+/// Format the prompt for a GRMR V3 model using the manual text/corrected format.
+/// llama.cpp's apply_chat_template outputs turn markers as literal text rather
+/// than special token IDs, so we format manually for correct tokenization.
+fn format_grmr_prompt(text: &str) -> String {
+    format!("text\n{}\ncorrected\n", text)
+}
+
+/// Format the prompt for a standard instruct model using its chat template.
+fn format_instruct_prompt(model: &LlamaModel, template: &LlamaChatTemplate, text: &str) -> Result<String, String> {
+    let prompt = format!("{}\n\n{}", SYSTEM_PROMPT, text);
+    let msg = LlamaChatMessage::new("user".to_string(), prompt)
+        .map_err(|e| format!("Failed to create chat message: {}", e))?;
+    model
+        .apply_chat_template(template, &[msg], true)
+        .map_err(|e| format!("Failed to apply chat template: {}", e))
+}
+
+/// Prompt strategy detected for a loaded model.
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum PromptKind {
+    /// Model has a registry prompt_template (e.g. GRMR 2B "### Original Text:" format)
+    Registry,
+    /// Model has a GRMR-style GGUF chat template (uses "corrected" turn tag)
+    Grmr,
+    /// Model has a standard GGUF chat template (uses system prompt)
+    Standard,
+    /// No template at all — raw system prompt fallback
+    Fallback,
+}
+
+/// Build the tokenized prompt for a model.
+/// Priority:
+///   1. Registry prompt_template (for models without GGUF template)
+///   2. GRMR GGUF template (has "corrected" tag): just the text, no system prompt
+///   3. Standard GGUF chat template: system prompt + text
+///   4. Raw fallback: system prompt + text
+/// Returns (tokens, prompt_kind).
+fn build_prompt(model: &LlamaModel, text: &str, registry_template: Option<&str>) -> Result<(Vec<LlamaToken>, PromptKind), String> {
+    // Priority 1: Registry template
+    if let Some(tmpl) = registry_template {
+        eprintln!("[jolly] Using registry prompt template");
+        let formatted = tmpl.replace("{text}", text);
+        let tokens = model
+            .str_to_token(&formatted, AddBos::Always)
+            .map_err(|e| format!("Failed to tokenize: {}", e))?;
+        return Ok((tokens, PromptKind::Registry));
+    }
+
+    // Priority 2-3: GGUF chat template
+    let chat_template = model.chat_template(None).ok();
+    let is_grmr = chat_template.as_ref().is_some_and(|t| is_grmr_template(t));
+
+    let formatted = if let Some(tmpl) = &chat_template {
+        if is_grmr {
+            eprintln!("[jolly] Using GRMR text/corrected format");
+            format_grmr_prompt(text)
+        } else {
+            eprintln!("[jolly] Using standard chat template");
+            format_instruct_prompt(model, tmpl, text)?
+        }
+    } else {
+        eprintln!("[jolly] No chat template found, using raw prompt");
+        format!("{}\n\n{}", SYSTEM_PROMPT, text)
+    };
+
+    let kind = if is_grmr {
+        PromptKind::Grmr
+    } else if chat_template.is_some() {
+        PromptKind::Standard
+    } else {
+        PromptKind::Fallback
+    };
+
+    // BOS is handled by apply_chat_template for standard models.
+    // GRMR and fallback use manual formatting and need explicit BOS.
+    let add_bos = if kind == PromptKind::Standard { AddBos::Never } else { AddBos::Always };
+    let tokens = model
+        .str_to_token(&formatted, add_bos)
+        .map_err(|e| format!("Failed to tokenize: {}", e))?;
+
+    Ok((tokens, kind))
+}
+
 /// Runs inference synchronously. Called inside spawn_blocking.
 pub fn run_inference(text: &str) -> Result<String, String> {
     eprintln!("[jolly] run_inference called with: {:?}", text);
@@ -217,59 +328,22 @@ pub fn run_inference(text: &str) -> Result<String, String> {
     let model_guard = MODEL
         .read()
         .map_err(|e| format!("Model lock poisoned: {}", e))?;
-    let (model, model_id) = model_guard
+    let (model, _model_id, registry_template) = model_guard
         .as_ref()
         .ok_or("Local model not loaded. Download a model in Settings.")?;
 
-    // GRMR models use a custom template: <bos>text\n{input}\ncorrected\n
-    // They don't need a system prompt — just the raw text.
-    // llama.cpp's built-in template engine doesn't support GRMR's Jinja
-    // template, so we format it manually.
-    let is_grmr = model_id.starts_with("grmr-");
     let input_len = text.len();
-
-    let formatted = if is_grmr {
-        format!("text\n{}\ncorrected\n", text)
-    } else {
-        let prompt = format!("{}\n\n{}", SYSTEM_PROMPT, text);
-        match model.chat_template(None) {
-            Ok(tmpl) => {
-                let msg = LlamaChatMessage::new(
-                    "user".to_string(),
-                    prompt.clone(),
-                ).map_err(|e| format!("Failed to create chat message: {}", e))?;
-                model
-                    .apply_chat_template(&tmpl, &[msg], true)
-                    .map_err(|e| format!("Failed to apply chat template: {}", e))?
-            }
-            Err(_) => {
-                eprintln!("[jolly] No chat template found, using raw prompt");
-                prompt
-            }
-        }
-    };
-
-    // Context and generation limits
-    let n_ctx: u32 = 2048;
-    let max_tokens: i32 = 1024;
-
-    // Create context for this inference call
-    let ctx_params = LlamaContextParams::default()
-        .with_n_ctx(NonZeroU32::new(n_ctx));
-    let mut ctx = model
-        .new_context(backend, ctx_params)
-        .map_err(|e| format!("Failed to create context: {}", e))?;
-
-    // Tokenize
-    let tokens = model
-        .str_to_token(&formatted, AddBos::Always)
-        .map_err(|e| format!("Failed to tokenize: {}", e))?;
+    let (tokens, prompt_kind) = build_prompt(model, text, registry_template.as_deref())?;
 
     eprintln!("[jolly] Input tokens: {}", tokens.len());
 
     if tokens.is_empty() {
         return Ok(String::new());
     }
+
+    // Context and generation limits
+    let n_ctx: u32 = 2048;
+    let max_tokens: i32 = 1024;
 
     // Ensure prompt fits in context window
     if tokens.len() as u32 >= n_ctx {
@@ -279,6 +353,13 @@ pub fn run_inference(text: &str) -> Result<String, String> {
             n_ctx
         ));
     }
+
+    // Create context for this inference call
+    let ctx_params = LlamaContextParams::default()
+        .with_n_ctx(NonZeroU32::new(n_ctx));
+    let mut ctx = model
+        .new_context(backend, ctx_params)
+        .map_err(|e| format!("Failed to create context: {}", e))?;
 
     // Feed tokens into context
     let mut batch = LlamaBatch::new(tokens.len().max(512), 1);
@@ -317,17 +398,19 @@ pub fn run_inference(text: &str) -> Result<String, String> {
             .map_err(|e| format!("Failed to detokenize: {}", e))?;
         output.push_str(&piece);
 
-        // GRMR models may loop into another text/corrected pair instead of
-        // emitting EOS. Stop on "text\n" or "corrected\n" tags reappearing.
-        if is_grmr {
-            if let Some(pos) = output.find("\ntext\n").or_else(|| output.find("\ncorrected\n")) {
-                output.truncate(pos);
-                break;
-            }
+        // Model-specific stop conditions for looping
+        let stop_pos = match prompt_kind {
+            PromptKind::Grmr => output.find("\ntext\n").or_else(|| output.find("\ncorrected\n")),
+            PromptKind::Registry => output.find("### Original Text:"),
+            _ => None,
+        };
+        if let Some(pos) = stop_pos {
+            output.truncate(pos);
+            break;
         }
 
         // Stop runaway generation: output should never be much longer than input
-        if output.len() > input_len * 2 + 100 {
+        if output.len() > input_len + 200 {
             output = trim_runaway(&output, text);
             break;
         }
@@ -342,7 +425,7 @@ pub fn run_inference(text: &str) -> Result<String, String> {
         n_cur += 1;
     }
 
-    let result = output.trim().to_string();
+    let result = strip_think_tags(output.trim());
     eprintln!("[jolly] Returning: {:?}", result);
     Ok(result)
 }
@@ -363,16 +446,11 @@ fn run_parallel_inference(texts: Vec<String>) -> Result<Vec<String>, String> {
     let model_guard = MODEL
         .read()
         .map_err(|e| format!("Model lock poisoned: {}", e))?;
-    let (model, model_id) = model_guard
+    let (model, _model_id, registry_template) = model_guard
         .as_ref()
         .ok_or("Local model not loaded. Download a model in Settings.")?;
 
-    let is_grmr = model_id.starts_with("grmr-");
-
-    // Get the chat template once (shared across all sequences)
-    let chat_template = if is_grmr { None } else { model.chat_template(None).ok() };
-
-    // Tokenize all sequences independently
+    // Tokenize all sequences independently using build_prompt
     struct SeqState {
         seq_id: i32,
         tokens: Vec<LlamaToken>,
@@ -385,31 +463,15 @@ fn run_parallel_inference(texts: Vec<String>) -> Result<Vec<String>, String> {
         i_batch: i32,
         original_text: String,
         input_len: usize,
+        prompt_kind: PromptKind,
     }
 
     let mut seqs: Vec<SeqState> = texts
         .iter()
         .enumerate()
         .map(|(i, text)| {
-            let formatted = if is_grmr {
-                format!("text\n{}\ncorrected\n", text)
-            } else {
-                let prompt = format!("{}\n\n{}", SYSTEM_PROMPT, text);
-                match &chat_template {
-                    Some(tmpl) => {
-                        let msg = LlamaChatMessage::new("user".to_string(), prompt.clone())
-                            .map_err(|e| format!("Failed to create chat message: {}", e))?;
-                        model
-                            .apply_chat_template(tmpl, &[msg], true)
-                            .map_err(|e| format!("Failed to apply chat template: {}", e))?
-                    }
-                    None => prompt,
-                }
-            };
-
-            let tokens = model
-                .str_to_token(&formatted, AddBos::Always)
-                .map_err(|e| format!("Failed to tokenize seq {}: {}", i, e))?;
+            let (tokens, prompt_kind) = build_prompt(model, text, registry_template.as_deref())
+                .map_err(|e| format!("Failed to build prompt for seq {}: {}", i, e))?;
 
             Ok(SeqState {
                 seq_id: i as i32,
@@ -427,6 +489,7 @@ fn run_parallel_inference(texts: Vec<String>) -> Result<Vec<String>, String> {
                 i_batch: 0,
                 original_text: text.clone(),
                 input_len: text.len(),
+                prompt_kind,
             })
         })
         .collect::<Result<Vec<_>, String>>()?;
@@ -518,20 +581,23 @@ fn run_parallel_inference(texts: Vec<String>) -> Result<Vec<String>, String> {
             seq.output.push_str(&piece);
             seq.last_token = token;
 
-            // GRMR stop: new text/corrected pair starting
-            if is_grmr {
-                if let Some(pos) = seq.output.find("\ntext\n").or_else(|| seq.output.find("\ncorrected\n")) {
-                    seq.output.truncate(pos);
-                    seq.done = true;
-                    if let Err(e) = ctx.clear_kv_cache_seq(Some(seq.seq_id as u32), None, None) {
-                        eprintln!("[jolly] Failed to clear KV cache for seq {}: {}", seq.seq_id, e);
-                    }
-                    continue;
+            // Model-specific stop conditions for looping
+            let stop_pos = match seq.prompt_kind {
+                PromptKind::Grmr => seq.output.find("\ntext\n").or_else(|| seq.output.find("\ncorrected\n")),
+                PromptKind::Registry => seq.output.find("### Original Text:"),
+                _ => None,
+            };
+            if let Some(pos) = stop_pos {
+                seq.output.truncate(pos);
+                seq.done = true;
+                if let Err(e) = ctx.clear_kv_cache_seq(Some(seq.seq_id as u32), None, None) {
+                    eprintln!("[jolly] Failed to clear KV cache for seq {}: {}", seq.seq_id, e);
                 }
+                continue;
             }
 
             // Stop runaway generation
-            if seq.output.len() > seq.input_len * 2 + 100 {
+            if seq.output.len() > seq.input_len + 200 {
                 seq.output = trim_runaway(&seq.output, &seq.original_text);
                 seq.done = true;
                 if let Err(e) = ctx.clear_kv_cache_seq(Some(seq.seq_id as u32), None, None) {
@@ -562,7 +628,7 @@ fn run_parallel_inference(texts: Vec<String>) -> Result<Vec<String>, String> {
     Ok(seqs
         .into_iter()
         .map(|s| {
-            let trimmed = s.output.trim().to_string();
+            let trimmed = strip_think_tags(s.output.trim());
             if trimmed.is_empty() {
                 s.original_text
             } else {
@@ -632,5 +698,92 @@ mod tests {
         // Trailing whitespace after last punctuation in multi-sentence input
         let result = split_sentences("First. Second. ");
         assert_eq!(result, vec![("First.", " "), ("Second.", " ")]);
+    }
+
+    // ── trim_runaway tests ──────────────────────────────────────
+
+    #[test]
+    fn trim_runaway_short_output_unchanged() {
+        let result = trim_runaway("Hello world.", "Hello wrold.");
+        assert_eq!(result, "Hello world.");
+    }
+
+    #[test]
+    fn trim_runaway_cuts_at_double_newline() {
+        let input = "Short.";
+        let output = format!("Short.\n\n{}", "garbage ".repeat(100));
+        let result = trim_runaway(&output, input);
+        assert_eq!(result, "Short.");
+    }
+
+    #[test]
+    fn trim_runaway_cuts_at_single_newline() {
+        let input = "Short.";
+        let output = format!("Short.\n{}", "garbage ".repeat(100));
+        let result = trim_runaway(&output, input);
+        assert_eq!(result, "Short.");
+    }
+
+    // ── Registry template format tests ──────────────────────────
+
+    #[test]
+    fn registry_template_formats_correctly() {
+        let template = "Below is the original text.\n\n### Original Text:\n{text}\n\n### Corrected Text:\n";
+        let text = "I recieved your messege.";
+        let formatted = template.replace("{text}", text);
+        assert!(formatted.contains("### Original Text:\nI recieved your messege."));
+        assert!(formatted.contains("### Corrected Text:\n"));
+        assert!(!formatted.contains("{text}"));
+    }
+
+    #[test]
+    fn registry_template_stop_condition() {
+        // Simulate model looping: output contains "### Original Text:" again
+        let output = "I received your message.\n\n### Original Text:\nsome other text";
+        let stop_pos = output.find("### Original Text:");
+        assert!(stop_pos.is_some());
+        let truncated = &output[..stop_pos.unwrap()];
+        assert_eq!(truncated.trim(), "I received your message.");
+    }
+
+    // ── PromptKind tests ────────────────────────────────────────
+
+    #[test]
+    fn prompt_kind_equality() {
+        assert_eq!(PromptKind::Registry, PromptKind::Registry);
+        assert_eq!(PromptKind::Grmr, PromptKind::Grmr);
+        assert_ne!(PromptKind::Registry, PromptKind::Grmr);
+        assert_ne!(PromptKind::Standard, PromptKind::Fallback);
+    }
+
+    // ── strip_think_tags tests ──────────────────────────────────
+
+    #[test]
+    fn strip_think_no_tags() {
+        assert_eq!(strip_think_tags("Hello world."), "Hello world.");
+    }
+
+    #[test]
+    fn strip_think_complete_block() {
+        let input = "<think>\nsome reasoning\n</think>\n\nCorrected text.";
+        assert_eq!(strip_think_tags(input), "Corrected text.");
+    }
+
+    #[test]
+    fn strip_think_unclosed_tag() {
+        let input = "<think>\nsome reasoning that never ends";
+        assert_eq!(strip_think_tags(input), "");
+    }
+
+    #[test]
+    fn strip_think_empty_block() {
+        let input = "<think>\n\n</think>\n\nThe answer.";
+        assert_eq!(strip_think_tags(input), "The answer.");
+    }
+
+    #[test]
+    fn strip_think_preserves_content_before() {
+        let input = "Before <think>reasoning</think> After";
+        assert_eq!(strip_think_tags(input), "Before  After");
     }
 }

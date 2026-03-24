@@ -161,7 +161,7 @@
 						disabled={!!settings.downloadProgress}
 					>
 						{#each modelsForDownload as model}
-							<option value={model.id}>
+							<option value={model.id} class="bg-white text-[#423f37] dark:bg-[#423f37] dark:text-[#e8e8e3]">
 								{model.name} — {formatBytes(model.sizeBytes)}
 								{#if model.state === 'partial'}(resumable){/if}
 							</option>
@@ -415,7 +415,7 @@
 								type={showKey ? 'text' : 'password'}
 								bind:value={keyInput}
 								placeholder="sk-or-..."
-								class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 pr-10 text-sm text-[#423f37] focus:border-[#960200] focus:ring-1 focus:ring-[#960200] focus:outline-none dark:border-white/20 dark:bg-white/10 dark:text-[#e8e8e3] dark:focus:border-[#ffd046] dark:focus:ring-[#ffd046]"
+								class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 pr-10 text-sm text-[#423f37] placeholder:text-gray-400 focus:border-[#960200] focus:ring-1 focus:ring-[#960200] focus:outline-none dark:border-white/20 dark:bg-white/10 dark:text-[#e8e8e3] dark:placeholder:text-[#e8e8e3]/40 dark:focus:border-[#ffd046] dark:focus:ring-[#ffd046]"
 							/>
 							<button
 								onclick={() => {

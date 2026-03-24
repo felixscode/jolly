@@ -44,7 +44,7 @@
 </script>
 
 <svelte:head>
-	<link rel="icon" href="/jolly_normal.svg" />
+	<link rel="icon" type="image/png" href="/icon.png" />
 </svelte:head>
 
 {#if isApp}

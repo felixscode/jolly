@@ -114,25 +114,22 @@
 	<hr class="mb-8 border-gray-200 md:mb-16 dark:border-gray-700" />
 
 	<!-- Heading -->
-	<h1 class="mb-4 text-center text-2xl font-bold text-[#423f37] dark:text-[#e8e8e3]">
-		Benchmarks
-	</h1>
+	<h1 class="mb-4 text-center text-2xl font-bold text-[#423f37] dark:text-[#e8e8e3]">Benchmarks</h1>
 
 	<!-- Methodology -->
 	<div class="mx-auto mb-8 max-w-2xl text-center md:mb-16">
 		<p class="leading-relaxed text-gray-500 dark:text-gray-400">
 			Each model was tested on 8 cases — 4 English, 4 German — spanning short sentences, medium
-			paragraphs, and email-length texts with intentional typos. Exact match means the corrected
-			output matched the expected text character-for-character. Errors fixed shows what percentage
-			of individual errors the model caught. Time is wall-clock milliseconds. Memory is resident
-			set size in MB.
+			paragraphs, and email-length texts with intentional typos.
 		</p>
 	</div>
 
 	{#snippet dataTable(data: typeof englishData)}
 		<div class="mb-8 overflow-x-auto md:mb-16">
 			<table class="w-full text-left text-sm text-gray-500 dark:text-gray-400">
-				<thead class="border-b border-gray-200 text-xs uppercase text-[#423f37] dark:border-gray-700 dark:text-[#e8e8e3]">
+				<thead
+					class="border-b border-gray-200 text-xs text-[#423f37] uppercase dark:border-gray-700 dark:text-[#e8e8e3]"
+				>
 					<tr>
 						<th scope="col" class="py-3 pr-6">Model</th>
 						<th scope="col" class="py-3 pr-6">Exact Match (%)</th>
@@ -144,7 +141,9 @@
 				<tbody>
 					{#each data as row}
 						<tr class="border-b border-gray-100 dark:border-gray-800">
-							<td class="py-3 pr-6 font-medium text-[#423f37] whitespace-nowrap dark:text-[#e8e8e3]">{row.model}</td>
+							<td class="py-3 pr-6 font-medium whitespace-nowrap text-[#423f37] dark:text-[#e8e8e3]"
+								>{row.model}</td
+							>
 							<td class="py-3 pr-6">{row.exact}%</td>
 							<td class="py-3 pr-6">{row.errorsFixed}%</td>
 							<td class="py-3 pr-6">{row.time.toLocaleString()}</td>
@@ -162,9 +161,15 @@
 	<h2 class="mb-4 text-xl font-bold text-[#423f37] dark:text-[#e8e8e3]">German</h2>
 	{@render dataTable(germanData)}
 
-	<div class="mb-8 grid grid-cols-2 gap-x-8 gap-y-1 text-xs text-gray-400 md:mb-16 dark:text-gray-500">
-		<span><strong>Exact Match</strong> — corrected output matched the expected text character-for-character</span>
-		<span><strong>Errors Fixed</strong> — percentage of individual typos the model caught and corrected</span>
+	<div
+		class="mb-8 grid grid-cols-2 gap-x-8 gap-y-1 text-xs text-gray-400 md:mb-16 dark:text-gray-500"
+	>
+		<span
+			><strong>Exact Match</strong> — corrected output matched the expected text character-for-character</span
+		>
+		<span
+			><strong>Errors Fixed</strong> — percentage of individual typos the model caught and corrected</span
+		>
 		<span><strong>Time</strong> — wall-clock milliseconds from input to corrected output</span>
 		<span><strong>Memory</strong> — resident set size in megabytes while the model is loaded</span>
 	</div>
@@ -175,23 +180,25 @@
 	<div class="mx-auto max-w-2xl text-center">
 		<h2 class="mb-4 text-xl font-bold text-[#423f37] dark:text-[#e8e8e3]">What this means</h2>
 		<p class="mb-4 leading-relaxed text-gray-500 dark:text-gray-400">
-			Harper is the fastest option by far and catches most English errors, but it falls apart on
-			German — it is an English grammar checker after all. OpenRouter's GPT-4o-mini delivers
-			perfect accuracy across both languages, but it requires an API key and sends text to a
-			remote server.
+			The models fall into three categories. Harper is a rule-based grammar checker — it matches
+			words against a dictionary and applies fixes instantly, but it only knows English and
+			struggles with context-dependent errors. Is a linter at the end. The GRMR models are small
+			LLMs fine-tuned specifically for grammar correction — they understand context and fix more
+			errors than Harper, but they were trained primarily on English data, so German accuracy is
+			limited. The general-purpose models (Gemma, Mistral) are larger instruction-following LLMs
+			that use a system prompt to correct text — they aren't specialized for grammar but their
+			broader training data gives them better multilingual support.
 		</p>
 		<p class="mb-4 leading-relaxed text-gray-500 dark:text-gray-400">
-			Among local models, the GRMR V3 family offers the best balance of speed and English
-			accuracy. The 3B and 4B variants fix nearly all English errors and score high. German
-			remains a weak spot for all GRMR sizes. Mistral 7B is the only local model that handles
-			German well, but it needs ~7.7 GB of RAM and is the slowest. Gemma 3 4B catches most
-			English errors but produces less precise output overall.
+			OpenRouter's GPT-4o-mini fixes every single error across both languages because it is a much
+			larger model running on powerful remote hardware. The tradeoff is that your text leaves your
+			device and you need an API key.
 		</p>
 		<p class="leading-relaxed text-gray-500 dark:text-gray-400">
-			If you mostly write in English and want everything local, GRMR V3 3B gives you great
-			accuracy at ~3.5 GB. If you need German support and can spare the RAM, Mistral 7B is the
-			way to go. For the best results with no hardware requirements, OpenRouter with an API key
-			is unbeatable.
+			For local English-only use, GRMR V3 4B (2.5 GB) is the recommended choice — it fixes 87% of
+			errors and is fast. For multilingual use, Mistral 7B (4.7 GB) is the only local model that
+			handles German well. For the best results with no hardware constraints, OpenRouter is
+			unbeatable.
 		</p>
 	</div>
 </div>

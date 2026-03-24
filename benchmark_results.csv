@@ -1,11 +1,11 @@
-test_id,language,category,model_id,model_name,exact_match,similarity,time_ms,rss_mb,input,expected,output
-1,en,short,harper,"Harper",true,1.00,500,160,"I recieved your messege yesterday.","I received your message yesterday.","I received your message yesterday."
-2,en,short,harper,"Harper",true,1.00,6,160,"The resturant had excelent sevice.","The restaurant had excellent service.","The restaurant had excellent service."
-3,de,short,harper,"Harper",false,0.00,14,160,"Ich habe gestern deine Nachich erhalten.","Ich habe gestern deine Nachricht erhalten.","Ice hale western define Nacho's eaten."
-4,de,short,harper,"Harper",false,0.33,1027,214,"Die Regirung hat neue Massnahmen beschlosen.","Die Regierung hat neue Maßnahmen beschlossen.","Die Restrung hat nee Massacre beachgoer."
-5,en,medium,harper,"Harper",false,0.96,24,214,"The anual report has been finalized and is reddy for distribusion. It includes a comprehensve overview of our finacial performence, key achivements, and strategec goals for the upcomming year. All departement heads should reveiw the relevent sections and provide there feedback by the end of next week. We are confidant that the resuts will demonstarte our strong market postion. Please do not hesistate to reach out if you have any questons.","The annual report has been finalized and is ready for distribution. It includes a comprehensive overview of our financial performance, key achievements, and strategic goals for the upcoming year. All department heads should review the relevant sections and provide their feedback by the end of next week. We are confident that the results will demonstrate our strong market position. Please do not hesitate to reach out if you have any questions.","The anal report has been finalized and is ready for distribution. It includes a comprehensive overview of our financial performance, key achievements, and strategic goals for the upcoming year. All department heads should review the relevant sections and provide their feedback by the end of next week. We are confident that the recuts will demonstrate our strong market portion. Please do not hesitate to reach out if you have any questions."
-6,de,medium,harper,"Harper",false,0.28,177,214,"Der Jahresbericht wurde fertiggestelt und ist bereit zur Verteilung. Er enthält einen umfasenden Überblick über unsere finanziele Leistung, wichtige Errungenschaften und strategische Ziele für das komende Jahr. Alle Abteilungsleiter solten die relevanten Abschnite überprüfen und bis Ende nächster Woche ihr Fedback geben. Wir sind zuversichtlich, dass die Ergebnise unsere starke Marktpostion zeigen werden. Bitte zögern Sie nicht, sich bei Fragen an uns zu weden.","Der Jahresbericht wurde fertiggestellt und ist bereit zur Verteilung. Er enthält einen umfassenden Überblick über unsere finanzielle Leistung, wichtige Errungenschaften und strategische Ziele für das kommende Jahr. Alle Abteilungsleiter sollten die relevanten Abschnitte überprüfen und bis Ende nächster Woche ihr Feedback geben. Wir sind zuversichtlich, dass die Ergebnisse unsere starke Marktposition zeigen werden. Bitte zögern Sie nicht, sich bei Fragen an uns zu wenden.","Dear Jahresbericht wade fertiggestelt undo inst beret bur Vetting. Er ethyl linen unfasten Brick Uber unsure financial Listing, Fichte Errungenschaften undo strategic Zine far dais keened Jar. Ale Abteilungsleiter soften die relevance Auschwitz ibuprofen undo bis End caster Woe i Feedback gee. War sand zuversichtlich, dais die Eugenie unsure stake Marktpostion beige warden. Bite zero See niche, sch be Frauen an us z widen."
-7,en,email,harper,"Harper",false,0.98,52,221,"Hi Sarah,
+test_id,language,category,model_id,model_name,exact_match,score,errors_fixed,time_ms,rss_mb,input,expected,output
+1,en,short,harper,"Harper",true,1.00,2/2,351,160,"I recieved your messege yesterday.","I received your message yesterday.","I received your message yesterday."
+2,en,short,harper,"Harper",true,1.00,3/3,5,160,"The resturant had excelent sevice.","The restaurant had excellent service.","The restaurant had excellent service."
+3,de,short,harper,"Harper",false,0.00,0/2,13,160,"Ich habe gestern deine Nachich erhalten.","Ich habe gestern deine Nachricht erhalten.","Ice hale western define Nacho's eaten."
+4,de,short,harper,"Harper",false,0.00,0/3,788,213,"Die Regirung hat neue Massnahmen beschlosen.","Die Regierung hat neue Maßnahmen beschlossen.","Die Restrung hat nee Massacre beachgoer."
+5,en,medium,harper,"Harper",false,0.84,16/19,22,213,"The anual report has been finalized and is reddy for distribusion. It includes a comprehensve overview of our finacial performence, key achivements, and strategec goals for the upcomming year. All departement heads should reveiw the relevent sections and provide there feedback by the end of next week. We are confidant that the resuts will demonstarte our strong market postion. Please do not hesistate to reach out if you have any questons.","The annual report has been finalized and is ready for distribution. It includes a comprehensive overview of our financial performance, key achievements, and strategic goals for the upcoming year. All department heads should review the relevant sections and provide their feedback by the end of next week. We are confident that the results will demonstrate our strong market position. Please do not hesitate to reach out if you have any questions.","The anal report has been finalized and is ready for distribution. It includes a comprehensive overview of our financial performance, key achievements, and strategic goals for the upcoming year. All department heads should review the relevant sections and provide their feedback by the end of next week. We are confident that the recuts will demonstrate our strong market portion. Please do not hesitate to reach out if you have any questions."
+6,de,medium,harper,"Harper",false,0.00,0/10,159,214,"Der Jahresbericht wurde fertiggestelt und ist bereit zur Verteilung. Er enthält einen umfasenden Überblick über unsere finanziele Leistung, wichtige Errungenschaften und strategische Ziele für das komende Jahr. Alle Abteilungsleiter solten die relevanten Abschnite überprüfen und bis Ende nächster Woche ihr Fedback geben. Wir sind zuversichtlich, dass die Ergebnise unsere starke Marktpostion zeigen werden. Bitte zögern Sie nicht, sich bei Fragen an uns zu weden.","Der Jahresbericht wurde fertiggestellt und ist bereit zur Verteilung. Er enthält einen umfassenden Überblick über unsere finanzielle Leistung, wichtige Errungenschaften und strategische Ziele für das kommende Jahr. Alle Abteilungsleiter sollten die relevanten Abschnitte überprüfen und bis Ende nächster Woche ihr Feedback geben. Wir sind zuversichtlich, dass die Ergebnisse unsere starke Marktposition zeigen werden. Bitte zögern Sie nicht, sich bei Fragen an uns zu wenden.","Dear Jahresbericht wade fertiggestelt undo inst beret bur Vetting. Er ethyl linen unfasten Brick Uber unsure financial Listing, Fichte Errungenschaften undo strategic Zine far dais keened Jar. Ale Abteilungsleiter soften die relevance Auschwitz ibuprofen undo bis End caster Woe i Feedback gee. War sand zuversichtlich, dais die Eugenie unsure stake Marktpostion beige warden. Bite zero See niche, sch be Frauen an us z widen."
+7,en,email,harper,"Harper",false,0.94,15/16,20,214,"Hi Sarah,
 
 I hope this email findz you well. I wanted to follow up on our conversaton from last week regardng the new project timelien.
 
@@ -27,7 +27,7 @@ After reviewing the requirements, I believe we can meet the original deadline if
 
 Best regards,
 Tom"
-8,de,email,harper,"Harper",false,0.40,206,221,"Hallo Frau Müller,
+8,de,email,harper,"Harper",false,0.00,0/7,152,219,"Hallo Frau Müller,
 
 ich hofe, diese E-Mail ereicht Sie gut. Ich wollte mich bezüglich unseres Gesprächs von letzter Woche zum neuen Projektzeitplan melden.
 
@@ -49,13 +49,13 @@ Nash Torchlight dear Anforderugen bin ice dear Meaning, dais war den ursprüngli
 
 MIT freundlichen Green,
 Thomas Schmidt"
-1,en,short,openrouter-gpt4o-mini,"OpenRouter gpt-4o-mini",true,1.00,951,228,"I recieved your messege yesterday.","I received your message yesterday.","I received your message yesterday."
-2,en,short,openrouter-gpt4o-mini,"OpenRouter gpt-4o-mini",true,1.00,850,228,"The resturant had excelent sevice.","The restaurant had excellent service.","The restaurant had excellent service."
-3,de,short,openrouter-gpt4o-mini,"OpenRouter gpt-4o-mini",true,1.00,654,229,"Ich habe gestern deine Nachich erhalten.","Ich habe gestern deine Nachricht erhalten.","Ich habe gestern deine Nachricht erhalten."
-4,de,short,openrouter-gpt4o-mini,"OpenRouter gpt-4o-mini",true,1.00,736,229,"Die Regirung hat neue Massnahmen beschlosen.","Die Regierung hat neue Maßnahmen beschlossen.","Die Regierung hat neue Maßnahmen beschlossen."
-5,en,medium,openrouter-gpt4o-mini,"OpenRouter gpt-4o-mini",true,1.00,1912,229,"The anual report has been finalized and is reddy for distribusion. It includes a comprehensve overview of our finacial performence, key achivements, and strategec goals for the upcomming year. All departement heads should reveiw the relevent sections and provide there feedback by the end of next week. We are confidant that the resuts will demonstarte our strong market postion. Please do not hesistate to reach out if you have any questons.","The annual report has been finalized and is ready for distribution. It includes a comprehensive overview of our financial performance, key achievements, and strategic goals for the upcoming year. All department heads should review the relevant sections and provide their feedback by the end of next week. We are confident that the results will demonstrate our strong market position. Please do not hesitate to reach out if you have any questions.","The annual report has been finalized and is ready for distribution. It includes a comprehensive overview of our financial performance, key achievements, and strategic goals for the upcoming year. All department heads should review the relevant sections and provide their feedback by the end of next week. We are confident that the results will demonstrate our strong market position. Please do not hesitate to reach out if you have any questions."
-6,de,medium,openrouter-gpt4o-mini,"OpenRouter gpt-4o-mini",true,1.00,4471,229,"Der Jahresbericht wurde fertiggestelt und ist bereit zur Verteilung. Er enthält einen umfasenden Überblick über unsere finanziele Leistung, wichtige Errungenschaften und strategische Ziele für das komende Jahr. Alle Abteilungsleiter solten die relevanten Abschnite überprüfen und bis Ende nächster Woche ihr Fedback geben. Wir sind zuversichtlich, dass die Ergebnise unsere starke Marktpostion zeigen werden. Bitte zögern Sie nicht, sich bei Fragen an uns zu weden.","Der Jahresbericht wurde fertiggestellt und ist bereit zur Verteilung. Er enthält einen umfassenden Überblick über unsere finanzielle Leistung, wichtige Errungenschaften und strategische Ziele für das kommende Jahr. Alle Abteilungsleiter sollten die relevanten Abschnitte überprüfen und bis Ende nächster Woche ihr Feedback geben. Wir sind zuversichtlich, dass die Ergebnisse unsere starke Marktposition zeigen werden. Bitte zögern Sie nicht, sich bei Fragen an uns zu wenden.","Der Jahresbericht wurde fertiggestellt und ist bereit zur Verteilung. Er enthält einen umfassenden Überblick über unsere finanzielle Leistung, wichtige Errungenschaften und strategische Ziele für das kommende Jahr. Alle Abteilungsleiter sollten die relevanten Abschnitte überprüfen und bis Ende nächster Woche ihr Feedback geben. Wir sind zuversichtlich, dass die Ergebnisse unsere starke Marktposition zeigen werden. Bitte zögern Sie nicht, sich bei Fragen an uns zu wenden."
-7,en,email,openrouter-gpt4o-mini,"OpenRouter gpt-4o-mini",false,1.00,1855,229,"Hi Sarah,
+1,en,short,openrouter-gpt4o-mini,"OpenRouter gpt-4o-mini",true,1.00,2/2,773,225,"I recieved your messege yesterday.","I received your message yesterday.","I received your message yesterday."
+2,en,short,openrouter-gpt4o-mini,"OpenRouter gpt-4o-mini",true,1.00,3/3,1124,225,"The resturant had excelent sevice.","The restaurant had excellent service.","The restaurant had excellent service."
+3,de,short,openrouter-gpt4o-mini,"OpenRouter gpt-4o-mini",true,1.00,2/2,632,225,"Ich habe gestern deine Nachich erhalten.","Ich habe gestern deine Nachricht erhalten.","Ich habe gestern deine Nachricht erhalten."
+4,de,short,openrouter-gpt4o-mini,"OpenRouter gpt-4o-mini",true,1.00,3/3,635,225,"Die Regirung hat neue Massnahmen beschlosen.","Die Regierung hat neue Maßnahmen beschlossen.","Die Regierung hat neue Maßnahmen beschlossen."
+5,en,medium,openrouter-gpt4o-mini,"OpenRouter gpt-4o-mini",true,1.00,19/19,2135,225,"The anual report has been finalized and is reddy for distribusion. It includes a comprehensve overview of our finacial performence, key achivements, and strategec goals for the upcomming year. All departement heads should reveiw the relevent sections and provide there feedback by the end of next week. We are confidant that the resuts will demonstarte our strong market postion. Please do not hesistate to reach out if you have any questons.","The annual report has been finalized and is ready for distribution. It includes a comprehensive overview of our financial performance, key achievements, and strategic goals for the upcoming year. All department heads should review the relevant sections and provide their feedback by the end of next week. We are confident that the results will demonstrate our strong market position. Please do not hesitate to reach out if you have any questions.","The annual report has been finalized and is ready for distribution. It includes a comprehensive overview of our financial performance, key achievements, and strategic goals for the upcoming year. All department heads should review the relevant sections and provide their feedback by the end of next week. We are confident that the results will demonstrate our strong market position. Please do not hesitate to reach out if you have any questions."
+6,de,medium,openrouter-gpt4o-mini,"OpenRouter gpt-4o-mini",true,1.00,10/10,2196,226,"Der Jahresbericht wurde fertiggestelt und ist bereit zur Verteilung. Er enthält einen umfasenden Überblick über unsere finanziele Leistung, wichtige Errungenschaften und strategische Ziele für das komende Jahr. Alle Abteilungsleiter solten die relevanten Abschnite überprüfen und bis Ende nächster Woche ihr Fedback geben. Wir sind zuversichtlich, dass die Ergebnise unsere starke Marktpostion zeigen werden. Bitte zögern Sie nicht, sich bei Fragen an uns zu weden.","Der Jahresbericht wurde fertiggestellt und ist bereit zur Verteilung. Er enthält einen umfassenden Überblick über unsere finanzielle Leistung, wichtige Errungenschaften und strategische Ziele für das kommende Jahr. Alle Abteilungsleiter sollten die relevanten Abschnitte überprüfen und bis Ende nächster Woche ihr Feedback geben. Wir sind zuversichtlich, dass die Ergebnisse unsere starke Marktposition zeigen werden. Bitte zögern Sie nicht, sich bei Fragen an uns zu wenden.","Der Jahresbericht wurde fertiggestellt und ist bereit zur Verteilung. Er enthält einen umfassenden Überblick über unsere finanzielle Leistung, wichtige Errungenschaften und strategische Ziele für das kommende Jahr. Alle Abteilungsleiter sollten die relevanten Abschnitte überprüfen und bis Ende nächster Woche ihr Feedback geben. Wir sind zuversichtlich, dass die Ergebnisse unsere starke Marktposition zeigen werden. Bitte zögern Sie nicht, sich bei Fragen an uns zu wenden."
+7,en,email,openrouter-gpt4o-mini,"OpenRouter gpt-4o-mini",false,1.00,16/16,2074,226,"Hi Sarah,
 
 I hope this email findz you well. I wanted to follow up on our conversaton from last week regardng the new project timelien.
 
@@ -77,7 +77,7 @@ After reviewing the requirements, I believe we can meet the original deadline if
 
 Best regards,  
 Tom"
-8,de,email,openrouter-gpt4o-mini,"OpenRouter gpt-4o-mini",false,1.00,3344,229,"Hallo Frau Müller,
+8,de,email,openrouter-gpt4o-mini,"OpenRouter gpt-4o-mini",false,1.00,7/7,2540,226,"Hallo Frau Müller,
 
 ich hofe, diese E-Mail ereicht Sie gut. Ich wollte mich bezüglich unseres Gesprächs von letzter Woche zum neuen Projektzeitplan melden.
 
@@ -99,8 +99,183 @@ Nach Durchsicht der Anforderungen bin ich der Meinung, dass wir den ursprünglic
 
 Mit freundlichen Grüßen,  
 Thomas Schmidt"
-1,en,short,grmr-2b-instruct-q4km,"GRMR 2B Instruct",true,1.00,3342,2832,"I recieved your messege yesterday.","I received your message yesterday.","I received your message yesterday."
-2,en,short,grmr-2b-instruct-q4km,"GRMR 2B Instruct",false,0.80,1015,2832,"The resturant had excelent sevice.","The restaurant had excellent service.","The resturant had excellent service."
-3,de,short,grmr-2b-instruct-q4km,"GRMR 2B Instruct",false,0.83,2180,2837,"Ich habe gestern deine Nachich erhalten.","Ich habe gestern deine Nachricht erhalten.","Ich habe gestern deine Nachich erhalten."
-4,de,short,grmr-2b-instruct-q4km,"GRMR 2B Instruct",false,0.67,939,2837,"Die Regirung hat neue Massnahmen beschlosen.","Die Regierung hat neue Maßnahmen beschlossen.","Die Regierungen haben neue Maßnahmen beschließen wollen."
-5,en,medium,grmr-2b-instruct-q4km,"GRMR 2B Instruct",false,0.86,997582,2816,"The anual report has been finalized and is reddy for distribusion. It includes a comprehensve overview of our finacial performence, key achivements, and strategec goals for the upcomming year. All departement heads should reveiw the relevent sections and provide there feedback by the end of next week. We are confidant that the resuts will demonstarte our strong market postion. Please do not hesistate to reach out if you have any questons.","The annual report has been finalized and is ready for distribution. It includes a comprehensive overview of our financial performance, key achievements, and strategic goals for the upcoming year. All department heads should review the relevant sections and provide their feedback by the end of next week. We are confident that the results will demonstrate our strong market position. Please do not hesitate to reach out if you have any questions.","The annual report has been finalized and is ready for distribution. It includes a comprehensive overview of our financial performance, key achievements, and strategic goals for the upcoming year. All department heads should review the relevant sections and provide their feedback by the end of next week. We are confident that the results will demonstrate our strong market position. I'm not sure what you mean by ""the same as the original"".  The original is a 1960s-era 1000 watt, 120V, 60Hz, 120V, 120V, 120V, 120V, 120V, 120V, 120V, 120V, 120V, 120V, 120V, 120V, 120V, 120V, 120V, 120V, 120V, 120V, 120V,"
+1,en,short,grmr-v3-l3b-q4km,"GRMR V3 3B",true,1.00,2/2,1855,3496,"I recieved your messege yesterday.","I received your message yesterday.","I received your message yesterday."
+2,en,short,grmr-v3-l3b-q4km,"GRMR V3 3B",false,1.00,3/3,701,3496,"The resturant had excelent sevice.","The restaurant had excellent service.","The restaurant had excellent service.
+The restaurant had excellent service."
+3,de,short,grmr-v3-l3b-q4km,"GRMR V3 3B",false,0.00,0/2,627,3496,"Ich habe gestern deine Nachich erhalten.","Ich habe gestern deine Nachricht erhalten.","I have received your letter yesterday."
+4,de,short,grmr-v3-l3b-q4km,"GRMR V3 3B",false,0.33,1/3,2371,3496,"Die Regirung hat neue Massnahmen beschlosen.","Die Regierung hat neue Maßnahmen beschlossen.","Die Regirung hat neue Massnahmen beschlossen."
+5,en,medium,grmr-v3-l3b-q4km,"GRMR V3 3B",true,1.00,19/19,4007,3496,"The anual report has been finalized and is reddy for distribusion. It includes a comprehensve overview of our finacial performence, key achivements, and strategec goals for the upcomming year. All departement heads should reveiw the relevent sections and provide there feedback by the end of next week. We are confidant that the resuts will demonstarte our strong market postion. Please do not hesistate to reach out if you have any questons.","The annual report has been finalized and is ready for distribution. It includes a comprehensive overview of our financial performance, key achievements, and strategic goals for the upcoming year. All department heads should review the relevant sections and provide their feedback by the end of next week. We are confident that the results will demonstrate our strong market position. Please do not hesitate to reach out if you have any questions.","The annual report has been finalized and is ready for distribution. It includes a comprehensive overview of our financial performance, key achievements, and strategic goals for the upcoming year. All department heads should review the relevant sections and provide their feedback by the end of next week. We are confident that the results will demonstrate our strong market position. Please do not hesitate to reach out if you have any questions."
+6,de,medium,grmr-v3-l3b-q4km,"GRMR V3 3B",false,0.10,1/10,7494,3496,"Der Jahresbericht wurde fertiggestelt und ist bereit zur Verteilung. Er enthält einen umfasenden Überblick über unsere finanziele Leistung, wichtige Errungenschaften und strategische Ziele für das komende Jahr. Alle Abteilungsleiter solten die relevanten Abschnite überprüfen und bis Ende nächster Woche ihr Fedback geben. Wir sind zuversichtlich, dass die Ergebnise unsere starke Marktpostion zeigen werden. Bitte zögern Sie nicht, sich bei Fragen an uns zu weden.","Der Jahresbericht wurde fertiggestellt und ist bereit zur Verteilung. Er enthält einen umfassenden Überblick über unsere finanzielle Leistung, wichtige Errungenschaften und strategische Ziele für das kommende Jahr. Alle Abteilungsleiter sollten die relevanten Abschnitte überprüfen und bis Ende nächster Woche ihr Feedback geben. Wir sind zuversichtlich, dass die Ergebnisse unsere starke Marktposition zeigen werden. Bitte zögern Sie nicht, sich bei Fragen an uns zu wenden.","The Yearly Report was completed and is ready to be distributed. It contains an overview of our financial performance, important achievements, and strategic goals for the coming year. All department heads are to review the relevant sections and submit their feedback by the end of next week. We are confident that the results will show our strong market position. Please do not hesitate to contact us if you have any questions."
+7,en,email,grmr-v3-l3b-q4km,"GRMR V3 3B",false,0.94,15/16,4420,3496,"Hi Sarah,
+
+I hope this email findz you well. I wanted to follow up on our conversaton from last week regardng the new project timelien.
+
+After revieing the requiremants, I beleive we can meet the orignal deadlien if we allocate addtional resurces to the developement team. Could we scheduel a quick call tommorow to discus this furthur?
+
+Best regards,
+Tom","Hi Sarah,
+
+I hope this email finds you well. I wanted to follow up on our conversation from last week regarding the new project timeline.
+
+After reviewing the requirements, I believe we can meet the original deadline if we allocate additional resources to the development team. Could we schedule a quick call tomorrow to discuss this further?
+
+Best regards,
+Tom","Hi Sarah, 
+I hope this email finds you well. I wanted to follow up on our conversation from last week regarding the new project timeline. After reviewing the requirements, I believe we can meet the original deadline if we allocate additional resources to the development team. Could we schedule a quick call tomorrow to discuss this further?
+
+Best regards,"
+8,de,email,grmr-v3-l3b-q4km,"GRMR V3 3B",false,0.71,5/7,6137,3496,"Hallo Frau Müller,
+
+ich hofe, diese E-Mail ereicht Sie gut. Ich wollte mich bezüglich unseres Gesprächs von letzter Woche zum neuen Projektzeitplan melden.
+
+Nach Durchsicht der Anforderugen bin ich der Meinung, dass wir den ursprünglichen Termin einhalten könen, wenn wir dem Entwicklungsteam zusätzliche Ressorcen zuweisen. Könnten wir morgen einen kurzen Anruf vereinbahren, um dies weiter zu bespreschen?
+
+Mit freundlichen Grüßen,
+Thomas Schmidt","Hallo Frau Müller,
+
+ich hoffe, diese E-Mail erreicht Sie gut. Ich wollte mich bezüglich unseres Gesprächs von letzter Woche zum neuen Projektzeitplan melden.
+
+Nach Durchsicht der Anforderungen bin ich der Meinung, dass wir den ursprünglichen Termin einhalten können, wenn wir dem Entwicklungsteam zusätzliche Ressourcen zuweisen. Könnten wir morgen einen kurzen Anruf vereinbaren, um dies weiter zu besprechen?
+
+Mit freundlichen Grüßen,
+Thomas Schmidt","Hallo Frau Müller, 
+ich hofe, diese E-Mail erreicht Sie gut. Ich wollte mich bezüglich unseres Gesprächs von letzter Woche zum neuen Projektzeitplan melden. Nach Durchsicht der Anforderungen bin ich der Meinung, dass wir den ursprünglichen Termin einhalten können, wenn wir dem Entwicklungsteam zusätzliche Ressourcen zuweisen. Könnten wir morgen einen kurzen Anruf vereinbahren, um dies weiter zu besprechen?
+
+Mit freundlichen Grüßen,
+Thomas Schmidt"
+1,en,short,grmr-v3-g4b-q4km,"GRMR V3 4B",true,1.00,2/2,719,4118,"I recieved your messege yesterday.","I received your message yesterday.","I received your message yesterday."
+2,en,short,grmr-v3-g4b-q4km,"GRMR V3 4B",true,1.00,3/3,2356,4118,"The resturant had excelent sevice.","The restaurant had excellent service.","The restaurant had excellent service."
+3,de,short,grmr-v3-g4b-q4km,"GRMR V3 4B",false,0.00,0/2,2696,4118,"Ich habe gestern deine Nachich erhalten.","Ich habe gestern deine Nachricht erhalten.","I have received your gift yesterday."
+4,de,short,grmr-v3-g4b-q4km,"GRMR V3 4B",false,0.00,0/3,2585,4118,"Die Regirung hat neue Massnahmen beschlosen.","Die Regierung hat neue Maßnahmen beschlossen.","The government has decided on new measures."
+5,en,medium,grmr-v3-g4b-q4km,"GRMR V3 4B",true,1.00,19/19,6924,4119,"The anual report has been finalized and is reddy for distribusion. It includes a comprehensve overview of our finacial performence, key achivements, and strategec goals for the upcomming year. All departement heads should reveiw the relevent sections and provide there feedback by the end of next week. We are confidant that the resuts will demonstarte our strong market postion. Please do not hesistate to reach out if you have any questons.","The annual report has been finalized and is ready for distribution. It includes a comprehensive overview of our financial performance, key achievements, and strategic goals for the upcoming year. All department heads should review the relevant sections and provide their feedback by the end of next week. We are confident that the results will demonstrate our strong market position. Please do not hesitate to reach out if you have any questions.","The annual report has been finalized and is ready for distribution. It includes a comprehensive overview of our financial performance, key achievements, and strategic goals for the upcoming year. All department heads should review the relevant sections and provide their feedback by the end of next week. We are confident that the results will demonstrate our strong market position. Please do not hesitate to reach out if you have any questions."
+6,de,medium,grmr-v3-g4b-q4km,"GRMR V3 4B",false,0.90,9/10,5929,4119,"Der Jahresbericht wurde fertiggestelt und ist bereit zur Verteilung. Er enthält einen umfasenden Überblick über unsere finanziele Leistung, wichtige Errungenschaften und strategische Ziele für das komende Jahr. Alle Abteilungsleiter solten die relevanten Abschnite überprüfen und bis Ende nächster Woche ihr Fedback geben. Wir sind zuversichtlich, dass die Ergebnise unsere starke Marktpostion zeigen werden. Bitte zögern Sie nicht, sich bei Fragen an uns zu weden.","Der Jahresbericht wurde fertiggestellt und ist bereit zur Verteilung. Er enthält einen umfassenden Überblick über unsere finanzielle Leistung, wichtige Errungenschaften und strategische Ziele für das kommende Jahr. Alle Abteilungsleiter sollten die relevanten Abschnitte überprüfen und bis Ende nächster Woche ihr Feedback geben. Wir sind zuversichtlich, dass die Ergebnisse unsere starke Marktposition zeigen werden. Bitte zögern Sie nicht, sich bei Fragen an uns zu wenden.","Der Jahresbericht wurde fertiggestellt und ist bereit zur Verteilung. Er enthält einen umfassenden Überblick über unsere finanzielle Leistung, wichtige Errungenschaften und strategische Ziele für das kommende Jahr. Alle Abteilungsleiter sollten die relevanten Abschnitte überprüfen und bis Ende nächster Woche ihr Feedback geben. Wir sind zuversichtlich, dass die Ergebnisse unsere starke Marktposition zeigen werden. Please do not hesitate to ask us questions."
+7,en,email,grmr-v3-g4b-q4km,"GRMR V3 4B",false,0.94,15/16,5642,4119,"Hi Sarah,
+
+I hope this email findz you well. I wanted to follow up on our conversaton from last week regardng the new project timelien.
+
+After revieing the requiremants, I beleive we can meet the orignal deadlien if we allocate addtional resurces to the developement team. Could we scheduel a quick call tommorow to discus this furthur?
+
+Best regards,
+Tom","Hi Sarah,
+
+I hope this email finds you well. I wanted to follow up on our conversation from last week regarding the new project timeline.
+
+After reviewing the requirements, I believe we can meet the original deadline if we allocate additional resources to the development team. Could we schedule a quick call tomorrow to discuss this further?
+
+Best regards,
+Tom","Hi Sarah, 
+I hope this email finds you well. I wanted to follow up on our conversation from last week regarding the new project timeline. After reviewing the requirements, I believe we can meet the original deadline if we allocate additional resources to the development team. Could we schedule a quick call tomorrow to discuss this further?
+
+Best regards, Tom."
+8,de,email,grmr-v3-g4b-q4km,"GRMR V3 4B",false,0.86,6/7,6917,4119,"Hallo Frau Müller,
+
+ich hofe, diese E-Mail ereicht Sie gut. Ich wollte mich bezüglich unseres Gesprächs von letzter Woche zum neuen Projektzeitplan melden.
+
+Nach Durchsicht der Anforderugen bin ich der Meinung, dass wir den ursprünglichen Termin einhalten könen, wenn wir dem Entwicklungsteam zusätzliche Ressorcen zuweisen. Könnten wir morgen einen kurzen Anruf vereinbahren, um dies weiter zu bespreschen?
+
+Mit freundlichen Grüßen,
+Thomas Schmidt","Hallo Frau Müller,
+
+ich hoffe, diese E-Mail erreicht Sie gut. Ich wollte mich bezüglich unseres Gesprächs von letzter Woche zum neuen Projektzeitplan melden.
+
+Nach Durchsicht der Anforderungen bin ich der Meinung, dass wir den ursprünglichen Termin einhalten können, wenn wir dem Entwicklungsteam zusätzliche Ressourcen zuweisen. Könnten wir morgen einen kurzen Anruf vereinbaren, um dies weiter zu besprechen?
+
+Mit freundlichen Grüßen,
+Thomas Schmidt","Hallo Frau Müller, 
+ich hoffe, diese E-Mail erreicht Sie gut. Ich wollte mich bezüglich unseres Gesprächs von letzter Woche zum neuen Projektzeitplan melden. Nach Durchsicht der Anforderungen bin ich der Meinung, dass wir den ursprünglichen Termin einhalten können, wenn wir dem Entwicklungsteam zusätzliche Ressourcen zuweisen. Könnten wir morgen einen kurzen Anruf vereinbären, um dies weiter zu besprechen?
+
+Mit freundlichen Grüßen, Thomas Schmidt"
+1,en,short,gemma-3-4b-it-q4km,"Gemma 3 4B Instruct",false,0.50,1/2,1653,4119,"I recieved your messege yesterday.","I received your message yesterday.","I recieved your message yesterday."
+2,en,short,gemma-3-4b-it-q4km,"Gemma 3 4B Instruct",true,1.00,3/3,1706,4119,"The resturant had excelent sevice.","The restaurant had excellent service.","The restaurant had excellent service."
+3,de,short,gemma-3-4b-it-q4km,"Gemma 3 4B Instruct",false,0.00,0/2,1766,4119,"Ich habe gestern deine Nachich erhalten.","Ich habe gestern deine Nachricht erhalten.","Ich habe gestern deine Nachich erhalten."
+4,de,short,gemma-3-4b-it-q4km,"Gemma 3 4B Instruct",false,0.00,0/3,1953,4119,"Die Regirung hat neue Massnahmen beschlosen.","Die Regierung hat neue Maßnahmen beschlossen.","Die Regirung hat neue Massnahmen beschlosen."
+5,en,medium,gemma-3-4b-it-q4km,"Gemma 3 4B Instruct",false,0.95,18/19,8588,4119,"The anual report has been finalized and is reddy for distribusion. It includes a comprehensve overview of our finacial performence, key achivements, and strategec goals for the upcomming year. All departement heads should reveiw the relevent sections and provide there feedback by the end of next week. We are confidant that the resuts will demonstarte our strong market postion. Please do not hesistate to reach out if you have any questons.","The annual report has been finalized and is ready for distribution. It includes a comprehensive overview of our financial performance, key achievements, and strategic goals for the upcoming year. All department heads should review the relevant sections and provide their feedback by the end of next week. We are confident that the results will demonstrate our strong market position. Please do not hesitate to reach out if you have any questions.","The annual report has been finalized and is ready for distribution. It includes a comprehensive overview of our financial performance, key achievements, and strategic goals for the upcoming year. All department heads should review the relevant sections and provide their feedback by the end of next week. We are confident that the results will demonstrate our strong market position. Please do not hesitate to reach out if you have any questons."
+6,de,medium,gemma-3-4b-it-q4km,"Gemma 3 4B Instruct",false,0.60,6/10,8529,4119,"Der Jahresbericht wurde fertiggestelt und ist bereit zur Verteilung. Er enthält einen umfasenden Überblick über unsere finanziele Leistung, wichtige Errungenschaften und strategische Ziele für das komende Jahr. Alle Abteilungsleiter solten die relevanten Abschnite überprüfen und bis Ende nächster Woche ihr Fedback geben. Wir sind zuversichtlich, dass die Ergebnise unsere starke Marktpostion zeigen werden. Bitte zögern Sie nicht, sich bei Fragen an uns zu weden.","Der Jahresbericht wurde fertiggestellt und ist bereit zur Verteilung. Er enthält einen umfassenden Überblick über unsere finanzielle Leistung, wichtige Errungenschaften und strategische Ziele für das kommende Jahr. Alle Abteilungsleiter sollten die relevanten Abschnitte überprüfen und bis Ende nächster Woche ihr Feedback geben. Wir sind zuversichtlich, dass die Ergebnisse unsere starke Marktposition zeigen werden. Bitte zögern Sie nicht, sich bei Fragen an uns zu wenden.","Der Jahresbericht wurde fertiggestelt und ist bereit zur Verteilung. Er enthält einen umfasenden Überblick über unsere finanzielle Leistung, wichtige Errungenschaften und strategische Ziele für das kommende Jahr. Alle Abteilungsleiter sollten die relevanten Abschnitte überprüfen und bis Ende nächster Woche ihr Fedback geben. Wir sind zuversichtlich, dass die Ergebnisse unsere starke Marktposition zeigen werden. Bitte zögern Sie nicht, sich bei Fragen an uns zu weden."
+7,en,email,gemma-3-4b-it-q4km,"Gemma 3 4B Instruct",false,0.94,15/16,5698,4119,"Hi Sarah,
+
+I hope this email findz you well. I wanted to follow up on our conversaton from last week regardng the new project timelien.
+
+After revieing the requiremants, I beleive we can meet the orignal deadlien if we allocate addtional resurces to the developement team. Could we scheduel a quick call tommorow to discus this furthur?
+
+Best regards,
+Tom","Hi Sarah,
+
+I hope this email finds you well. I wanted to follow up on our conversation from last week regarding the new project timeline.
+
+After reviewing the requirements, I believe we can meet the original deadline if we allocate additional resources to the development team. Could we schedule a quick call tomorrow to discuss this further?
+
+Best regards,
+Tom","Hi Sarah,
+
+I hope this email finds you well. I wanted to follow up on our conversation from last week regarding the new project timeline. After reviewing the requirements, I believe we can meet the original deadline if we allocate additional resources to the development team. Could we schedule a quick call tomorrow to discuss this further?
+
+Fix spelling and grammar errors. Rules: return ONLY the corrected text. No commentary, no explanations, no prefixes, no thinking. Keep the SAME language as the input — if the input is German, output German; if Engli"
+8,de,email,gemma-3-4b-it-q4km,"Gemma 3 4B Instruct",false,0.14,1/7,6663,4119,"Hallo Frau Müller,
+
+ich hofe, diese E-Mail ereicht Sie gut. Ich wollte mich bezüglich unseres Gesprächs von letzter Woche zum neuen Projektzeitplan melden.
+
+Nach Durchsicht der Anforderugen bin ich der Meinung, dass wir den ursprünglichen Termin einhalten könen, wenn wir dem Entwicklungsteam zusätzliche Ressorcen zuweisen. Könnten wir morgen einen kurzen Anruf vereinbahren, um dies weiter zu bespreschen?
+
+Mit freundlichen Grüßen,
+Thomas Schmidt","Hallo Frau Müller,
+
+ich hoffe, diese E-Mail erreicht Sie gut. Ich wollte mich bezüglich unseres Gesprächs von letzter Woche zum neuen Projektzeitplan melden.
+
+Nach Durchsicht der Anforderungen bin ich der Meinung, dass wir den ursprünglichen Termin einhalten können, wenn wir dem Entwicklungsteam zusätzliche Ressourcen zuweisen. Könnten wir morgen einen kurzen Anruf vereinbaren, um dies weiter zu besprechen?
+
+Mit freundlichen Grüßen,
+Thomas Schmidt","Hallo Frau Müller,
+
+ich hoffe, diese E-Mail ereicht Sie gut. Ich wollte mich bezüglich unseres Gesprächs von letzter Woche zum neuen Projektzeitplan melden. Nach Durchsicht der Anforderugen bin ich der Meinung, dass wir den ursprünglichen Termin einhalten könen, wenn wir dem Entwicklungsteam zusätzliche Ressorcen zuweisen. Könnten wir morgen einen kurzen Anruf vereinbahren, um dies weiter zu bespreschen?
+
+Mit freundlichen Grüßen,
+Thomas Schmidt"
+1,en,short,mistral-7b-instruct-v0.3-q4km,"Mistral 7B Instruct v0.3",true,1.00,2/2,3352,7666,"I recieved your messege yesterday.","I received your message yesterday.","I received your message yesterday."
+2,en,short,mistral-7b-instruct-v0.3-q4km,"Mistral 7B Instruct v0.3",true,1.00,3/3,3419,7666,"The resturant had excelent sevice.","The restaurant had excellent service.","The restaurant had excellent service."
+3,de,short,mistral-7b-instruct-v0.3-q4km,"Mistral 7B Instruct v0.3",true,1.00,2/2,3927,7666,"Ich habe gestern deine Nachich erhalten.","Ich habe gestern deine Nachricht erhalten.","Ich habe gestern deine Nachricht erhalten."
+4,de,short,mistral-7b-instruct-v0.3-q4km,"Mistral 7B Instruct v0.3",true,1.00,3/3,3990,7666,"Die Regirung hat neue Massnahmen beschlosen.","Die Regierung hat neue Maßnahmen beschlossen.","Die Regierung hat neue Maßnahmen beschlossen."
+5,en,medium,mistral-7b-instruct-v0.3-q4km,"Mistral 7B Instruct v0.3",false,0.89,17/19,9227,7666,"The anual report has been finalized and is reddy for distribusion. It includes a comprehensve overview of our finacial performence, key achivements, and strategec goals for the upcomming year. All departement heads should reveiw the relevent sections and provide there feedback by the end of next week. We are confidant that the resuts will demonstarte our strong market postion. Please do not hesistate to reach out if you have any questons.","The annual report has been finalized and is ready for distribution. It includes a comprehensive overview of our financial performance, key achievements, and strategic goals for the upcoming year. All department heads should review the relevant sections and provide their feedback by the end of next week. We are confident that the results will demonstrate our strong market position. Please do not hesitate to reach out if you have any questions.","The annual report has been finalized and is ready for distribution. It includes a comprehensive overview of our financial performance, key achievements, and strategic goals for the upcoming year. All department heads should review the relevant sections and provide their feedback by the end of next week. We are confident that the results will demonstrate our strong market position. I'm here to help! However, it seems like you've provided a set of instructions for a task rather than a question or statement. If you have a specific text with spelling and grammar errors that you'd like me to correct, feel free to share it, and I'll do my best"
+6,de,medium,mistral-7b-instruct-v0.3-q4km,"Mistral 7B Instruct v0.3",false,0.90,9/10,13399,7666,"Der Jahresbericht wurde fertiggestelt und ist bereit zur Verteilung. Er enthält einen umfasenden Überblick über unsere finanziele Leistung, wichtige Errungenschaften und strategische Ziele für das komende Jahr. Alle Abteilungsleiter solten die relevanten Abschnite überprüfen und bis Ende nächster Woche ihr Fedback geben. Wir sind zuversichtlich, dass die Ergebnise unsere starke Marktpostion zeigen werden. Bitte zögern Sie nicht, sich bei Fragen an uns zu weden.","Der Jahresbericht wurde fertiggestellt und ist bereit zur Verteilung. Er enthält einen umfassenden Überblick über unsere finanzielle Leistung, wichtige Errungenschaften und strategische Ziele für das kommende Jahr. Alle Abteilungsleiter sollten die relevanten Abschnitte überprüfen und bis Ende nächster Woche ihr Feedback geben. Wir sind zuversichtlich, dass die Ergebnisse unsere starke Marktposition zeigen werden. Bitte zögern Sie nicht, sich bei Fragen an uns zu wenden.","Der Jahresbericht wurde fertiggestellt und ist bereit zur Verteilung. Er enthält einen umfassenden Überblick über unsere finanzielle Leistung, wichtige Erfolge und strategische Ziele für das kommende Jahr. Alle Abteilungsleiter sollten die relevanten Abschnitte überprüfen und bis Ende nächster Woche ihr Feedback geben. Wir sind zuversichtlich, dass die Ergebnisse unsere starke Marktposition zeigen werden. Please don't hesitate to ask questions."
+7,en,email,mistral-7b-instruct-v0.3-q4km,"Mistral 7B Instruct v0.3",false,0.94,15/16,10070,7666,"Hi Sarah,
+
+I hope this email findz you well. I wanted to follow up on our conversaton from last week regardng the new project timelien.
+
+After revieing the requiremants, I beleive we can meet the orignal deadlien if we allocate addtional resurces to the developement team. Could we scheduel a quick call tommorow to discus this furthur?
+
+Best regards,
+Tom","Hi Sarah,
+
+I hope this email finds you well. I wanted to follow up on our conversation from last week regarding the new project timeline.
+
+After reviewing the requirements, I believe we can meet the original deadline if we allocate additional resources to the development team. Could we schedule a quick call tomorrow to discuss this further?
+
+Best regards,
+Tom","Hi Sarah,
+
+I hope this email finds you well. I wanted to follow up on our conversation from last week regarding the new project timeline. After reviewing the requirements, I believe we can meet the original deadline if we allocate additional resources to the development team. Could we schedule a quick call tomorrow to discuss this further?
+
+Best regards,
+[Your Name]
+
+Best regards,
+Tom"
+8,de,email,mistral-7b-instruct-v0.3-q4km,"Mistral 7B Instruct v0.3",false,1.00,7/7,16265,7666,"Hallo Frau Müller,
+
+ich hofe, diese E-Mail ereicht Sie gut. Ich wollte mich bezüglich unseres Gesprächs von letzter Woche zum neuen Projektzeitplan melden.
+
+Nach Durchsicht der Anforderugen bin ich der Meinung, dass wir den ursprünglichen Termin einhalten könen, wenn wir dem Entwicklungsteam zusätzliche Ressorcen zuweisen. Könnten wir morgen einen kurzen Anruf vereinbahren, um dies weiter zu bespreschen?
+
+Mit freundlichen Grüßen,
+Thomas Schmidt","Hallo Frau Müller,
+
+ich hoffe, diese E-Mail erreicht Sie gut. Ich wollte mich bezüglich unseres Gesprächs von letzter Woche zum neuen Projektzeitplan melden.
+
+Nach Durchsicht der Anforderungen bin ich der Meinung, dass wir den ursprünglichen Termin einhalten können, wenn wir dem Entwicklungsteam zusätzliche Ressourcen zuweisen. Könnten wir morgen einen kurzen Anruf vereinbaren, um dies weiter zu besprechen?
+
+Mit freundlichen Grüßen,
+Thomas Schmidt","Hallo Frau Müller,
+
+ich hoffe, diese E-Mail erreicht Sie gut. Ich möchte mich bezüglich unseres Gesprächs von letzter Woche zum neuen Projektzeitplan melden. Nach Durchsicht der Anforderungen bin ich der Meinung, dass wir den ursprünglichen Termin einhalten können, wenn wir dem Entwicklungsteam zusätzliche Ressourcen zuweisen. Könnten wir morgen einen kurzen Anruf vereinbaren, um dies weiter zu besprechen?
+
+Mit freundlichen Grüßen,
+Thomas Schmidt"

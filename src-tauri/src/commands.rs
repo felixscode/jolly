@@ -223,14 +223,14 @@ pub async fn cancel_download(
 
 #[tauri::command]
 pub async fn activate_model(app: AppHandle, model_id: String) -> Result<(), String> {
-    let model_path = if model_id.starts_with("custom-") {
+    let (model_path, prompt_template) = if model_id.starts_with("custom-") {
         let path_str = get_custom_model_path(&app, &model_id)
             .ok_or("Custom model not found in settings")?;
         let path = std::path::PathBuf::from(&path_str);
         if !path.exists() {
             return Err(format!("Custom model file not found: {}", path_str));
         }
-        path
+        (path, None)
     } else {
         let model = registry::find_model(&model_id).ok_or("Unknown model ID")?;
         let app_data = app.path().app_data_dir().map_err(|e| e.to_string())?;
@@ -239,11 +239,11 @@ pub async fn activate_model(app: AppHandle, model_id: String) -> Result<(), Stri
         if !path.exists() {
             return Err(format!("Model file not found: {}", model.file_name));
         }
-        path
+        (path, model.prompt_template.map(|s| s.to_string()))
     };
 
     tokio::task::spawn_blocking(move || {
-        crate::inference::local::swap_model(&model_path, &model_id)
+        crate::inference::local::swap_model(&model_path, &model_id, prompt_template.as_deref())
     })
     .await
     .map_err(|e| format!("Task failed: {}", e))?
