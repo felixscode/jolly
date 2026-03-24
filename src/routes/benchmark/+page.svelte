@@ -134,65 +134,44 @@
 		</p>
 	</div>
 
-	<!-- English table -->
-	<h2 class="mb-4 text-xl font-bold text-[#423f37] dark:text-[#e8e8e3]">English</h2>
-	<div class="mb-8 overflow-x-auto md:mb-16">
-		<table class="w-full text-left text-sm text-gray-500 dark:text-gray-400">
-			<thead class="border-b border-gray-200 text-xs uppercase text-[#423f37] dark:border-gray-700 dark:text-[#e8e8e3]">
-				<tr>
-					<th scope="col" class="py-3 pr-6">Model</th>
-					<th scope="col" class="py-3 pr-6">Exact Match</th>
-					<th scope="col" class="py-3 pr-6">Score</th>
-					<th scope="col" class="py-3 pr-6">Time (ms)</th>
-					<th scope="col" class="py-3">Memory (MB)</th>
-				</tr>
-			</thead>
-			<tbody>
-				{#each englishData as row}
-					<tr class="border-b border-gray-100 dark:border-gray-800">
-						<td class="py-3 pr-6 font-medium text-[#423f37] whitespace-nowrap dark:text-[#e8e8e3]">{row.model}</td>
-						<td class="py-3 pr-6">{row.exact}%</td>
-						<td class="py-3 pr-6">{row.score.toFixed(2)}</td>
-						<td class="py-3 pr-6">{row.time.toLocaleString()}</td>
-						<td class="py-3">{row.mem.toLocaleString()}</td>
+	{#snippet dataTable(data: typeof englishData)}
+		<div class="mb-8 overflow-x-auto md:mb-16">
+			<table class="w-full text-left text-sm text-gray-500 dark:text-gray-400">
+				<thead class="border-b border-gray-200 text-xs uppercase text-[#423f37] dark:border-gray-700 dark:text-[#e8e8e3]">
+					<tr>
+						<th scope="col" class="py-3 pr-6">Model</th>
+						<th scope="col" class="py-3 pr-6">Exact Match (%)</th>
+						<th scope="col" class="py-3 pr-6">Score</th>
+						<th scope="col" class="py-3 pr-6">Time (ms)</th>
+						<th scope="col" class="py-3">Memory (MB)</th>
 					</tr>
-				{/each}
-			</tbody>
-		</table>
-	</div>
+				</thead>
+				<tbody>
+					{#each data as row}
+						<tr class="border-b border-gray-100 dark:border-gray-800">
+							<td class="py-3 pr-6 font-medium text-[#423f37] whitespace-nowrap dark:text-[#e8e8e3]">{row.model}</td>
+							<td class="py-3 pr-6">{row.exact}%</td>
+							<td class="py-3 pr-6">{row.score.toFixed(2)}</td>
+							<td class="py-3 pr-6">{row.time.toLocaleString()}</td>
+							<td class="py-3">{row.mem.toLocaleString()}</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+	{/snippet}
 
-	<!-- German table -->
+	<h2 class="mb-4 text-xl font-bold text-[#423f37] dark:text-[#e8e8e3]">English</h2>
+	{@render dataTable(englishData)}
+
 	<h2 class="mb-4 text-xl font-bold text-[#423f37] dark:text-[#e8e8e3]">German</h2>
-	<div class="mb-8 overflow-x-auto md:mb-16">
-		<table class="w-full text-left text-sm text-gray-500 dark:text-gray-400">
-			<thead class="border-b border-gray-200 text-xs uppercase text-[#423f37] dark:border-gray-700 dark:text-[#e8e8e3]">
-				<tr>
-					<th scope="col" class="py-3 pr-6">Model</th>
-					<th scope="col" class="py-3 pr-6">Exact Match</th>
-					<th scope="col" class="py-3 pr-6">Score</th>
-					<th scope="col" class="py-3 pr-6">Time (ms)</th>
-					<th scope="col" class="py-3">Memory (MB)</th>
-				</tr>
-			</thead>
-			<tbody>
-				{#each germanData as row}
-					<tr class="border-b border-gray-100 dark:border-gray-800">
-						<td class="py-3 pr-6 font-medium text-[#423f37] whitespace-nowrap dark:text-[#e8e8e3]">{row.model}</td>
-						<td class="py-3 pr-6">{row.exact}%</td>
-						<td class="py-3 pr-6">{row.score.toFixed(2)}</td>
-						<td class="py-3 pr-6">{row.time.toLocaleString()}</td>
-						<td class="py-3">{row.mem.toLocaleString()}</td>
-					</tr>
-				{/each}
-			</tbody>
-		</table>
-	</div>
+	{@render dataTable(germanData)}
 
 	<hr class="mb-8 border-gray-200 md:mb-16 dark:border-gray-700" />
 
 	<!-- Interpretation -->
 	<div class="mx-auto max-w-2xl text-center">
-		<h2 class="mb-4 text-2xl font-bold text-[#423f37] dark:text-[#e8e8e3]">What this means</h2>
+		<h2 class="mb-4 text-xl font-bold text-[#423f37] dark:text-[#e8e8e3]">What this means</h2>
 		<p class="mb-4 leading-relaxed text-gray-500 dark:text-gray-400">
 			Harper is the fastest option by far and handles English well, but it falls apart on German —
 			it is an English grammar checker after all. OpenRouter's GPT-4o-mini delivers the best
