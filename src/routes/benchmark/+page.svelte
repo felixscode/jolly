@@ -7,23 +7,23 @@
 	let blinking = $state(false);
 
 	const englishData = [
-		{ model: 'Harper', exact: 50, score: 0.94, errorsFixed: 90, time: 98, mem: 187 },
 		{ model: 'OpenRouter gpt-4o-mini', exact: 75, score: 1.00, errorsFixed: 100, time: 1277, mem: 220 },
-		{ model: 'GRMR V3 1.7B', exact: 0, score: 0.42, errorsFixed: 45, time: 3174, mem: 1960 },
 		{ model: 'GRMR V3 3B', exact: 50, score: 0.98, errorsFixed: 98, time: 2533, mem: 3489 },
 		{ model: 'GRMR V3 4B', exact: 75, score: 0.98, errorsFixed: 98, time: 3326, mem: 4112 },
 		{ model: 'Gemma 3 4B Instruct', exact: 25, score: 0.85, errorsFixed: 93, time: 4109, mem: 4112 },
-		{ model: 'Mistral 7B Instruct v0.3', exact: 50, score: 0.96, errorsFixed: 93, time: 6560, mem: 7659 }
+		{ model: 'Mistral 7B Instruct v0.3', exact: 50, score: 0.96, errorsFixed: 93, time: 6560, mem: 7659 },
+		{ model: 'Harper', exact: 50, score: 0.94, errorsFixed: 90, time: 98, mem: 187 },
+		{ model: 'GRMR V3 1.7B', exact: 0, score: 0.42, errorsFixed: 45, time: 3174, mem: 1960 }
 	];
 
 	const germanData = [
-		{ model: 'Harper', exact: 0, score: 0.00, errorsFixed: 0, time: 273, mem: 200 },
 		{ model: 'OpenRouter gpt-4o-mini', exact: 75, score: 1.00, errorsFixed: 100, time: 1379, mem: 221 },
-		{ model: 'GRMR V3 1.7B', exact: 0, score: 0.15, errorsFixed: 14, time: 5833, mem: 1960 },
-		{ model: 'GRMR V3 3B', exact: 0, score: 0.28, errorsFixed: 32, time: 4294, mem: 3489 },
+		{ model: 'Mistral 7B Instruct v0.3', exact: 50, score: 0.97, errorsFixed: 95, time: 10305, mem: 7659 },
 		{ model: 'GRMR V3 4B', exact: 0, score: 0.44, errorsFixed: 68, time: 4123, mem: 4112 },
+		{ model: 'GRMR V3 3B', exact: 0, score: 0.28, errorsFixed: 32, time: 4294, mem: 3489 },
 		{ model: 'Gemma 3 4B Instruct', exact: 0, score: 0.18, errorsFixed: 32, time: 4250, mem: 4112 },
-		{ model: 'Mistral 7B Instruct v0.3', exact: 50, score: 0.97, errorsFixed: 95, time: 10305, mem: 7659 }
+		{ model: 'GRMR V3 1.7B', exact: 0, score: 0.15, errorsFixed: 14, time: 5833, mem: 1960 },
+		{ model: 'Harper', exact: 0, score: 0.00, errorsFixed: 0, time: 273, mem: 200 }
 	];
 
 	onMount(() => {
