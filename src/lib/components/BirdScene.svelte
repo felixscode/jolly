@@ -113,12 +113,14 @@
 	}
 
 	async function writeClipboard(text: string): Promise<void> {
+		// Try Tauri plugin first (more reliable on Linux/Wayland),
+		// fall back to Web Clipboard API.
 		try {
-			await navigator.clipboard.writeText(text);
+			const { writeText } = await import('@tauri-apps/plugin-clipboard-manager');
+			await writeText(text);
 		} catch {
 			try {
-				const { writeText } = await import('@tauri-apps/plugin-clipboard-manager');
-				await writeText(text);
+				await navigator.clipboard.writeText(text);
 			} catch {
 				throw new Error('Clipboard write denied');
 			}
