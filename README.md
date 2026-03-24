@@ -20,7 +20,7 @@ Copy Enter Paste! Jolly read from your clipboard and applies changes so you can 
 Nothing leaves your device.
 
 
-[Features](#features) | [Installation](#installation) | [Benchmarks](#benchmarks) | [Models](#available-models) | [Development](#development) | [Tech Stack](#tech-stack)
+[Features](#features) | [Installation](#installation) | [Models](#available-models) | [Benchmarks](#benchmarks) | [Screenshots](#screenshots)
 
 </div>
 
