@@ -7,27 +7,23 @@
 	let blinking = $state(false);
 
 	const englishData = [
-		{ model: 'Harper', exact: 50, score: 0.94, time: 100, mem: 179 },
-		{ model: 'OpenRouter gpt-4o-mini', exact: 75, score: 1.00, time: 1301, mem: 213 },
-		{ model: 'GRMR 2B Instruct', exact: 50, score: 0.97, time: 5639, mem: 2806 },
-		{ model: 'GRMR V3 G4B (Q2_K)', exact: 75, score: 0.98, time: 3567, mem: 1912 },
-		{ model: 'GRMR V3 G4B (Q4_K_M)', exact: 75, score: 0.98, time: 3922, mem: 4096 },
-		{ model: 'GRMR V3 G4B (Q8_0)', exact: 75, score: 0.98, time: 7060, mem: 4202 },
-		{ model: 'Mistral 7B Instruct v0.3', exact: 50, score: 0.96, time: 6606, mem: 7694 },
-		{ model: 'Qwen3 1.7B', exact: 50, score: 0.73, time: 2997, mem: 2127 },
-		{ model: 'Qwen3.5 4B', exact: 0, score: 0.00, time: 11425, mem: 4364 }
+		{ model: 'Harper', exact: 50, score: 0.94, errorsFixed: 90, time: 98, mem: 187 },
+		{ model: 'OpenRouter gpt-4o-mini', exact: 75, score: 1.00, errorsFixed: 100, time: 1277, mem: 220 },
+		{ model: 'GRMR V3 1.7B', exact: 0, score: 0.42, errorsFixed: 45, time: 3174, mem: 1960 },
+		{ model: 'GRMR V3 3B', exact: 50, score: 0.98, errorsFixed: 98, time: 2533, mem: 3489 },
+		{ model: 'GRMR V3 4B', exact: 75, score: 0.98, errorsFixed: 98, time: 3326, mem: 4112 },
+		{ model: 'Gemma 3 4B Instruct', exact: 25, score: 0.85, errorsFixed: 93, time: 4109, mem: 4112 },
+		{ model: 'Mistral 7B Instruct v0.3', exact: 50, score: 0.96, errorsFixed: 93, time: 6560, mem: 7659 }
 	];
 
 	const germanData = [
-		{ model: 'Harper', exact: 0, score: 0.00, time: 276, mem: 190 },
-		{ model: 'OpenRouter gpt-4o-mini', exact: 50, score: 1.00, time: 1436, mem: 213 },
-		{ model: 'GRMR 2B Instruct', exact: 0, score: 0.03, time: 3651, mem: 2806 },
-		{ model: 'GRMR V3 G4B (Q2_K)', exact: 0, score: 0.23, time: 5503, mem: 1912 },
-		{ model: 'GRMR V3 G4B (Q4_K_M)', exact: 0, score: 0.44, time: 5224, mem: 4096 },
-		{ model: 'GRMR V3 G4B (Q8_0)', exact: 0, score: 0.42, time: 6467, mem: 4202 },
-		{ model: 'Mistral 7B Instruct v0.3', exact: 50, score: 0.97, time: 9336, mem: 7694 },
-		{ model: 'Qwen3 1.7B', exact: 0, score: 0.32, time: 3618, mem: 2127 },
-		{ model: 'Qwen3.5 4B', exact: 50, score: 0.92, time: 6998, mem: 4364 }
+		{ model: 'Harper', exact: 0, score: 0.00, errorsFixed: 0, time: 273, mem: 200 },
+		{ model: 'OpenRouter gpt-4o-mini', exact: 75, score: 1.00, errorsFixed: 100, time: 1379, mem: 221 },
+		{ model: 'GRMR V3 1.7B', exact: 0, score: 0.15, errorsFixed: 14, time: 5833, mem: 1960 },
+		{ model: 'GRMR V3 3B', exact: 0, score: 0.28, errorsFixed: 32, time: 4294, mem: 3489 },
+		{ model: 'GRMR V3 4B', exact: 0, score: 0.44, errorsFixed: 68, time: 4123, mem: 4112 },
+		{ model: 'Gemma 3 4B Instruct', exact: 0, score: 0.18, errorsFixed: 32, time: 4250, mem: 4112 },
+		{ model: 'Mistral 7B Instruct v0.3', exact: 50, score: 0.97, errorsFixed: 95, time: 10305, mem: 7659 }
 	];
 
 	onMount(() => {
@@ -129,8 +125,9 @@
 		<p class="leading-relaxed text-gray-500 dark:text-gray-400">
 			Each model was tested on 8 cases — 4 English, 4 German — spanning short sentences, medium
 			paragraphs, and email-length texts with intentional typos. Exact match means the corrected
-			output matched the expected text character-for-character. Score measures how close the output
-			was on a 0–1 scale. Time is wall-clock milliseconds. Memory is resident set size in MB.
+			output matched the expected text character-for-character. Errors fixed shows what percentage
+			of individual errors the model caught. Score measures how close the output was on a 0–1
+			scale. Time is wall-clock milliseconds. Memory is resident set size in MB.
 		</p>
 	</div>
 
@@ -141,6 +138,7 @@
 					<tr>
 						<th scope="col" class="py-3 pr-6">Model</th>
 						<th scope="col" class="py-3 pr-6">Exact Match (%)</th>
+						<th scope="col" class="py-3 pr-6">Errors Fixed (%)</th>
 						<th scope="col" class="py-3 pr-6">Score</th>
 						<th scope="col" class="py-3 pr-6">Time (ms)</th>
 						<th scope="col" class="py-3">Memory (MB)</th>
@@ -151,6 +149,7 @@
 						<tr class="border-b border-gray-100 dark:border-gray-800">
 							<td class="py-3 pr-6 font-medium text-[#423f37] whitespace-nowrap dark:text-[#e8e8e3]">{row.model}</td>
 							<td class="py-3 pr-6">{row.exact}%</td>
+							<td class="py-3 pr-6">{row.errorsFixed}%</td>
 							<td class="py-3 pr-6">{row.score.toFixed(2)}</td>
 							<td class="py-3 pr-6">{row.time.toLocaleString()}</td>
 							<td class="py-3">{row.mem.toLocaleString()}</td>
@@ -173,23 +172,23 @@
 	<div class="mx-auto max-w-2xl text-center">
 		<h2 class="mb-4 text-xl font-bold text-[#423f37] dark:text-[#e8e8e3]">What this means</h2>
 		<p class="mb-4 leading-relaxed text-gray-500 dark:text-gray-400">
-			Harper is the fastest option by far and handles English well, but it falls apart on German —
-			it is an English grammar checker after all. OpenRouter's GPT-4o-mini delivers the best
-			overall accuracy across both languages, but it requires an API key and sends text to a
+			Harper is the fastest option by far and catches most English errors, but it falls apart on
+			German — it is an English grammar checker after all. OpenRouter's GPT-4o-mini delivers
+			perfect accuracy across both languages, but it requires an API key and sends text to a
 			remote server.
 		</p>
 		<p class="mb-4 leading-relaxed text-gray-500 dark:text-gray-400">
-			Among local models, the GRMR family offers the best balance of speed and English accuracy.
-			The V3 G4B variants all score similarly on English but vary in speed and memory — Q2_K is
-			the lightest at ~1.9 GB, while Q8_0 uses ~4.2 GB for marginal gains. German remains a weak
-			spot for all GRMR variants. Mistral 7B is the only local model that handles German well,
-			but it needs ~7.7 GB of RAM and is slower.
+			Among local models, the GRMR V3 family offers the best balance of speed and English
+			accuracy. The 3B and 4B variants fix nearly all English errors and score high, while the
+			1.7B variant struggles. German remains a weak spot for all GRMR sizes. Mistral 7B is the
+			only local model that handles German well, but it needs ~7.7 GB of RAM and is the slowest.
+			Gemma 3 4B catches most English errors but produces less precise output overall.
 		</p>
 		<p class="leading-relaxed text-gray-500 dark:text-gray-400">
-			If you mostly write in English and want everything local, GRMR V3 G4B (Q2_K) gives you
-			good accuracy at the lowest memory cost. If you need German support and can spare the
-			RAM, Mistral 7B or Qwen3.5 4B are worth trying. For the best results with no hardware
-			requirements, OpenRouter with an API key is the way to go.
+			If you mostly write in English and want everything local, GRMR V3 3B gives you great
+			accuracy at ~3.5 GB. If you need German support and can spare the RAM, Mistral 7B is the
+			way to go. For the best results with no hardware requirements, OpenRouter with an API key
+			is unbeatable.
 		</p>
 	</div>
 </div>
