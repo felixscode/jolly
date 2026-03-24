@@ -4,14 +4,33 @@
 	import Settings from '$lib/components/Settings.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 
-	let hasCorrepted = $state(false);
 	let settingsOpen = $state(false);
 	let historyOpen = $state(false);
+	let birdScene = $state<string>('flying');
+	let showDone = $state(false);
+	let doneTimer: ReturnType<typeof setTimeout> | undefined;
+
+	$effect(() => {
+		if (birdScene === 'quoting') {
+			showDone = true;
+			clearTimeout(doneTimer);
+			doneTimer = setTimeout(() => {
+				showDone = false;
+			}, 2000);
+		}
+	});
+
+	const hintText = $derived(
+		birdScene === 'correcting'
+			? 'Jolly is thinking'
+			: showDone
+				? 'Jolly is done'
+				: 'press Enter to fix your clipboard'
+	);
 
 	async function tauriCorrect(text: string): Promise<string> {
 		const { invoke } = await import('@tauri-apps/api/core');
 		const result = await invoke<string>('correct_text', { text });
-		hasCorrepted = true;
 		await settings.addToHistory(result);
 		return result;
 	}
@@ -19,7 +38,7 @@
 
 <!-- Bird scene (always dead-center of screen) -->
 <div class="flex h-full items-center justify-center">
-	<BirdScene onCorrect={tauriCorrect} />
+	<BirdScene onCorrect={tauriCorrect} onSceneChange={(s) => { birdScene = s; }} />
 </div>
 
 <!-- Header bar (layered on top) -->
@@ -75,11 +94,9 @@
 </div>
 
 <!-- Hint text (layered on bottom) -->
-{#if !hasCorrepted}
-	<p class="absolute inset-x-0 bottom-0 pb-4 text-center text-xs text-gray-400 dark:text-gray-500">
-		press Enter to fix your clipboard
-	</p>
-{/if}
+<p class="absolute inset-x-0 bottom-0 pb-4 text-center text-xs text-gray-400 dark:text-gray-500">
+	{hintText}
+</p>
 
 <!-- Panels -->
 <History bind:open={historyOpen} />

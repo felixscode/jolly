@@ -3,9 +3,11 @@
 	import ThinkingBubble from '$lib/components/ThinkingBubble.svelte';
 
 	let {
-		onCorrect
+		onCorrect,
+		onSceneChange
 	}: {
 		onCorrect: (text: string) => Promise<string>;
+		onSceneChange?: (scene: string) => void;
 	} = $props();
 
 	// ── Scene configuration ────────────────────────────────────────────────────
@@ -72,6 +74,10 @@
 	];
 	let quoteText = $state(quotes[0]);
 	let lastQuoteIdx = -1;
+
+	$effect(() => {
+		onSceneChange?.(scene);
+	});
 
 	const pose = $derived<Pose>(
 		dead
