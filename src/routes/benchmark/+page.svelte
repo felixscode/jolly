@@ -166,6 +166,14 @@
 	<h2 class="mb-4 text-xl font-bold text-[#423f37] dark:text-[#e8e8e3]">German</h2>
 	{@render dataTable(germanData)}
 
+	<ul class="mb-8 list-none text-xs text-gray-400 md:mb-16 dark:text-gray-500">
+		<li><strong>Exact Match</strong> — output identical to expected text</li>
+		<li><strong>Errors Fixed</strong> — percentage of individual typos caught</li>
+		<li><strong>Score</strong> — similarity to expected output (0–1)</li>
+		<li><strong>Time</strong> — wall-clock milliseconds</li>
+		<li><strong>Memory</strong> — resident set size in MB</li>
+	</ul>
+
 	<hr class="mb-8 border-gray-200 md:mb-16 dark:border-gray-700" />
 
 	<!-- Interpretation -->
