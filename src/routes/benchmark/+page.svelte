@@ -7,23 +7,21 @@
 	let blinking = $state(false);
 
 	const englishData = [
-		{ model: 'OpenRouter gpt-4o-mini', exact: 75, score: 1.00, errorsFixed: 100, time: 1277, mem: 220 },
-		{ model: 'GRMR V3 3B', exact: 50, score: 0.98, errorsFixed: 98, time: 2533, mem: 3489 },
-		{ model: 'GRMR V3 4B', exact: 75, score: 0.98, errorsFixed: 98, time: 3326, mem: 4112 },
-		{ model: 'Gemma 3 4B Instruct', exact: 25, score: 0.85, errorsFixed: 93, time: 4109, mem: 4112 },
-		{ model: 'Mistral 7B Instruct v0.3', exact: 50, score: 0.96, errorsFixed: 93, time: 6560, mem: 7659 },
-		{ model: 'Harper', exact: 50, score: 0.94, errorsFixed: 90, time: 98, mem: 187 },
-		{ model: 'GRMR V3 1.7B', exact: 0, score: 0.42, errorsFixed: 45, time: 3174, mem: 1960 }
+		{ model: 'OpenRouter gpt-4o-mini', exact: 75, score: 1.00, errorsFixed: 100, time: 1526, mem: 225 },
+		{ model: 'GRMR V3 3B', exact: 50, score: 0.98, errorsFixed: 98, time: 2746, mem: 3496 },
+		{ model: 'GRMR V3 4B', exact: 75, score: 0.98, errorsFixed: 98, time: 3910, mem: 4118 },
+		{ model: 'Gemma 3 4B Instruct', exact: 25, score: 0.85, errorsFixed: 92, time: 4411, mem: 4119 },
+		{ model: 'Mistral 7B Instruct v0.3', exact: 50, score: 0.96, errorsFixed: 92, time: 6517, mem: 7666 },
+		{ model: 'Harper', exact: 50, score: 0.94, errorsFixed: 90, time: 100, mem: 187 }
 	];
 
 	const germanData = [
-		{ model: 'OpenRouter gpt-4o-mini', exact: 75, score: 1.00, errorsFixed: 100, time: 1379, mem: 221 },
-		{ model: 'Mistral 7B Instruct v0.3', exact: 50, score: 0.97, errorsFixed: 95, time: 10305, mem: 7659 },
-		{ model: 'GRMR V3 4B', exact: 0, score: 0.44, errorsFixed: 68, time: 4123, mem: 4112 },
-		{ model: 'GRMR V3 3B', exact: 0, score: 0.28, errorsFixed: 32, time: 4294, mem: 3489 },
-		{ model: 'Gemma 3 4B Instruct', exact: 0, score: 0.18, errorsFixed: 32, time: 4250, mem: 4112 },
-		{ model: 'GRMR V3 1.7B', exact: 0, score: 0.15, errorsFixed: 14, time: 5833, mem: 1960 },
-		{ model: 'Harper', exact: 0, score: 0.00, errorsFixed: 0, time: 273, mem: 200 }
+		{ model: 'OpenRouter gpt-4o-mini', exact: 75, score: 1.00, errorsFixed: 100, time: 1501, mem: 226 },
+		{ model: 'Mistral 7B Instruct v0.3', exact: 50, score: 0.97, errorsFixed: 95, time: 9395, mem: 7666 },
+		{ model: 'GRMR V3 4B', exact: 0, score: 0.44, errorsFixed: 68, time: 4532, mem: 4118 },
+		{ model: 'GRMR V3 3B', exact: 0, score: 0.28, errorsFixed: 32, time: 4157, mem: 3496 },
+		{ model: 'Gemma 3 4B Instruct', exact: 0, score: 0.18, errorsFixed: 32, time: 4728, mem: 4119 },
+		{ model: 'Harper', exact: 0, score: 0.00, errorsFixed: 0, time: 278, mem: 202 }
 	];
 
 	onMount(() => {
@@ -187,10 +185,10 @@
 		</p>
 		<p class="mb-4 leading-relaxed text-gray-500 dark:text-gray-400">
 			Among local models, the GRMR V3 family offers the best balance of speed and English
-			accuracy. The 3B and 4B variants fix nearly all English errors and score high, while the
-			1.7B variant struggles. German remains a weak spot for all GRMR sizes. Mistral 7B is the
-			only local model that handles German well, but it needs ~7.7 GB of RAM and is the slowest.
-			Gemma 3 4B catches most English errors but produces less precise output overall.
+			accuracy. The 3B and 4B variants fix nearly all English errors and score high. German
+			remains a weak spot for all GRMR sizes. Mistral 7B is the only local model that handles
+			German well, but it needs ~7.7 GB of RAM and is the slowest. Gemma 3 4B catches most
+			English errors but produces less precise output overall.
 		</p>
 		<p class="leading-relaxed text-gray-500 dark:text-gray-400">
 			If you mostly write in English and want everything local, GRMR V3 3B gives you great
