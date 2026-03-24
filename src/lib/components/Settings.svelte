@@ -1,8 +1,17 @@
 <script lang="ts">
 	import { settings } from '$lib/stores/settings.svelte';
 	import type { ModelWithState } from '$lib/types/models';
+	import { getVersion } from '@tauri-apps/api/app';
 
 	let { open = $bindable(false) } = $props();
+
+	let appVersion = $state('');
+
+	$effect(() => {
+		getVersion().then((v) => {
+			appVersion = v;
+		}).catch(() => {});
+	});
 
 	// API Key section
 	let keyInput = $state('');
@@ -463,5 +472,11 @@
 				</div>
 			{/if}
 		</section>
+
+		{#if appVersion}
+			<div class="border-t border-gray-200 pt-4 text-center text-xs text-gray-400 dark:border-white/10 dark:text-[#e8e8e3]/50">
+				v{appVersion}
+			</div>
+		{/if}
 	</div>
 </div>
