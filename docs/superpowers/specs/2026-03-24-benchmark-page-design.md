@@ -28,7 +28,7 @@ Add "Benchmark" link to `Navbar.svelte` between "Download" and "About". Current 
 4. **Methodology text** — paragraph explaining:
    - What models were benchmarked (all 9 — see Models in scope below)
    - Test setup: 8 test cases total (4 English, 4 German) across short, medium, and email-length texts
-   - What each metric means (exact match, similarity, time, memory)
+   - What each metric means (exact match, score, time, memory)
 5. **English results table** — subheading "English", data table with per-model aggregated metrics
 6. **German results table** — subheading "German", same table format
 7. **Interpretation text** — technical insights summarizing what the data reveals about each model's strengths and weaknesses
@@ -53,7 +53,7 @@ Unique parabolic arc fly-in, implemented as a **self-contained inline animation*
 ### Data Table
 
 - User will provide a Tailwind UI snippet for table styling — implementation should use a simple default table with proper semantic HTML (`<thead>`, `<th scope="col">`, `<tbody>`) until the snippet is provided
-- Table columns: Model Name, Exact Match Rate (%), Avg Similarity, Avg Time (ms), Avg Memory (MB)
+- Table columns: Model Name, Exact Match (%), Score (0–1), Time (ms), Memory (MB)
 - One table for English results, one for German results
 - Data is hardcoded — pre-aggregated averages computed from `benchmark_results.csv`
 
@@ -74,9 +74,9 @@ Static/hardcoded values. The benchmark CSV contains 72 data rows across 9 models
 
 **Metrics per model per language:**
 - Exact match rate: percentage of test cases where output === expected
-- Average similarity: 0.0–1.0 score
-- Average time: milliseconds
-- Average memory: RSS in MB
+- Score: 0.0–1.0 measuring closeness to expected output
+- Time: wall-clock milliseconds
+- Memory: resident set size in MB
 
 ## Out of Scope
 
