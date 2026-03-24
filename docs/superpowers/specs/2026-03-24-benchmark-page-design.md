@@ -18,7 +18,7 @@ New SvelteKit route: `src/routes/benchmark/+page.svelte`
 
 ### Navigation
 
-Add "Benchmark" link to `Navbar.svelte` between "Download" and "About".
+Add "Benchmark" link to `Navbar.svelte` between "Download" and "About". Current mobile layout uses `gap-4 md:gap-8` — verify this still looks good with three text links on small screens and adjust gap if needed.
 
 ### Layout (top to bottom)
 
@@ -26,8 +26,8 @@ Add "Benchmark" link to `Navbar.svelte` between "Download" and "About".
 2. **HR divider** — consistent with About/Download pages
 3. **Heading** — "Benchmarks", styled with `text-2xl font-bold text-[#423f37] dark:text-[#e8e8e3]`
 4. **Methodology text** — paragraph explaining:
-   - What models were benchmarked (Harper, OpenRouter GPT-4o-mini, GRMR 2B Q4_K_M, GRMR V3 G4B Q2_K, GRMR V3 G4B Q4_K_M)
-   - Test setup: 8 test cases across short, medium, and email-length texts in English and German
+   - What models were benchmarked (all 9 — see Models in scope below)
+   - Test setup: 8 test cases total (4 English, 4 German) across short, medium, and email-length texts
    - What each metric means (exact match, similarity, time, memory)
 5. **English results table** — subheading "English", data table with per-model aggregated metrics
 6. **German results table** — subheading "German", same table format
@@ -43,30 +43,34 @@ Follows existing page patterns:
 
 ### BirdScene Animation
 
-Unique parabolic arc fly-in:
+Unique parabolic arc fly-in, implemented as a **self-contained inline animation** within the page component (same pattern as About and Download pages — NOT using the shared `BirdScene.svelte` component, which is the interactive correction UI for the Home/App pages):
 - Bird starts off-screen (top-right area)
 - Follows a parabolic curve (translateX + translateY) sweeping down and left
 - Lands at center position
-- Implementation via CSS keyframes or inline style transitions with setTimeout, matching the pattern used on About/Download pages
+- Implementation via inline style transitions with setTimeout, matching the About/Download pattern
 - After landing: normal idle behavior (blinking loop)
 
 ### Data Table
 
-- User will provide a Tailwind UI snippet for table styling
+- User will provide a Tailwind UI snippet for table styling — implementation should use a simple default table with proper semantic HTML (`<thead>`, `<th scope="col">`, `<tbody>`) until the snippet is provided
 - Table columns: Model Name, Exact Match Rate (%), Avg Similarity, Avg Time (ms), Avg Memory (MB)
 - One table for English results, one for German results
 - Data is hardcoded — pre-aggregated averages computed from `benchmark_results.csv`
 
 ### Data Source
 
-Static/hardcoded values. The benchmark CSV contains 234 rows across 5 models and 8 test cases. Values will be averaged per model per language and written directly into the component. No build-time or runtime CSV parsing.
+Static/hardcoded values. The benchmark CSV contains 72 data rows across 9 models and 8 test cases (4 English, 4 German). Values will be averaged per model per language and written directly into the component. No build-time or runtime CSV parsing.
 
-**Models in scope:**
-- Harper (conventional grammar checker)
-- OpenRouter GPT-4o-mini (cloud API)
-- GRMR 2B Instruct Q4_K_M (local, ~2.8 GB)
-- GRMR V3 G4B Q2_K (local, ~1.9 GB)
-- GRMR V3 G4B Q4_K_M (local, ~4.1 GB)
+**Models in scope (all 9, using display names from CSV):**
+- "Harper" (conventional grammar checker)
+- "OpenRouter gpt-4o-mini" (cloud API)
+- "GRMR 2B Instruct" (local LLM)
+- "GRMR V3 G4B (Q2_K)" (local LLM)
+- "GRMR V3 G4B (Q4_K_M)" (local LLM)
+- "GRMR V3 G4B (Q8_0)" (local LLM)
+- "Mistral 7B Instruct v0.3" (local LLM)
+- "Qwen3 1.7B" (local LLM)
+- "Qwen3.5 4B" (local LLM)
 
 **Metrics per model per language:**
 - Exact match rate: percentage of test cases where output === expected
