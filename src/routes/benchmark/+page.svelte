@@ -7,25 +7,25 @@
 	let blinking = $state(false);
 
 	const englishData = [
-		{ model: 'OpenRouter gpt-4o-mini', exact: 75, errorsFixed: 100, time: 1208, mem: 230 },
-		{ model: 'Qwen3.5 2B', exact: 100, errorsFixed: 100, time: 2278, mem: 2029 },
-		{ model: 'Qwen3.5 4B', exact: 75, errorsFixed: 100, time: 5054, mem: 4202 },
-		{ model: 'GRMR V3 4B', exact: 75, errorsFixed: 98, time: 3290, mem: 4124 },
-		{ model: 'GRMR V3 3B', exact: 50, errorsFixed: 98, time: 3523, mem: 3501 },
-		{ model: 'Gemma 3 4B Instruct', exact: 25, errorsFixed: 95, time: 4192, mem: 4124 },
-		{ model: 'Mistral 7B Instruct v0.3', exact: 50, errorsFixed: 95, time: 7458, mem: 7712 },
-		{ model: 'Harper', exact: 50, errorsFixed: 90, time: 88, mem: 190 }
+		{ model: 'OpenRouter gpt-4o-mini', exact: 75, errorsFixed: 100, time: 1126, mem: 230 },
+		{ model: 'Qwen3.5 2B', exact: 100, errorsFixed: 100, time: 1986, mem: 2012 },
+		{ model: 'Qwen3.5 4B', exact: 75, errorsFixed: 100, time: 4099, mem: 4202 },
+		{ model: 'GRMR V3 3B', exact: 75, errorsFixed: 98, time: 2796, mem: 3511 },
+		{ model: 'GRMR V3 4B', exact: 75, errorsFixed: 98, time: 3256, mem: 4140 },
+		{ model: 'Mistral 7B Instruct v0.3', exact: 50, errorsFixed: 95, time: 6365, mem: 7690 },
+		{ model: 'Gemma 3 4B Instruct', exact: 25, errorsFixed: 92, time: 3600, mem: 4142 },
+		{ model: 'Harper', exact: 50, errorsFixed: 90, time: 86, mem: 190 }
 	];
 
 	const germanData = [
-		{ model: 'OpenRouter gpt-4o-mini', exact: 75, errorsFixed: 100, time: 1174, mem: 230 },
-		{ model: 'Qwen3.5 2B', exact: 50, errorsFixed: 95, time: 2569, mem: 2023 },
-		{ model: 'Qwen3.5 4B', exact: 75, errorsFixed: 95, time: 5412, mem: 4202 },
-		{ model: 'Mistral 7B Instruct v0.3', exact: 50, errorsFixed: 95, time: 9906, mem: 7712 },
-		{ model: 'GRMR V3 4B', exact: 0, errorsFixed: 68, time: 5001, mem: 4124 },
-		{ model: 'GRMR V3 3B', exact: 0, errorsFixed: 36, time: 3921, mem: 3501 },
-		{ model: 'Gemma 3 4B Instruct', exact: 0, errorsFixed: 32, time: 4918, mem: 4124 },
-		{ model: 'Harper', exact: 0, errorsFixed: 0, time: 289, mem: 205 }
+		{ model: 'OpenRouter gpt-4o-mini', exact: 75, errorsFixed: 100, time: 1240, mem: 230 },
+		{ model: 'Qwen3.5 2B', exact: 50, errorsFixed: 95, time: 2253, mem: 2004 },
+		{ model: 'Qwen3.5 4B', exact: 75, errorsFixed: 95, time: 4981, mem: 4202 },
+		{ model: 'Mistral 7B Instruct v0.3', exact: 50, errorsFixed: 95, time: 9197, mem: 7690 },
+		{ model: 'GRMR V3 4B', exact: 0, errorsFixed: 68, time: 4306, mem: 4140 },
+		{ model: 'GRMR V3 3B', exact: 0, errorsFixed: 36, time: 3455, mem: 3511 },
+		{ model: 'Gemma 3 4B Instruct', exact: 0, errorsFixed: 27, time: 4170, mem: 4142 },
+		{ model: 'Harper', exact: 0, errorsFixed: 0, time: 290, mem: 205 }
 	];
 
 	onMount(() => {

@@ -89,12 +89,12 @@ Tested across 8 cases (short, medium, email) in English and German. Errors fixed
 | Model | Errors Fixed | Exact Match | Avg Latency |
 |-------|:------------:|:-----------:|------------:|
 | **OpenRouter gpt-4o-mini** | **62/62** | 6/8 | 1.2s |
-| **Qwen3.5 2B** | **61/62** | 6/8 | 2.4s |
-| Qwen3.5 4B | 61/62 | 6/8 | 5.2s |
-| Mistral 7B Instruct v0.3 | 59/62 | 4/8 | 8.7s |
-| GRMR V3 4B | 54/62 | 3/8 | 4.1s |
-| GRMR V3 3B | 47/62 | 2/8 | 3.7s |
-| Gemma 3 4B Instruct | 45/62 | 1/8 | 4.6s |
+| **Qwen3.5 2B** | **61/62** | 6/8 | 2.1s |
+| Qwen3.5 4B | 61/62 | 6/8 | 4.5s |
+| Mistral 7B Instruct v0.3 | 59/62 | 4/8 | 7.8s |
+| GRMR V3 4B | 54/62 | 3/8 | 3.8s |
+| GRMR V3 3B | 47/62 | 3/8 | 3.1s |
+| Gemma 3 4B Instruct | 43/62 | 1/8 | 3.9s |
 | Harper | 36/62 | 2/8 | 0.2s |
 
 **Which model should I use?**
