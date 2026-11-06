@@ -16,6 +16,27 @@ pub struct ModelEntry {
 }
 
 pub static MODELS: &[ModelEntry] = &[
+    // ── Recommended: best accuracy/speed in the benchmark (Nov 2026) ──
+    // Qwen3.5 has an embedded chat template; thinking is disabled by
+    // pre-filling an empty <think> block (see local.rs).
+    ModelEntry {
+        id: "qwen3.5-2b-q4km",
+        name: "Qwen3.5 2B (Recommended)",
+        file_name: "Qwen3.5-2B-Q4_K_M.gguf",
+        url: "https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/resolve/main/Qwen3.5-2B-Q4_K_M.gguf",
+        size_bytes: 1_280_835_840,
+        sha256: "aaf42c8b7c3cab2bf3d69c355048d4a0ee9973d48f16c731c0520ee914699223",
+        prompt_template: None,
+    },
+    ModelEntry {
+        id: "qwen3.5-4b-q4km",
+        name: "Qwen3.5 4B",
+        file_name: "Qwen3.5-4B-Q4_K_M.gguf",
+        url: "https://huggingface.co/unsloth/Qwen3.5-4B-GGUF/resolve/main/Qwen3.5-4B-Q4_K_M.gguf",
+        size_bytes: 2_740_937_888,
+        sha256: "00fe7986ff5f6b463e62455821146049db6f9313603938a70800d1fb69ef11a4",
+        prompt_template: None,
+    },
     // ── Grammar-specialized models (GRMR V3 family) ─────────────
     // All use the text/corrected format via embedded GGUF chat template.
     ModelEntry {
@@ -29,7 +50,7 @@ pub static MODELS: &[ModelEntry] = &[
     },
     ModelEntry {
         id: "grmr-v3-g4b-q4km",
-        name: "GRMR V3 4B (Recommended)",
+        name: "GRMR V3 4B",
         file_name: "GRMR-V3-G4B-Q4_K_M.gguf",
         url: "https://huggingface.co/qingy2024/GRMR-V3-G4B-GGUF/resolve/main/GRMR-V3-G4B-Q4_K_M.gguf",
         size_bytes: 2_489_892_960,
@@ -48,7 +69,7 @@ pub static MODELS: &[ModelEntry] = &[
     },
     ModelEntry {
         id: "mistral-7b-instruct-v0.3-q4km",
-        name: "Mistral 7B Instruct v0.3 (Best Multilingual)",
+        name: "Mistral 7B Instruct v0.3",
         file_name: "Mistral-7B-Instruct-v0.3-Q4_K_M.gguf",
         url: "https://huggingface.co/bartowski/Mistral-7B-Instruct-v0.3-GGUF/resolve/main/Mistral-7B-Instruct-v0.3-Q4_K_M.gguf",
         size_bytes: 4_692_000_000,

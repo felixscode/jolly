@@ -71,10 +71,12 @@ Thanks to amazing lamacpp and vulcan Jolly detects GPU availability at runtime. 
 
 ## Available Models
 
-The [GRMR](https://huggingface.co/qingy2024) models are specifically fine-tuned for grammar correction — they take text in and return corrected text with minimal over-editing. The general-purpose models (Gemma, Mistral) are instruction-following LLMs prompted to fix spelling and grammar.
+The [GRMR](https://huggingface.co/qingy2024) models are specifically fine-tuned for grammar correction — they take text in and return corrected text with minimal over-editing. The general-purpose models (Qwen3.5, Gemma, Mistral) are instruction-following LLMs prompted to fix spelling and grammar.
 
 | Model | Type | Size | Quantization |
 |-------|------|------|--------------|
+| **Qwen3.5 2B** (recommended) | General-purpose | 1.3 GB | Q4_K_M |
+| Qwen3.5 4B | General-purpose | 2.7 GB | Q4_K_M |
 | GRMR V3 3B | Grammar-specialized | 2.0 GB | Q4_K_M |
 | GRMR V3 4B | Grammar-specialized | 2.5 GB | Q4_K_M |
 | Gemma 3 4B Instruct | General-purpose | 2.5 GB | Q4_K_M |
@@ -86,21 +88,26 @@ Tested across 8 cases (short, medium, email) in English and German. Errors fixed
 
 | Model | Errors Fixed | Exact Match | Avg Latency |
 |-------|:------------:|:-----------:|------------:|
-| **OpenRouter gpt-4o-mini** | **62/62** | 6/8 | 1.5s |
-| **Mistral 7B Instruct v0.3** | **58/62** | 4/8 | 8.0s |
-| GRMR V3 4B | 54/62 | 3/8 | 4.2s |
-| GRMR V3 3B | 46/62 | 2/8 | 3.5s |
-| Gemma 3 4B Instruct | 44/62 | 1/8 | 4.6s |
+| **OpenRouter gpt-4o-mini** | **62/62** | 6/8 | 1.2s |
+| **Qwen3.5 2B** | **61/62** | 6/8 | 2.4s |
+| Qwen3.5 4B | 61/62 | 6/8 | 5.2s |
+| Mistral 7B Instruct v0.3 | 59/62 | 4/8 | 8.7s |
+| GRMR V3 4B | 54/62 | 3/8 | 4.1s |
+| GRMR V3 3B | 47/62 | 2/8 | 3.7s |
+| Gemma 3 4B Instruct | 45/62 | 1/8 | 4.6s |
 | Harper | 36/62 | 2/8 | 0.2s |
 
 **Which model should I use?**
 
-- **Mistral 7B** is the best local model overall (58/62) and the only one that handles German well. It needs 4.7 GB of RAM and is the slowest local option.
-- **GRMR V3 4B** is the recommended tradeoff — fast, small (2.5 GB), and fixes 87% of errors. Best choice for English-only use.
-- **GRMR V3 3B** is similar but lighter (2.0 GB) at the cost of some accuracy.
-- **Gemma 3 4B** is a general-purpose model that works but can't match the grammar-specialized GRMR models.
+- **Qwen3.5 2B** is the recommended local model: 61/62 errors fixed in English *and* German, the fastest local LLM, and only ~2 GB of RAM.
+- **Qwen3.5 4B** is equally accurate here but about twice as slow; worth trying for longer or trickier texts.
+- **Mistral 7B** is still strong (59/62) but needs ~7.7 GB of RAM and is the slowest option.
+- **GRMR V3 4B / 3B** are grammar fine-tunes that do well in English but weakly in German.
+- **Gemma 3 4B** is very sensitive to the prompt and often returns text unchanged.
 - **Harper** is instant (0.2s) but only supports English and misses more complex errors.
 - **OpenRouter** gives the best results but requires an API key and sends text to a remote server.
+
+*Last run: November 2026, CPU-only build, 8 cases (4 English, 4 German). With this few cases, treat differences of 1–2 errors as noise.*
 
 > Run benchmarks yourself: `cargo run --release --bin benchmark` from `src-tauri/`.
 

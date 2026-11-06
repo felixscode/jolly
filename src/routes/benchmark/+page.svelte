@@ -7,21 +7,25 @@
 	let blinking = $state(false);
 
 	const englishData = [
-		{ model: 'OpenRouter gpt-4o-mini', exact: 75, errorsFixed: 100, time: 1526, mem: 225 },
-		{ model: 'GRMR V3 3B', exact: 50, errorsFixed: 98, time: 2746, mem: 3496 },
-		{ model: 'GRMR V3 4B', exact: 75, errorsFixed: 98, time: 3910, mem: 4118 },
-		{ model: 'Gemma 3 4B Instruct', exact: 25, errorsFixed: 92, time: 4411, mem: 4119 },
-		{ model: 'Mistral 7B Instruct v0.3', exact: 50, errorsFixed: 92, time: 6517, mem: 7666 },
-		{ model: 'Harper', exact: 50, errorsFixed: 90, time: 100, mem: 187 }
+		{ model: 'OpenRouter gpt-4o-mini', exact: 75, errorsFixed: 100, time: 1208, mem: 230 },
+		{ model: 'Qwen3.5 2B', exact: 100, errorsFixed: 100, time: 2278, mem: 2029 },
+		{ model: 'Qwen3.5 4B', exact: 75, errorsFixed: 100, time: 5054, mem: 4202 },
+		{ model: 'GRMR V3 4B', exact: 75, errorsFixed: 98, time: 3290, mem: 4124 },
+		{ model: 'GRMR V3 3B', exact: 50, errorsFixed: 98, time: 3523, mem: 3501 },
+		{ model: 'Gemma 3 4B Instruct', exact: 25, errorsFixed: 95, time: 4192, mem: 4124 },
+		{ model: 'Mistral 7B Instruct v0.3', exact: 50, errorsFixed: 95, time: 7458, mem: 7712 },
+		{ model: 'Harper', exact: 50, errorsFixed: 90, time: 88, mem: 190 }
 	];
 
 	const germanData = [
-		{ model: 'OpenRouter gpt-4o-mini', exact: 75, errorsFixed: 100, time: 1501, mem: 226 },
-		{ model: 'Mistral 7B Instruct v0.3', exact: 50, errorsFixed: 95, time: 9395, mem: 7666 },
-		{ model: 'GRMR V3 4B', exact: 0, errorsFixed: 68, time: 4532, mem: 4118 },
-		{ model: 'GRMR V3 3B', exact: 0, errorsFixed: 32, time: 4157, mem: 3496 },
-		{ model: 'Gemma 3 4B Instruct', exact: 0, errorsFixed: 32, time: 4728, mem: 4119 },
-		{ model: 'Harper', exact: 0, errorsFixed: 0, time: 278, mem: 202 }
+		{ model: 'OpenRouter gpt-4o-mini', exact: 75, errorsFixed: 100, time: 1174, mem: 230 },
+		{ model: 'Qwen3.5 2B', exact: 50, errorsFixed: 95, time: 2569, mem: 2023 },
+		{ model: 'Qwen3.5 4B', exact: 75, errorsFixed: 95, time: 5412, mem: 4202 },
+		{ model: 'Mistral 7B Instruct v0.3', exact: 50, errorsFixed: 95, time: 9906, mem: 7712 },
+		{ model: 'GRMR V3 4B', exact: 0, errorsFixed: 68, time: 5001, mem: 4124 },
+		{ model: 'GRMR V3 3B', exact: 0, errorsFixed: 36, time: 3921, mem: 3501 },
+		{ model: 'Gemma 3 4B Instruct', exact: 0, errorsFixed: 32, time: 4918, mem: 4124 },
+		{ model: 'Harper', exact: 0, errorsFixed: 0, time: 289, mem: 205 }
 	];
 
 	onMount(() => {
@@ -185,9 +189,10 @@
 			struggles with context-dependent errors. Is a linter at the end. The GRMR models are small
 			LLMs fine-tuned specifically for grammar correction — they understand context and fix more
 			errors than Harper, but they were trained primarily on English data, so German accuracy is
-			limited. The general-purpose models (Gemma, Mistral) are larger instruction-following LLMs
+			limited. The general-purpose models (Qwen3.5, Gemma, Mistral) are instruction-following LLMs
 			that use a system prompt to correct text — they aren't specialized for grammar but their
-			broader training data gives them better multilingual support.
+			broader training data gives them better multilingual support. The newer Qwen3.5 models are the
+			standout: even the 2B version matches or beats the much larger Mistral 7B in both languages.
 		</p>
 		<p class="mb-4 leading-relaxed text-gray-500 dark:text-gray-400">
 			OpenRouter's GPT-4o-mini fixes every single error across both languages because it is a much
@@ -195,9 +200,9 @@
 			device and you need an API key.
 		</p>
 		<p class="leading-relaxed text-gray-500 dark:text-gray-400">
-			For local English-only use, GRMR V3 4B (2.5 GB) is the recommended choice — it fixes 87% of
-			errors and is fast. For multilingual use, Mistral 7B (4.7 GB) is the only local model that
-			handles German well. For the best results with no hardware constraints, OpenRouter is
+			For local use, Qwen3.5 2B (1.3 GB) is the recommended choice — it fixes 61 of 62 errors in
+			English and German, is the fastest local LLM, and needs about 2 GB of RAM. Qwen3.5 4B is as
+			accurate but twice as slow. For the best results with no hardware constraints, OpenRouter is
 			unbeatable.
 		</p>
 	</div>
