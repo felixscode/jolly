@@ -67,7 +67,8 @@ pub async fn correct_text(app: AppHandle, text: String) -> Result<String, String
     let use_harper = get_use_harper(&app);
     let use_openrouter = get_use_openrouter(&app);
     let active_model = get_active_model_id(&app);
-    let has_local = active_model.is_some() && crate::inference::local::is_model_loaded();
+    // A loaded model is usable even if the store has no id yet (startup fallback).
+    let has_local = crate::inference::local::is_model_loaded();
 
     // Priority 1: Harper (lightweight, instant)
     if use_harper {
@@ -255,6 +256,14 @@ pub async fn delete_model(app: AppHandle, model_id: String) -> Result<(), String
 
     let app_data = app.path().app_data_dir().map_err(|e| e.to_string())?;
     let models_path = models_dir(&app_data)?;
+
+    // Unload it first if it's in memory (the file is memory-mapped; on
+    // Windows it can't be deleted while loaded).
+    if crate::inference::local::loaded_model_id().as_deref() == Some(model_id.as_str()) {
+        tokio::task::spawn_blocking(crate::inference::local::unload_model)
+            .await
+            .map_err(|e| format!("Task failed: {}", e))?;
+    }
 
     // Delete .gguf
     let gguf = models_path.join(model.file_name);

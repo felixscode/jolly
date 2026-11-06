@@ -93,6 +93,19 @@ pub fn run() {
                     match inference::local::init_model(&path, &model_id, prompt_template) {
                         Ok(()) => {
                             eprintln!("[jolly] Local model loaded: {:?}", path);
+                            // If this was a fallback pick, record it so the UI and
+                            // the backend agree on which model is active.
+                            if let Some(loaded) = inference::local::loaded_model_id() {
+                                if let Ok(store) = handle.store("settings.json") {
+                                    let current = store
+                                        .get("activeModelId")
+                                        .and_then(|v| v.as_str().map(str::to_string));
+                                    if current.as_deref() != Some(loaded.as_str()) {
+                                        store.set("activeModelId", loaded);
+                                        let _ = store.save();
+                                    }
+                                }
+                            }
                             let _ = handle.emit("model-loaded", ());
                         }
                         Err(e) => eprintln!("[jolly] Failed to load local model: {}", e),

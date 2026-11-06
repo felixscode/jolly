@@ -1,6 +1,7 @@
 use std::num::NonZeroU32;
 use std::path::Path;
-use std::sync::{LazyLock, RwLock};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{LazyLock, Mutex, RwLock};
 
 use regex::Regex;
 
@@ -27,29 +28,56 @@ static BACKEND: LazyLock<LlamaBackend> = LazyLock::new(|| {
 /// Model swaps block until in-flight inferences complete.
 static MODEL: RwLock<Option<(LlamaModel, String, Option<String>)>> = RwLock::new(None);
 
+/// Serialises model loads so a startup load and a user switch can't race
+/// (both loading into VRAM, last one silently winning).
+static LOAD_LOCK: Mutex<()> = Mutex::new(());
+
+/// Lock-free readiness flag for async callers (avoids blocking a runtime
+/// thread on `MODEL.read()` while a swap waits behind a long inference).
+static LOADED: AtomicBool = AtomicBool::new(false);
+
 /// Number of sentences per LLM call. Increase for speed, decrease for quality.
 const SENTENCES_PER_BATCH: usize = 4;
 const MAX_PARALLEL: usize = 8;
 const PER_SEQ_CTX: u32 = 2048;
 const MAX_GEN_TOKENS: i32 = 1024;
+/// Upper bound for the single-sequence context (prompt + generation).
+const MAX_CTX: u32 = 16384;
 
 /// Regex matching sentence-ending punctuation followed by whitespace.
 static SENTENCE_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"[.!?]\s+").unwrap());
 
-/// Initialize and load a GGUF model from the given path.
+/// Load a model at startup unless one is already loaded (e.g. the user
+/// switched models while the startup load was queued).
 pub fn init_model(model_path: &Path, model_id: &str, prompt_template: Option<&str>) -> Result<(), String> {
-    swap_model(model_path, model_id, prompt_template)
+    let _load = LOAD_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    if LOADED.load(Ordering::SeqCst) {
+        eprintln!("[jolly] A model is already loaded; skipping startup load of {}", model_id);
+        return Ok(());
+    }
+    load_into_slot(model_path, model_id, prompt_template)
 }
 
 /// Load a new model, replacing any currently loaded model.
 pub fn swap_model(model_path: &Path, model_id: &str, prompt_template: Option<&str>) -> Result<(), String> {
+    let _load = LOAD_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    load_into_slot(model_path, model_id, prompt_template)
+}
+
+/// Id of the currently loaded model, if any.
+pub fn loaded_model_id() -> Option<String> {
+    MODEL.read().ok()?.as_ref().map(|(_, id, _)| id.clone())
+}
+
+fn load_into_slot(model_path: &Path, model_id: &str, prompt_template: Option<&str>) -> Result<(), String> {
     let backend = &*BACKEND;
 
     // Drop the old model first to free VRAM
     {
         let mut slot = MODEL.write().map_err(|e| format!("Model lock poisoned: {}", e))?;
         *slot = None;
+        LOADED.store(false, Ordering::SeqCst);
     }
 
     // Try GPU first (n_gpu_layers = 999 offloads all layers to Vulkan/Metal)
@@ -72,19 +100,22 @@ pub fn swap_model(model_path: &Path, model_id: &str, prompt_template: Option<&st
 
     let mut slot = MODEL.write().map_err(|e| format!("Model lock poisoned: {}", e))?;
     *slot = Some((model, model_id.to_string(), prompt_template.map(|s| s.to_string())));
+    LOADED.store(true, Ordering::SeqCst);
     Ok(())
 }
 
 /// Unload the current model, freeing its memory.
 pub fn unload_model() {
+    let _load = LOAD_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     if let Ok(mut slot) = MODEL.write() {
         *slot = None;
+        LOADED.store(false, Ordering::SeqCst);
     }
 }
 
 /// Check if a model is loaded and ready for inference.
 pub fn is_model_loaded() -> bool {
-    MODEL.read().map(|slot| slot.is_some()).unwrap_or(false)
+    LOADED.load(Ordering::SeqCst)
 }
 
 /// Split text into (sentence, trailing_separator) pairs.
@@ -132,18 +163,22 @@ impl LLMProvider for LocalProvider {
 
             // Fast path: 0 or 1 sentences — no splitting needed
             if parts.len() <= 1 {
-                return run_inference(&text);
+                return run_inference(&text).map(|out| or_original(out, &text));
             }
 
-            // Group sentences into chunks of SENTENCES_PER_BATCH
+            // Group sentences into chunks of SENTENCES_PER_BATCH, keeping the
+            // original separators (incl. newlines) between sentences of a chunk.
             let chunks: Vec<String> = parts
                 .chunks(SENTENCES_PER_BATCH)
                 .map(|batch| {
-                    batch
-                        .iter()
-                        .map(|(sentence, _)| *sentence)
-                        .collect::<Vec<_>>()
-                        .join(" ")
+                    let mut chunk = String::new();
+                    for (i, (sentence, sep)) in batch.iter().enumerate() {
+                        chunk.push_str(sentence);
+                        if i + 1 < batch.len() {
+                            chunk.push_str(sep);
+                        }
+                    }
+                    chunk
                 })
                 .collect();
 
@@ -163,7 +198,7 @@ impl LLMProvider for LocalProvider {
                     Err(e) => {
                         eprintln!("[jolly] Parallel inference failed: {}, falling back to sequential", e);
                         for chunk in round {
-                            results.push(run_inference(chunk)?);
+                            results.push(or_original(run_inference(chunk)?, chunk));
                         }
                     }
                 }
@@ -188,18 +223,32 @@ impl LLMProvider for LocalProvider {
     }
 }
 
+/// Never hand back an empty correction: an empty model answer means
+/// "no usable output", so keep the user's original text instead.
+fn or_original(output: String, original: &str) -> String {
+    if output.trim().is_empty() {
+        original.to_string()
+    } else {
+        output
+    }
+}
+
 /// Strip `<think>...</think>` blocks from model output.
 /// Some models (Qwen3, Qwen3.5) emit reasoning blocks before the answer.
 fn strip_think_tags(output: &str) -> String {
-    // Fast path: no think tags
+    // Templates that open `<think>` in the prompt produce output that only
+    // contains the closing tag: keep what follows the last `</think>`.
     if !output.contains("<think>") {
-        return output.to_string();
+        return match output.rfind("</think>") {
+            Some(end) => output[end + "</think>".len()..].trim().to_string(),
+            None => output.to_string(),
+        };
     }
     // Remove everything between <think> and </think> (inclusive)
     let mut result = output.to_string();
     while let Some(start) = result.find("<think>") {
-        if let Some(end) = result.find("</think>") {
-            let end = end + "</think>".len();
+        if let Some(rel_end) = result[start..].find("</think>") {
+            let end = start + rel_end + "</think>".len();
             result = format!("{}{}", &result[..start], &result[end..]);
         } else {
             // Unclosed <think> — remove everything from <think> onward
@@ -228,7 +277,11 @@ fn trim_runaway(output: &str, input: &str) -> String {
             return output[..pos].to_string();
         }
     }
-    output[..max_len].to_string()
+    let mut cut = max_len;
+    while !output.is_char_boundary(cut) {
+        cut -= 1;
+    }
+    output[..cut].to_string()
 }
 
 /// Detect whether a chat template is GRMR-style (uses "corrected" turn tag).
@@ -248,9 +301,15 @@ fn format_instruct_prompt(model: &LlamaModel, template: &LlamaChatTemplate, text
     let prompt = format!("{}\n\n{}", SYSTEM_PROMPT, text);
     let msg = LlamaChatMessage::new("user".to_string(), prompt)
         .map_err(|e| format!("Failed to create chat message: {}", e))?;
-    model
+    let mut formatted = model
         .apply_chat_template(template, &[msg], true)
-        .map_err(|e| format!("Failed to apply chat template: {}", e))
+        .map_err(|e| format!("Failed to apply chat template: {}", e))?;
+    // Hybrid reasoning models (Qwen3/3.5): pre-fill an empty think block, which is
+    // what their template emits for enable_thinking=false. Saves the token budget.
+    if template.to_str().is_ok_and(|t| t.contains("<think>")) && !formatted.ends_with("</think>\n\n") {
+        formatted.push_str("<think>\n\n</think>\n\n");
+    }
+    Ok(formatted)
 }
 
 /// Prompt strategy detected for a loaded model.
@@ -321,7 +380,7 @@ fn build_prompt(model: &LlamaModel, text: &str, registry_template: Option<&str>)
 
 /// Runs inference synchronously. Called inside spawn_blocking.
 pub fn run_inference(text: &str) -> Result<String, String> {
-    eprintln!("[jolly] run_inference called with: {:?}", text);
+    eprintln!("[jolly] run_inference called ({} chars)", text.chars().count());
 
     let backend = &*BACKEND;
 
@@ -341,16 +400,15 @@ pub fn run_inference(text: &str) -> Result<String, String> {
         return Ok(String::new());
     }
 
-    // Context and generation limits
-    let n_ctx: u32 = 2048;
-    let max_tokens: i32 = 1024;
-
-    // Ensure prompt fits in context window
-    if tokens.len() as u32 >= n_ctx {
+    // Generation budget scales with the input (corrections are about as long
+    // as the input); the context must hold prompt + generated tokens.
+    let max_tokens: i32 = (tokens.len() as i32 + 256).clamp(256, 4096);
+    let n_ctx: u32 = tokens.len() as u32 + max_tokens as u32;
+    if n_ctx > MAX_CTX {
         return Err(format!(
-            "Input too long: {} tokens exceeds context window of {}",
+            "Input too long: {} tokens exceeds the supported context of {}",
             tokens.len(),
-            n_ctx
+            MAX_CTX
         ));
     }
 
@@ -383,12 +441,14 @@ pub fn run_inference(text: &str) -> Result<String, String> {
     let mut n_cur = tokens.len() as i32;
     let mut output = String::new();
     let mut decoder = encoding_rs::UTF_8.new_decoder();
+    let mut finished = false;
 
     for _ in 0..max_tokens {
         let token = sampler.sample(&ctx, batch.n_tokens() - 1);
         sampler.accept(token);
 
         if model.is_eog_token(token) {
+            finished = true;
             break;
         }
 
@@ -406,12 +466,14 @@ pub fn run_inference(text: &str) -> Result<String, String> {
         };
         if let Some(pos) = stop_pos {
             output.truncate(pos);
+            finished = true;
             break;
         }
 
         // Stop runaway generation: output should never be much longer than input
         if output.len() > input_len + 200 {
             output = trim_runaway(&output, text);
+            finished = true;
             break;
         }
 
@@ -425,9 +487,13 @@ pub fn run_inference(text: &str) -> Result<String, String> {
         n_cur += 1;
     }
 
-    let result = strip_think_tags(output.trim());
-    eprintln!("[jolly] Returning: {:?}", result);
-    Ok(result)
+    if !finished {
+        // Hit the token cap without EOS: the answer is incomplete, so don't
+        // return a truncated correction.
+        eprintln!("[jolly] Generation hit max_tokens; returning original text");
+        return Ok(text.to_string());
+    }
+    Ok(strip_think_tags(output.trim()))
 }
 
 /// Processes multiple text chunks simultaneously using continuous batching.
@@ -461,6 +527,8 @@ fn run_parallel_inference(texts: Vec<String>) -> Result<Vec<String>, String> {
         sampler: LlamaSampler,
         decoder: encoding_rs::Decoder,
         i_batch: i32,
+        /// True once the sequence ended on its own (EOS / stop rule).
+        finished: bool,
         original_text: String,
         input_len: usize,
         prompt_kind: PromptKind,
@@ -487,6 +555,7 @@ fn run_parallel_inference(texts: Vec<String>) -> Result<Vec<String>, String> {
                 ]),
                 decoder: encoding_rs::UTF_8.new_decoder(),
                 i_batch: 0,
+                finished: false,
                 original_text: text.clone(),
                 input_len: text.len(),
                 prompt_kind,
@@ -496,7 +565,7 @@ fn run_parallel_inference(texts: Vec<String>) -> Result<Vec<String>, String> {
 
     // Guard: skip sequences whose prompt exceeds PER_SEQ_CTX
     for seq in &mut seqs {
-        if seq.tokens.len() as u32 >= PER_SEQ_CTX {
+        if seq.tokens.len() as u32 + MAX_GEN_TOKENS as u32 > PER_SEQ_CTX {
             eprintln!(
                 "[jolly] Seq {} prompt too long ({} tokens), returning original",
                 seq.seq_id,
@@ -509,6 +578,11 @@ fn run_parallel_inference(texts: Vec<String>) -> Result<Vec<String>, String> {
     // If all sequences are done (all too long), return originals
     if seqs.iter().all(|s| s.done) {
         return Ok(seqs.into_iter().map(|s| s.original_text).collect());
+    }
+
+    // llama.cpp requires seq_id < n_seq_max, so number only the active ones.
+    for (active_idx, seq) in seqs.iter_mut().filter(|s| !s.done).enumerate() {
+        seq.seq_id = active_idx as i32;
     }
 
     // Create context sized for all active sequences
@@ -569,6 +643,7 @@ fn run_parallel_inference(texts: Vec<String>) -> Result<Vec<String>, String> {
 
             if model.is_eog_token(token) {
                 seq.done = true;
+                seq.finished = true;
                 if let Err(e) = ctx.clear_kv_cache_seq(Some(seq.seq_id as u32), None, None) {
                     eprintln!("[jolly] Failed to clear KV cache for seq {}: {}", seq.seq_id, e);
                 }
@@ -590,6 +665,7 @@ fn run_parallel_inference(texts: Vec<String>) -> Result<Vec<String>, String> {
             if let Some(pos) = stop_pos {
                 seq.output.truncate(pos);
                 seq.done = true;
+                seq.finished = true;
                 if let Err(e) = ctx.clear_kv_cache_seq(Some(seq.seq_id as u32), None, None) {
                     eprintln!("[jolly] Failed to clear KV cache for seq {}: {}", seq.seq_id, e);
                 }
@@ -600,6 +676,7 @@ fn run_parallel_inference(texts: Vec<String>) -> Result<Vec<String>, String> {
             if seq.output.len() > seq.input_len + 200 {
                 seq.output = trim_runaway(&seq.output, &seq.original_text);
                 seq.done = true;
+                seq.finished = true;
                 if let Err(e) = ctx.clear_kv_cache_seq(Some(seq.seq_id as u32), None, None) {
                     eprintln!("[jolly] Failed to clear KV cache for seq {}: {}", seq.seq_id, e);
                 }
@@ -624,12 +701,12 @@ fn run_parallel_inference(texts: Vec<String>) -> Result<Vec<String>, String> {
             .map_err(|e| format!("Failed to decode generation step: {}", e))?;
     }
 
-    // Return results: use output if non-empty, else original text
+    // Return results: use output if complete and non-empty, else original text
     Ok(seqs
         .into_iter()
         .map(|s| {
             let trimmed = strip_think_tags(s.output.trim());
-            if trimmed.is_empty() {
+            if !s.finished || trimmed.is_empty() {
                 s.original_text
             } else {
                 trimmed
@@ -754,6 +831,32 @@ mod tests {
         assert_eq!(PromptKind::Grmr, PromptKind::Grmr);
         assert_ne!(PromptKind::Registry, PromptKind::Grmr);
         assert_ne!(PromptKind::Standard, PromptKind::Fallback);
+    }
+
+    #[test]
+    fn strip_think_only_closing_tag() {
+        // Template opened <think> in the prompt; output only has the close tag.
+        assert_eq!(strip_think_tags("reasoning…\n</think>\n\nFixed text."), "Fixed text.");
+    }
+
+    #[test]
+    fn strip_think_stray_close_before_open() {
+        assert_eq!(strip_think_tags("A </think> B <think>x</think> C"), "A </think> B  C");
+    }
+
+    #[test]
+    fn trim_runaway_respects_char_boundaries() {
+        let input = "ä";
+        let output = "ü".repeat(300); // 600 bytes, no newline
+        let trimmed = trim_runaway(&output, input);
+        assert!(trimmed.len() <= input.len() + 200);
+        assert!(trimmed.chars().all(|c| c == 'ü'));
+    }
+
+    #[test]
+    fn or_original_keeps_input_on_empty_output() {
+        assert_eq!(or_original("  ".to_string(), "orig"), "orig");
+        assert_eq!(or_original("new".to_string(), "orig"), "new");
     }
 
     // ── strip_think_tags tests ──────────────────────────────────
