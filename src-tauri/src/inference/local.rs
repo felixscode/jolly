@@ -10,7 +10,7 @@ use llama_cpp_2::context::params::LlamaContextParams;
 use llama_cpp_2::llama_backend::LlamaBackend;
 use llama_cpp_2::llama_batch::LlamaBatch;
 use llama_cpp_2::model::params::LlamaModelParams;
-use llama_cpp_2::model::{AddBos, LlamaChatMessage, LlamaChatTemplate, LlamaModel};
+use llama_cpp_2::model::{LlamaChatMessage, LlamaChatTemplate, LlamaModel};
 use llama_cpp_2::sampling::LlamaSampler;
 use llama_cpp_2::token::LlamaToken;
 
@@ -337,9 +337,7 @@ fn build_prompt(model: &LlamaModel, text: &str, registry_template: Option<&str>)
     if let Some(tmpl) = registry_template {
         eprintln!("[jolly] Using registry prompt template");
         let formatted = tmpl.replace("{text}", text);
-        let tokens = model
-            .str_to_token(&formatted, AddBos::Always)
-            .map_err(|e| format!("Failed to tokenize: {}", e))?;
+        let tokens = tokenize(model, &formatted, true);
         return Ok((tokens, PromptKind::Registry));
     }
 
@@ -370,12 +368,29 @@ fn build_prompt(model: &LlamaModel, text: &str, registry_template: Option<&str>)
 
     // BOS is handled by apply_chat_template for standard models.
     // GRMR and fallback use manual formatting and need explicit BOS.
-    let add_bos = if kind == PromptKind::Standard { AddBos::Never } else { AddBos::Always };
-    let tokens = model
-        .str_to_token(&formatted, add_bos)
-        .map_err(|e| format!("Failed to tokenize: {}", e))?;
+    let add_bos = kind != PromptKind::Standard;
+    let tokens = tokenize(model, &formatted, add_bos);
 
     Ok((tokens, kind))
+}
+
+/// Tokenize with special-token parsing (chat-template markers become real
+/// special tokens), optionally prepending BOS.
+fn tokenize(model: &LlamaModel, text: &str, add_bos: bool) -> Vec<LlamaToken> {
+    model.vocab().tokenize(text.as_bytes(), add_bos, true)
+}
+
+/// Detokenize one token, streaming bytes through `decoder` so multi-byte
+/// UTF-8 characters split across tokens (ä, ß, emoji…) come out intact.
+fn token_piece(model: &LlamaModel, token: LlamaToken, decoder: &mut encoding_rs::Decoder) -> String {
+    let bytes = model.vocab().token_to_piece(token, true, None);
+    let mut piece = String::with_capacity(
+        decoder
+            .max_utf8_buffer_length(bytes.len())
+            .unwrap_or(bytes.len() * 3 + 4),
+    );
+    let _ = decoder.decode_to_string(&bytes, &mut piece, false);
+    piece
 }
 
 /// Runs inference synchronously. Called inside spawn_blocking.
@@ -447,16 +462,13 @@ pub fn run_inference(text: &str) -> Result<String, String> {
         let token = sampler.sample(&ctx, batch.n_tokens() - 1);
         sampler.accept(token);
 
-        if model.is_eog_token(token) {
+        if model.vocab().is_eog(token) {
             finished = true;
             break;
         }
 
         // Detokenize this token
-        let piece = model
-            .token_to_piece(token, &mut decoder, true, None)
-            .map_err(|e| format!("Failed to detokenize: {}", e))?;
-        output.push_str(&piece);
+        output.push_str(&token_piece(model, token, &mut decoder));
 
         // Model-specific stop conditions for looping
         let stop_pos = match prompt_kind {
@@ -641,7 +653,7 @@ fn run_parallel_inference(texts: Vec<String>) -> Result<Vec<String>, String> {
             let token = seq.sampler.sample(&ctx, seq.i_batch);
             seq.sampler.accept(token);
 
-            if model.is_eog_token(token) {
+            if model.vocab().is_eog(token) {
                 seq.done = true;
                 seq.finished = true;
                 if let Err(e) = ctx.clear_kv_cache_seq(Some(seq.seq_id as u32), None, None) {
@@ -650,10 +662,7 @@ fn run_parallel_inference(texts: Vec<String>) -> Result<Vec<String>, String> {
                 continue;
             }
 
-            let piece = model
-                .token_to_piece(token, &mut seq.decoder, true, None)
-                .map_err(|e| format!("Failed to detokenize seq {}: {}", seq.seq_id, e))?;
-            seq.output.push_str(&piece);
+            seq.output.push_str(&token_piece(model, token, &mut seq.decoder));
             seq.last_token = token;
 
             // Model-specific stop conditions for looping
