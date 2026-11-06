@@ -8,9 +8,11 @@
 	let appVersion = $state('');
 
 	$effect(() => {
-		getVersion().then((v) => {
-			appVersion = v;
-		}).catch(() => {});
+		getVersion()
+			.then((v) => {
+				appVersion = v;
+			})
+			.catch(() => {});
 	});
 
 	// API Key section
@@ -36,17 +38,28 @@
 
 	// Model switch confirmation
 	let switchedModelName = $state<string | null>(null);
+	let switchingModelName = $state<string | null>(null);
+	let switchError = $state<string | null>(null);
+	let switchedTimer: ReturnType<typeof setTimeout> | undefined;
 
 	async function handleModelSwitch(modelId: string) {
 		const model = settings.availableModels.find((m) => m.id === modelId);
 		const custom = settings.customModels.find((m) => m.id === modelId);
-		await settings.setActiveModel(modelId);
-		const name = model?.name ?? custom?.name;
-		if (name) {
+		const name = model?.name ?? custom?.name ?? modelId;
+		clearTimeout(switchedTimer);
+		switchedModelName = null;
+		switchError = null;
+		switchingModelName = name;
+		try {
+			await settings.setActiveModel(modelId);
 			switchedModelName = name;
-			setTimeout(() => {
+			switchedTimer = setTimeout(() => {
 				switchedModelName = null;
 			}, 2000);
+		} catch (e) {
+			switchError = `Couldn't load ${name}: ${e}`;
+		} finally {
+			switchingModelName = null;
 		}
 	}
 
@@ -137,11 +150,46 @@
 					aria-label={settings.isDark ? 'Switch to light mode' : 'Switch to dark mode'}
 				>
 					{#if settings.isDark}
-						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="20"
+							height="20"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line
+								x1="12"
+								y1="21"
+								x2="12"
+								y2="23"
+							/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line
+								x1="18.36"
+								y1="18.36"
+								x2="19.78"
+								y2="19.78"
+							/><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line
+								x1="4.22"
+								y1="19.78"
+								x2="5.64"
+								y2="18.36"
+							/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
 						</svg>
 					{:else}
-						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="20"
+							height="20"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
 							<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
 						</svg>
 					{/if}
@@ -161,7 +209,10 @@
 						disabled={!!settings.downloadProgress}
 					>
 						{#each modelsForDownload as model}
-							<option value={model.id} class="bg-white text-[#423f37] dark:bg-[#423f37] dark:text-[#e8e8e3]">
+							<option
+								value={model.id}
+								class="bg-white text-[#423f37] dark:bg-[#423f37] dark:text-[#e8e8e3]"
+							>
 								{model.name} — {formatBytes(model.sizeBytes)}
 								{#if model.state === 'partial'}(resumable){/if}
 							</option>
@@ -327,15 +378,18 @@
 						</div>
 					{/each}
 				</div>
-				<p class="mt-1 text-xs text-gray-400 dark:text-[#e8e8e3]/50">
-					Restart app after downloading a new model to activate it.
-				</p>
 			{:else}
 				<p class="mt-2 text-xs text-gray-400 dark:text-[#e8e8e3]/50">
 					Disabled while {settings.useHarper ? 'Harper' : 'OpenRouter'} is active
 				</p>
 			{/if}
-			{#if switchedModelName}
+			{#if switchingModelName}
+				<p class="mt-2 text-xs text-gray-400 dark:text-[#e8e8e3]/50">
+					Loading {switchingModelName}…
+				</p>
+			{:else if switchError}
+				<p class="mt-2 text-xs text-red-500 dark:text-red-400">{switchError}</p>
+			{:else if switchedModelName}
 				<p class="mt-2 text-xs font-medium text-green-600 dark:text-green-400">
 					Switched to {switchedModelName}
 				</p>
@@ -345,9 +399,7 @@
 		<!-- Section: Harper (Lightweight) -->
 		<section>
 			<div class="flex items-center justify-between">
-				<h3 class="text-sm font-bold text-[#423f37] dark:text-[#e8e8e3]">
-					Harper (Lightweight)
-				</h3>
+				<h3 class="text-sm font-bold text-[#423f37] dark:text-[#e8e8e3]">Harper (Lightweight)</h3>
 				<button
 					onclick={() => settings.setUseHarper(!settings.useHarper)}
 					class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors {settings.useHarper
@@ -474,7 +526,9 @@
 		</section>
 
 		{#if appVersion}
-			<div class="border-t border-gray-200 pt-4 text-center text-xs text-gray-400 dark:border-white/10 dark:text-[#e8e8e3]/50">
+			<div
+				class="border-t border-gray-200 pt-4 text-center text-xs text-gray-400 dark:border-white/10 dark:text-[#e8e8e3]/50"
+			>
 				v{appVersion}
 			</div>
 		{/if}

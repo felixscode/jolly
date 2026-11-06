@@ -215,7 +215,12 @@ function createSettingsStore() {
 		}
 	}
 
+	/** Load the model in the backend, then persist the choice. Throws if loading fails. */
 	async function setActiveModel(modelId: string | null) {
+		if (modelId) {
+			const invoke = await getInvoke();
+			await invoke('activate_model', { modelId });
+		}
 		activeModelId = modelId;
 		try {
 			const store = await getStore();

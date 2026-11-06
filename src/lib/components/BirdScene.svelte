@@ -197,29 +197,41 @@
 			}
 		}
 
+		const isBusy = () => scene !== 'idle' && scene !== 'hovering' && scene !== 'greeting';
+
 		async function handleCorrection(
 			text: string,
-			clipboardWrite?: Promise<void>,
-			resolveClip?: (v: string) => void
+			deferredWrite?: { promise: Promise<void>; resolve: (v: string) => void }
 		) {
-			if (scene !== 'idle' && scene !== 'hovering' && scene !== 'greeting') return;
 			clearTimeout(greetingTimer);
 			scene = 'correcting';
 			const minDelay = new Promise((r) => setTimeout(r, 5000));
 
-			if (!text) {
+			// The web path opened a clipboard write up front; it must always be
+			// resolved, so on any failure it gets the original text back.
+			let written = false;
+			async function write(value: string) {
+				if (deferredWrite) {
+					deferredWrite.resolve(value);
+					try {
+						await deferredWrite.promise;
+						written = true;
+						return;
+					} catch {
+						// Deferred ClipboardItem write rejected: try the direct APIs.
+					}
+				}
+				await writeClipboard(value);
+				written = true;
+			}
+
+			if (!text.trim()) {
 				quoteText = 'Nothing to fix here!';
 			} else {
 				try {
 					const correctedText = await onCorrect(text);
-					// Resolve the deferred clipboard write if available (web),
-					// otherwise fall back to direct writeClipboard (Tauri).
-					if (resolveClip && clipboardWrite) {
-						resolveClip(correctedText);
-						await clipboardWrite;
-					} else {
-						await writeClipboard(correctedText);
-					}
+					if (!correctedText.trim()) throw new Error('empty_result');
+					await write(correctedText);
 					quoteText = pickQuote();
 				} catch (err) {
 					console.error('Correction failed:', err);
@@ -230,6 +242,10 @@
 						quoteText = 'API key seems wrong — check Settings!';
 					} else if (code.includes('model_not_loaded')) {
 						quoteText = 'Model not loaded — grab one in Settings!';
+					} else if (code.includes('no_provider_configured')) {
+						quoteText = 'Pick a model or Harper in Settings first!';
+					} else if (code.includes('harper_failed')) {
+						quoteText = "Harper couldn't check that — try again!";
 					} else if (code.includes('local_inference_failed')) {
 						quoteText = "Hmm, the model couldn't handle that — try again!";
 					} else if (code.includes('api_failed')) {
@@ -238,6 +254,11 @@
 						quoteText = "Oops, couldn't fix that!";
 					}
 				}
+			}
+			// Never leave a pending web clipboard write dangling.
+			if (deferredWrite && !written) {
+				deferredWrite.resolve(text);
+				deferredWrite.promise.catch(() => {});
 			}
 
 			await minDelay;
@@ -264,35 +285,41 @@
 			}
 		}
 
+		const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+
 		async function handleKeydown(e: KeyboardEvent) {
-			if (e.key !== 'Enter') return;
-			const tag = (e.target as Element)?.tagName;
-			if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-			let text: string;
+			if (e.key !== 'Enter' || e.repeat) return;
+			const target = e.target as HTMLElement | null;
+			// Enter on a focused control belongs to that control, not to Jolly.
+			if (target?.closest('input, textarea, select, button, a, [role], [contenteditable]')) return;
+			if (isBusy()) return;
+
+			// Web: clipboard.write() fails after an async gap (the user gesture
+			// expires), so open a ClipboardItem write synchronously, before any
+			// await, and resolve its content later. Tauri writes via the plugin.
+			let deferredWrite: { promise: Promise<void>; resolve: (v: string) => void } | undefined;
+			if (!isTauri) {
+				try {
+					let resolve!: (v: string) => void;
+					const content = new Promise<string>((r) => (resolve = r));
+					const promise = navigator.clipboard.write([
+						new ClipboardItem({
+							'text/plain': content.then((t) => new Blob([t], { type: 'text/plain' }))
+						})
+					]);
+					deferredWrite = { promise, resolve };
+				} catch {
+					// ClipboardItem with a promise isn't supported; writeClipboard is used instead.
+				}
+			}
+
+			let text = '';
 			try {
 				text = await readClipboard();
 			} catch (err) {
 				console.error('Clipboard read failed:', err);
-				return;
 			}
-
-			// On web, clipboard.writeText() fails after an async gap (user gesture
-			// expires). Use ClipboardItem with a deferred promise so the write is
-			// initiated synchronously within the gesture, but content resolves later.
-			let resolveClip!: (v: string) => void;
-			let clipboardWrite: Promise<void> | undefined;
-			try {
-				const deferred = new Promise<string>((r) => { resolveClip = r; });
-				clipboardWrite = navigator.clipboard.write([
-					new ClipboardItem({
-						'text/plain': deferred.then((t) => new Blob([t], { type: 'text/plain' }))
-					})
-				]);
-			} catch {
-				// ClipboardItem with promise not supported; fall back in handleCorrection
-			}
-
-			handleCorrection(text, clipboardWrite, resolveClip);
+			handleCorrection(text ?? '', deferredWrite);
 		}
 
 		let deadTimer: ReturnType<typeof setTimeout> | undefined;

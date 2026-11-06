@@ -5,9 +5,12 @@
 	let isDark = $state(false);
 	let correctFn = $state<(text: string) => Promise<string>>(async (t) => t);
 
-	onMount(async () => {
-		const { harperCorrect } = await import('$lib/harper-web');
-		correctFn = harperCorrect;
+	// Synchronous so the returned cleanup is actually used (Svelte ignores
+	// cleanups returned from async onMount callbacks).
+	onMount(() => {
+		import('$lib/harper-web').then(({ harperCorrect }) => {
+			correctFn = harperCorrect;
+		});
 
 		const observer = new MutationObserver(() => {
 			isDark = document.documentElement.classList.contains('dark');
