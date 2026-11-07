@@ -28,6 +28,10 @@
 	// ── Bubble tuning ──────────────────────────────────────────────────────────
 	const DEBUG_BUBBLES = false;
 
+	// On phones the default offset pushes the bubble past the right edge.
+	const BUBBLE_OFFSET_X_NARROW = 80;
+	let narrow = $state(false);
+
 	const TALK_BUBBLE_OFFSET_X = 140;
 	const TALK_BUBBLE_OFFSET_Y = -10;
 	const TALK_BOX_TOP = 16;
@@ -62,7 +66,10 @@
 	let flyingIn = $state(true);
 	let dead = $state(false);
 
-	const GREETING_TEXT = "Hi, I'm Jolly!\npress Enter";
+	// Touch devices have no Enter key outside text fields, so a tap on Jolly
+	// starts the correction instead.
+	let touch = $state(false);
+	const GREETING_TEXT = $derived(touch ? "Hi, I'm Jolly!\ntap me" : "Hi, I'm Jolly!\npress Enter");
 
 	const quotes = [
 		"You're welcome, Shakespeare.",
@@ -129,6 +136,11 @@
 
 	onMount(() => {
 		let mounted = true;
+		const narrowQuery = window.matchMedia('(max-width: 639px)');
+		const onNarrowChange = () => (narrow = narrowQuery.matches);
+		onNarrowChange();
+		narrowQuery.addEventListener('change', onNarrowChange);
+		touch = window.matchMedia('(pointer: coarse)').matches;
 		let greetingTimer: ReturnType<typeof setTimeout>;
 		let quotingTimer: ReturnType<typeof setTimeout>;
 		let blinkTimer: ReturnType<typeof setTimeout>;
@@ -200,15 +212,15 @@
 		const isBusy = () => scene !== 'idle' && scene !== 'hovering' && scene !== 'greeting';
 
 		async function handleCorrection(
-			text: string,
-			deferredWrite?: { promise: Promise<void>; resolve: (v: string) => void }
+			text: string | null,
+			deferredWrite?: { promise: Promise<void>; resolve: (v: string) => void; cancel: () => void }
 		) {
 			clearTimeout(greetingTimer);
 			scene = 'correcting';
 			const minDelay = new Promise((r) => setTimeout(r, 5000));
 
 			// The web path opened a clipboard write up front; it must always be
-			// resolved, so on any failure it gets the original text back.
+			// settled, so on any failure it is cancelled and the clipboard stays as it was.
 			let written = false;
 			async function write(value: string) {
 				if (deferredWrite) {
@@ -225,7 +237,9 @@
 				written = true;
 			}
 
-			if (!text.trim()) {
+			if (text === null) {
+				quoteText = "Can't read your clipboard!";
+			} else if (!text.trim()) {
 				quoteText = 'Nothing to fix here!';
 			} else {
 				try {
@@ -257,8 +271,8 @@
 			}
 			// Never leave a pending web clipboard write dangling.
 			if (deferredWrite && !written) {
-				deferredWrite.resolve(text);
 				deferredWrite.promise.catch(() => {});
+				deferredWrite.cancel();
 			}
 
 			await minDelay;
@@ -287,44 +301,57 @@
 
 		const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
-		async function handleKeydown(e: KeyboardEvent) {
+		function handleKeydown(e: KeyboardEvent) {
 			if (e.key !== 'Enter' || e.repeat) return;
 			const target = e.target as HTMLElement | null;
 			// Enter on a focused control belongs to that control, not to Jolly.
 			if (target?.closest('input, textarea, select, button, a, [role], [contenteditable]')) return;
+			startCorrection();
+		}
+
+		// Must run synchronously inside the user gesture (key press or tap).
+		async function startCorrection() {
 			if (isBusy()) return;
 
 			// Web: clipboard.write() fails after an async gap (the user gesture
 			// expires), so open a ClipboardItem write synchronously, before any
 			// await, and resolve its content later. Tauri writes via the plugin.
-			let deferredWrite: { promise: Promise<void>; resolve: (v: string) => void } | undefined;
+			let deferredWrite: { promise: Promise<void>; resolve: (v: string) => void; cancel: () => void } | undefined;
 			if (!isTauri) {
 				try {
 					let resolve!: (v: string) => void;
-					const content = new Promise<string>((r) => (resolve = r));
+					let reject!: () => void;
+					const content = new Promise<string>((res, rej) => {
+						resolve = res;
+						reject = () => rej(new Error('cancelled'));
+					});
 					const promise = navigator.clipboard.write([
 						new ClipboardItem({
 							'text/plain': content.then((t) => new Blob([t], { type: 'text/plain' }))
 						})
 					]);
-					deferredWrite = { promise, resolve };
+					deferredWrite = { promise, resolve, cancel: reject };
 				} catch {
 					// ClipboardItem with a promise isn't supported; writeClipboard is used instead.
 				}
 			}
 
-			let text = '';
+			let text: string | null = null;
 			try {
-				text = await readClipboard();
+				text = (await readClipboard()) ?? '';
 			} catch (err) {
 				console.error('Clipboard read failed:', err);
 			}
-			handleCorrection(text ?? '', deferredWrite);
+			handleCorrection(text, deferredWrite);
 		}
 
 		let deadTimer: ReturnType<typeof setTimeout> | undefined;
 		function handleClick() {
 			if (scene === 'flying' || scene === 'correcting') return;
+			if (touch) {
+				startCorrection();
+				return;
+			}
 			dead = true;
 			clearTimeout(deadTimer);
 			deadTimer = setTimeout(() => {
@@ -339,6 +366,7 @@
 
 		return () => {
 			mounted = false;
+			narrowQuery.removeEventListener('change', onNarrowChange);
 			clearInterval(flyInterval);
 			clearTimeout(t1);
 			clearTimeout(t2);
@@ -386,7 +414,9 @@
 					class="pointer-events-none absolute bottom-full"
 					style="left: 50%; opacity: {bubbleVisible
 						? 1
-						: 0}; transition: opacity 300ms ease; transform: translate(calc(-50% + {TALK_BUBBLE_OFFSET_X}px), {TALK_BUBBLE_OFFSET_Y}px);"
+						: 0}; transition: opacity 300ms ease; transform: translate(calc(-50% + {narrow
+						? BUBBLE_OFFSET_X_NARROW
+						: TALK_BUBBLE_OFFSET_X}px), {TALK_BUBBLE_OFFSET_Y}px);"
 				>
 					<div class="relative">
 						<img
@@ -412,7 +442,7 @@
 					scale={THINK_SCALE}
 					pulseAmount={THINK_PULSE}
 					scaleSpeed={THINK_SCALE_SPEED}
-					offsetX={THINK_BUBBLE_OFFSET_X}
+					offsetX={narrow ? BUBBLE_OFFSET_X_NARROW : THINK_BUBBLE_OFFSET_X}
 					offsetY={THINK_BUBBLE_OFFSET_Y}
 					boxTop={THINK_BOX_TOP}
 					boxLeft={THINK_BOX_LEFT}

@@ -130,27 +130,27 @@
 
 	{#snippet dataTable(data: typeof englishData)}
 		<div class="mb-8 overflow-x-auto md:mb-16">
-			<table class="w-full text-left text-sm text-gray-500 dark:text-gray-400">
+			<table class="w-full text-left text-xs sm:text-sm text-gray-500 dark:text-gray-400">
 				<thead
 					class="border-b border-gray-200 text-xs text-[#423f37] uppercase dark:border-gray-700 dark:text-[#e8e8e3]"
 				>
 					<tr>
-						<th scope="col" class="py-3 pr-6">Model</th>
-						<th scope="col" class="py-3 pr-6">Exact Match (%)</th>
-						<th scope="col" class="py-3 pr-6">Errors Fixed (%)</th>
-						<th scope="col" class="py-3 pr-6">Time (ms)</th>
+						<th scope="col" class="py-3 pr-3 sm:pr-6">Model</th>
+						<th scope="col" class="py-3 pr-3 sm:pr-6">Exact Match (%)</th>
+						<th scope="col" class="py-3 pr-3 sm:pr-6">Errors Fixed (%)</th>
+						<th scope="col" class="py-3 pr-3 sm:pr-6">Time (ms)</th>
 						<th scope="col" class="py-3">Memory (MB)</th>
 					</tr>
 				</thead>
 				<tbody>
 					{#each data as row}
 						<tr class="border-b border-gray-100 dark:border-gray-800">
-							<td class="py-3 pr-6 font-medium whitespace-nowrap text-[#423f37] dark:text-[#e8e8e3]"
+							<td class="py-3 pr-3 sm:pr-6 font-medium text-[#423f37] sm:whitespace-nowrap dark:text-[#e8e8e3]"
 								>{row.model}</td
 							>
-							<td class="py-3 pr-6">{row.exact}%</td>
-							<td class="py-3 pr-6">{row.errorsFixed}%</td>
-							<td class="py-3 pr-6">{row.time.toLocaleString()}</td>
+							<td class="py-3 pr-3 sm:pr-6">{row.exact}%</td>
+							<td class="py-3 pr-3 sm:pr-6">{row.errorsFixed}%</td>
+							<td class="py-3 pr-3 sm:pr-6">{row.time.toLocaleString()}</td>
 							<td class="py-3">{row.mem.toLocaleString()}</td>
 						</tr>
 					{/each}
@@ -166,7 +166,7 @@
 	{@render dataTable(germanData)}
 
 	<div
-		class="mb-8 grid grid-cols-2 gap-x-8 gap-y-1 text-xs text-gray-400 md:mb-16 dark:text-gray-500"
+		class="mb-8 grid grid-cols-1 gap-x-8 gap-y-1 sm:grid-cols-2 text-xs text-gray-400 md:mb-16 dark:text-gray-500"
 	>
 		<span
 			><strong>Exact Match</strong> — corrected output matched the expected text character-for-character</span

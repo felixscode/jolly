@@ -53,12 +53,15 @@
 		</div>
 
 		<!-- Right: character scene -->
-		<div class="flex items-center justify-center overflow-visible pt-20 pb-24 md:pt-0 md:pb-0">
-			<BirdScene onCorrect={correctFn} />
+		<!-- Phones: shrink bird, branch and bubbles together; keep their relative layout. -->
+		<div class="flex items-center justify-center overflow-visible pt-14 pb-16 md:pt-0 md:pb-0">
+			<div class="scale-[0.75] sm:scale-100">
+				<BirdScene onCorrect={correctFn} />
+			</div>
 		</div>
 	</div>
 
-	<p class="relative z-10 py-2 text-xs text-gray-400 dark:text-gray-500">
+	<p class="relative z-10 py-2 text-center text-xs text-gray-400 md:text-left dark:text-gray-500">
 		* This is a web demo using <a
 			href="https://github.com/Automattic/harper"
 			target="_blank"

@@ -98,7 +98,7 @@
 
 <div class="mx-auto flex max-w-4xl flex-col justify-center px-4 md:px-6" style="min-height: calc(100svh - 116px - 117px);">
 	<!-- Header: Jolly drops in from top with speech bubble -->
-	<div class="-mt-4 mb-6 flex items-center justify-center sm:-mt-8 sm:mb-12">
+	<div class="mt-2 mb-6 flex items-center justify-center sm:-mt-8 sm:mb-12">
 		<div
 			class="relative h-28 w-24"
 			style="
@@ -158,11 +158,23 @@
 
 	<hr class="mb-6 border-gray-200 sm:mb-12 dark:border-gray-700" />
 
+	<!-- Phones and tablets: Jolly only runs on desktops. -->
+	<p
+		class="mx-auto mb-10 hidden max-w-sm rounded-lg border-2 border-dashed border-[#aea897] px-4 py-3 text-center text-sm leading-relaxed text-gray-500 pointer-coarse:block dark:text-gray-400"
+	>
+		Jolly is a desktop app for Windows, macOS and Linux. Open this page on your computer to
+		install it — or try the web demo on the <a
+			href="/"
+			class="font-bold text-[#423f37] underline hover:text-[#960200] dark:text-[#e8e8e3] dark:hover:text-[#ffd046]"
+			>home page</a
+		>.
+	</p>
+
 	<!-- Platform grid -->
-	<div class="grid grid-cols-1 gap-6 sm:grid-cols-3 sm:gap-12">
+	<div class="grid grid-cols-1 gap-12 pb-8 sm:grid-cols-3 sm:pb-0">
 		<div class="flex flex-col items-center text-center">
 			<h2 class="mb-3 text-2xl font-bold text-[#423f37] dark:text-[#e8e8e3]">Windows</h2>
-			<p class="mb-8 text-sm leading-relaxed text-gray-500 dark:text-gray-400">
+			<p class="mb-4 text-sm leading-relaxed sm:mb-8 text-gray-500 dark:text-gray-400">
 				Windows 10 or later. 64-bit.
 			</p>
 			<a
@@ -176,7 +188,7 @@
 
 		<div class="flex flex-col items-center text-center">
 			<h2 class="mb-3 text-2xl font-bold text-[#423f37] dark:text-[#e8e8e3]">macOS</h2>
-			<p class="mb-8 text-sm leading-relaxed text-gray-500 dark:text-gray-400">
+			<p class="mb-4 text-sm leading-relaxed sm:mb-8 text-gray-500 dark:text-gray-400">
 				macOS 12 or later. Apple Silicon &amp; Intel.
 			</p>
 			<a
@@ -190,7 +202,7 @@
 
 		<div class="flex flex-col items-center text-center">
 			<h2 class="mb-3 text-2xl font-bold text-[#423f37] dark:text-[#e8e8e3]">Linux</h2>
-			<p class="mb-8 text-sm leading-relaxed text-gray-500 dark:text-gray-400">
+			<p class="mb-4 text-sm leading-relaxed sm:mb-8 text-gray-500 dark:text-gray-400">
 				AppImage, .deb, and .rpm available.
 			</p>
 			<div class="relative mt-auto">

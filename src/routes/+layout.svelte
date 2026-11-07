@@ -1,6 +1,7 @@
 <script lang="ts">
 	import './layout.css';
 	import Navbar from '$lib/components/Navbar.svelte';
+	import { NAV_LINKS } from '$lib/nav';
 	import { page } from '$app/state';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { onMount } from 'svelte';
@@ -61,6 +62,15 @@
 			<div
 				class="mx-auto max-w-4xl border-t border-gray-100 px-4 pt-8 text-center md:px-6 dark:border-gray-700"
 			>
+				<nav aria-label="Footer" class="mb-4 flex justify-center gap-6 text-sm">
+					{#each NAV_LINKS as link}
+						<a
+							href={link.href}
+							class="py-1 font-semibold text-gray-500 transition-colors hover:text-[#960200] dark:text-gray-400 dark:hover:text-[#ffd046]"
+							>{link.label}</a
+						>
+					{/each}
+				</nav>
 				<a
 					href="https://github.com/felixscode/jolly"
 					target="_blank"
