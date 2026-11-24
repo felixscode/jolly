@@ -3,6 +3,7 @@
 	import History from '$lib/components/History.svelte';
 	import Settings from '$lib/components/Settings.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
+	import { formatAccelerator, formatPortalTrigger } from '$lib/shortcut';
 
 	let settingsOpen = $state(false);
 	let historyOpen = $state(false);
@@ -20,25 +21,64 @@
 		}
 	});
 
+	const shortcutLabel = $derived(
+		settings.shortcutStatus?.active
+			? formatPortalTrigger(settings.shortcutStatus.triggerDescription) ||
+					formatAccelerator(settings.globalShortcut)
+			: null
+	);
+
 	const hintText = $derived(
 		birdScene === 'correcting'
 			? 'Jolly is thinking'
 			: showDone
 				? 'Jolly is done'
-				: 'press Enter to fix your clipboard'
+				: shortcutLabel
+					? `press Enter here or ${shortcutLabel} anywhere`
+					: 'press Enter to fix your clipboard'
 	);
+
+	// Corrections triggered by the global hotkey happen in the backend.
+	$effect(() => {
+		let unlisten: (() => void) | undefined;
+		let cancelled = false;
+		import('@tauri-apps/api/event')
+			.then(({ listen }) =>
+				listen<{ ok: boolean; original?: string; text?: string }>(
+					'correction-finished',
+					(event) => {
+						const { ok, original, text } = event.payload;
+						if (ok && text) settings.addToHistory(text, original);
+					}
+				)
+			)
+			.then((u) => {
+				if (cancelled) u();
+				else unlisten = u;
+			})
+			.catch(() => {});
+		return () => {
+			cancelled = true;
+			unlisten?.();
+		};
+	});
 
 	async function tauriCorrect(text: string): Promise<string> {
 		const { invoke } = await import('@tauri-apps/api/core');
 		const result = await invoke<string>('correct_text', { text });
-		await settings.addToHistory(result);
+		await settings.addToHistory(result, text);
 		return result;
 	}
 </script>
 
 <!-- Bird scene (always dead-center of screen) -->
 <div class="flex h-full items-center justify-center">
-	<BirdScene onCorrect={tauriCorrect} onSceneChange={(s) => { birdScene = s; }} />
+	<BirdScene
+		onCorrect={tauriCorrect}
+		onSceneChange={(s) => {
+			birdScene = s;
+		}}
+	/>
 </div>
 
 <!-- Header bar (layered on top) -->

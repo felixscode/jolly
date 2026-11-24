@@ -2,8 +2,9 @@ pub mod download;
 pub mod harper;
 pub mod local;
 pub mod model_manager;
-pub mod openrouter;
+pub mod providers;
 pub mod registry;
+pub mod remote;
 
 use async_trait::async_trait;
 

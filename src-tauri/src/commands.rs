@@ -13,60 +13,103 @@ use crate::inference::download::{
 use crate::inference::harper::HarperProvider;
 use crate::inference::local::LocalProvider;
 use crate::inference::model_manager::models_dir;
-use crate::inference::openrouter::OpenRouterProvider;
+use crate::inference::providers::{find_provider, keyring_account, ProviderPreset, PROVIDERS};
 use crate::inference::registry::{self, ModelEntry, MODELS};
+use crate::inference::remote::RemoteProvider;
 use crate::inference::LLMProvider;
 
-/// Read the API key: keyring first, then env var fallback.
-fn get_api_key(app: &AppHandle) -> Result<String, String> {
-    if let Ok(Some(key)) =
-        app.keyring()
-            .get_password("com.jolly.desktop", "openrouter_api_key")
+/// Read a provider's API key: keyring first, then the preset's env var.
+fn get_api_key(app: &AppHandle, preset: &ProviderPreset) -> Option<String> {
+    if let Ok(Some(key)) = app
+        .keyring()
+        .get_password("com.jolly.desktop", &keyring_account(preset.id))
     {
-        if !key.is_empty() {
-            return Ok(key);
+        if !key.trim().is_empty() {
+            return Some(key);
         }
     }
+    std::env::var(preset.key_env)
+        .ok()
+        .filter(|k| !k.trim().is_empty())
+}
 
-    std::env::var("OPENROUTER_API_KEY")
-        .map_err(|_| "no_api_key".to_string())
+fn store_value(app: &AppHandle, key: &str) -> Option<serde_json::Value> {
+    app.store("settings.json").ok()?.get(key)
+}
+
+fn store_bool(app: &AppHandle, key: &str) -> Option<bool> {
+    store_value(app, key).and_then(|v| v.as_bool())
 }
 
 /// Check if a local model is selected in the store.
 fn get_active_model_id(app: &AppHandle) -> Option<String> {
-    let store = app.store("settings.json").ok()?;
-    store
-        .get("activeModelId")
-        .and_then(|v| v.as_str().map(|s| s.to_string()))
+    store_value(app, "activeModelId").and_then(|v| v.as_str().map(|s| s.to_string()))
 }
 
-/// Check if the user has toggled "use OpenRouter" in settings.
-fn get_use_openrouter(app: &AppHandle) -> bool {
-    app.store("settings.json")
-        .ok()
-        .and_then(|store| store.get("useOpenRouter"))
-        .and_then(|v| v.as_bool())
+/// Whether the remote (cloud API) provider is enabled. Falls back to the
+/// pre-0.2 `useOpenRouter` flag so upgrading keeps the user's choice.
+fn get_use_remote(app: &AppHandle) -> bool {
+    store_bool(app, "useRemote")
+        .or_else(|| store_bool(app, "useOpenRouter"))
         .unwrap_or(false)
 }
 
 /// Check if the user has toggled "use Harper" in settings.
 fn get_use_harper(app: &AppHandle) -> bool {
-    app.store("settings.json")
-        .ok()
-        .and_then(|store| store.get("useHarper"))
-        .and_then(|v| v.as_bool())
-        .unwrap_or(false)
+    store_bool(app, "useHarper").unwrap_or(false)
 }
 
-#[tauri::command]
-pub async fn correct_text(app: AppHandle, text: String) -> Result<String, String> {
+/// Per-provider overrides stored as `remoteConfigs[<id>] = { model, baseUrl }`.
+#[derive(Default, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RemoteConfig {
+    model: Option<String>,
+    base_url: Option<String>,
+}
+
+fn non_empty(s: Option<String>) -> Option<String> {
+    s.filter(|v| !v.trim().is_empty())
+}
+
+/// Build the remote provider from settings, filling gaps with preset defaults.
+fn build_remote_provider(app: &AppHandle) -> Result<(RemoteProvider, &'static str), String> {
+    let provider_id = store_value(app, "remoteProvider")
+        .and_then(|v| v.as_str().map(str::to_string))
+        .unwrap_or_else(|| "openrouter".to_string());
+    let preset = find_provider(&provider_id)
+        .or_else(|| find_provider("openrouter"))
+        .ok_or("unknown provider")?;
+
+    let config: RemoteConfig = store_value(app, "remoteConfigs")
+        .and_then(|v| v.get(preset.id).cloned())
+        .and_then(|v| serde_json::from_value(v).ok())
+        .unwrap_or_default();
+
+    let api_key = get_api_key(app, preset);
+    if preset.needs_key && api_key.is_none() {
+        return Err("no_api_key".to_string());
+    }
+
+    let provider = RemoteProvider::new(
+        preset.kind,
+        non_empty(config.base_url).unwrap_or_else(|| preset.base_url.to_string()),
+        non_empty(config.model).unwrap_or_else(|| preset.default_model.to_string()),
+        api_key,
+    );
+    Ok((provider, preset.name))
+}
+
+/// Correct `text` with whichever provider the settings select. Shared by the
+/// `correct_text` command and the global hotkey. Errors are short codes the
+/// UI maps to messages (`no_api_key`, `bad_model`, ...).
+pub async fn run_correction(app: &AppHandle, text: &str) -> Result<String, String> {
     if text.trim().is_empty() {
         return Ok(String::new());
     }
 
-    let use_harper = get_use_harper(&app);
-    let use_openrouter = get_use_openrouter(&app);
-    let active_model = get_active_model_id(&app);
+    let use_harper = get_use_harper(app);
+    let use_remote = get_use_remote(app);
+    let active_model = get_active_model_id(app);
     // A loaded model is usable even if the store has no id yet (startup fallback).
     let has_local = crate::inference::local::is_model_loaded();
 
@@ -74,44 +117,50 @@ pub async fn correct_text(app: AppHandle, text: String) -> Result<String, String
     if use_harper {
         eprintln!("[jolly] Using Harper grammar checker");
         let harper = HarperProvider::new();
-        return harper.correct_text(&text).await.map_err(|e| {
+        return harper.correct_text(text).await.map_err(|e| {
             eprintln!("[jolly] Harper error: {}", e);
             "harper_failed".to_string()
         });
     }
 
-    // Priority 2: Local model (loaded and not overridden by OpenRouter)
-    if has_local && !use_openrouter {
+    // Priority 2: Local model (loaded and not overridden by a remote provider)
+    if has_local && !use_remote {
         eprintln!("[jolly] Using local inference");
         let local = LocalProvider::new();
-        return local.correct_text(&text).await.map_err(|e| {
+        return local.correct_text(text).await.map_err(|e| {
             eprintln!("[jolly] Local inference error: {}", e);
             "local_inference_failed".to_string()
         });
     }
 
     // Priority 3: Model selected but not loaded
-    if !use_openrouter && !has_local && active_model.is_some() {
+    if !use_remote && !has_local && active_model.is_some() {
         return Err("model_not_loaded".to_string());
     }
 
-    // Priority 4: OpenRouter
-    if use_openrouter {
-        eprintln!("[jolly] Using OpenRouter API");
-        let api_key = get_api_key(&app)?;
-        let openrouter = OpenRouterProvider::new(api_key);
-        return openrouter.correct_text(&text).await.map_err(|e| {
-            eprintln!("[jolly] OpenRouter error: {}", e);
-            if e.contains("401") || e.contains("403") {
-                "bad_api_key".to_string()
-            } else {
-                "api_failed".to_string()
-            }
+    // Priority 4: Remote API
+    if use_remote {
+        let (remote, name) = build_remote_provider(app)?;
+        eprintln!("[jolly] Using remote API: {} ({})", name, remote.model);
+        return remote.correct_text(text).await.map_err(|e| {
+            eprintln!("[jolly] Remote API error: {}", e);
+            // Keep only the code prefix ("bad_api_key: HTTP 401 ..." -> "bad_api_key").
+            e.split(':').next().unwrap_or("api_failed").to_string()
         });
     }
 
     // Priority 5: Nothing configured
     Err("no_provider_configured".to_string())
+}
+
+#[tauri::command]
+pub async fn correct_text(app: AppHandle, text: String) -> Result<String, String> {
+    run_correction(&app, &text).await
+}
+
+#[tauri::command]
+pub fn list_remote_providers() -> Vec<ProviderPreset> {
+    PROVIDERS.to_vec()
 }
 
 // ── Download management commands ────────────────────────────────
@@ -328,4 +377,49 @@ pub async fn validate_custom_models(paths: Vec<String>) -> Result<Vec<String>, S
         .into_iter()
         .filter(|p| std::path::Path::new(p).exists())
         .collect())
+}
+
+// ── Global hotkey ───────────────────────────────────────────────
+
+/// Register (or, with `None`, disable) the global hotkey and persist it.
+#[cfg(desktop)]
+#[tauri::command]
+pub async fn set_global_shortcut(
+    app: AppHandle,
+    accelerator: Option<String>,
+) -> Result<crate::shortcut::ShortcutStatus, String> {
+    let accelerator = accelerator.filter(|a| !a.trim().is_empty());
+    if accelerator
+        .as_deref()
+        .is_some_and(crate::shortcut::is_reserved)
+    {
+        return Err("That's an everyday editing shortcut — pick another combination".into());
+    }
+    let status = crate::shortcut::apply(&app, accelerator.clone()).await;
+    if accelerator.is_some() && !status.active {
+        // Keep the previous working shortcut instead of persisting a broken one.
+        let previous = crate::shortcut::saved_accelerator(&app);
+        let restored = crate::shortcut::apply(&app, previous).await;
+        return Err(status
+            .error
+            .or(restored.error)
+            .unwrap_or_else(|| "Couldn't register shortcut".into()));
+    }
+    let store = app.store("settings.json").map_err(|e| e.to_string())?;
+    store.set("globalShortcut", serde_json::json!(accelerator));
+    store.save().map_err(|e| e.to_string())?;
+    Ok(status)
+}
+
+#[cfg(desktop)]
+#[tauri::command]
+pub fn get_shortcut_status(app: AppHandle) -> crate::shortcut::ShortcutStatus {
+    crate::shortcut::status(&app)
+}
+
+/// Open the desktop's own shortcut dialog (GNOME/KDE on Wayland own the key).
+#[cfg(desktop)]
+#[tauri::command]
+pub async fn configure_system_shortcut() -> Result<(), String> {
+    crate::shortcut::configure_system().await
 }
