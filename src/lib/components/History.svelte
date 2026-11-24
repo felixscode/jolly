@@ -78,35 +78,69 @@
 			</p>
 		{:else}
 			<div class="flex flex-col gap-2">
-				{#each settings.correctionHistory as text}
+				{#each settings.correctionHistory as entry}
 					<div
 						class="group flex items-start gap-2 rounded-lg border border-[#960200] px-3 py-2.5 dark:border-[#ffd046]"
 					>
-						<p
-							class="min-w-0 flex-1 text-sm leading-snug text-[#423f37] line-clamp-2 dark:text-[#e8e8e3]"
-						>
-							{text}
-						</p>
-						<button
-							onclick={() => copyToClipboard(text)}
-							class="mt-0.5 shrink-0 rounded p-1 text-gray-300 transition-colors hover:text-[#960200] dark:text-[#e8e8e3]/30 dark:hover:text-[#ffd046]"
-							aria-label="Copy to clipboard"
-						>
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								width="14"
-								height="14"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								stroke-linecap="round"
-								stroke-linejoin="round"
+						<div class="min-w-0 flex-1">
+							<p class="line-clamp-2 text-sm leading-snug text-[#423f37] dark:text-[#e8e8e3]">
+								{entry.corrected}
+							</p>
+							{#if entry.original}
+								<p
+									class="mt-1 line-clamp-2 text-xs leading-snug text-gray-400 line-through dark:text-[#e8e8e3]/40"
+									title={entry.original}
+								>
+									{entry.original}
+								</p>
+							{/if}
+						</div>
+						<div class="flex shrink-0 flex-col items-center">
+							<button
+								onclick={() => copyToClipboard(entry.corrected)}
+								class="mt-0.5 rounded p-1 text-gray-300 transition-colors hover:text-[#960200] dark:text-[#e8e8e3]/30 dark:hover:text-[#ffd046]"
+								aria-label="Copy corrected text"
+								title="Copy corrected text"
 							>
-								<rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
-								<path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
-							</svg>
-						</button>
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									width="14"
+									height="14"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								>
+									<rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+									<path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+								</svg>
+							</button>
+							{#if entry.original}
+								<button
+									onclick={() => copyToClipboard(entry.original!)}
+									class="rounded p-1 text-gray-300 transition-colors hover:text-[#960200] dark:text-[#e8e8e3]/30 dark:hover:text-[#ffd046]"
+									aria-label="Copy original text"
+									title="Copy original text"
+								>
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="14"
+										height="14"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+									>
+										<path d="M3 7v6h6" />
+										<path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
+									</svg>
+								</button>
+							{/if}
+						</div>
 					</div>
 				{/each}
 			</div>

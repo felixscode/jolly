@@ -110,6 +110,24 @@
 	let onLeaveRef: (() => void) | undefined;
 	let onClickRef: (() => void) | undefined;
 
+	/** Map a backend error code to something Jolly can say. */
+	function quoteForError(err: unknown): string {
+		const code = String(err);
+		if (code.includes('no_api_key')) return 'No API key set — add one in Settings!';
+		if (code.includes('bad_api_key')) return 'API key seems wrong — check Settings!';
+		if (code.includes('bad_model')) return 'Model not found — check the model name in Settings!';
+		if (code.includes('bad_base_url')) return 'Base URL needs fixing — check Settings!';
+		if (code.includes('model_not_loaded')) return 'Model not loaded — grab one in Settings!';
+		if (code.includes('no_provider_configured')) return 'Pick a model or Harper in Settings first!';
+		if (code.includes('harper_failed')) return "Harper couldn't check that — try again!";
+		if (code.includes('local_inference_failed'))
+			return "Hmm, the model couldn't handle that — try again!";
+		if (code.includes('api_failed')) return "Can't reach the API — check your connection!";
+		if (code.includes('nothing_to_fix')) return 'Nothing to fix here!';
+		if (code.includes('clipboard_unreadable')) return "Can't read your clipboard!";
+		return "Oops, couldn't fix that!";
+	}
+
 	function pickQuote(): string {
 		let idx: number;
 		do {
@@ -249,24 +267,7 @@
 					quoteText = pickQuote();
 				} catch (err) {
 					console.error('Correction failed:', err);
-					const code = String(err);
-					if (code.includes('no_api_key')) {
-						quoteText = 'No API key set — add one in Settings!';
-					} else if (code.includes('bad_api_key')) {
-						quoteText = 'API key seems wrong — check Settings!';
-					} else if (code.includes('model_not_loaded')) {
-						quoteText = 'Model not loaded — grab one in Settings!';
-					} else if (code.includes('no_provider_configured')) {
-						quoteText = 'Pick a model or Harper in Settings first!';
-					} else if (code.includes('harper_failed')) {
-						quoteText = "Harper couldn't check that — try again!";
-					} else if (code.includes('local_inference_failed')) {
-						quoteText = "Hmm, the model couldn't handle that — try again!";
-					} else if (code.includes('api_failed')) {
-						quoteText = "Can't reach the API — check your connection!";
-					} else {
-						quoteText = "Oops, couldn't fix that!";
-					}
+					quoteText = quoteForError(err);
 				}
 			}
 			// Never leave a pending web clipboard write dangling.
@@ -276,6 +277,10 @@
 			}
 
 			await minDelay;
+			showQuote();
+		}
+
+		function showQuote() {
 			if (!mounted) return;
 			scene = 'quoting';
 			quotingTimer = setTimeout(() => {
@@ -316,7 +321,9 @@
 			// Web: clipboard.write() fails after an async gap (the user gesture
 			// expires), so open a ClipboardItem write synchronously, before any
 			// await, and resolve its content later. Tauri writes via the plugin.
-			let deferredWrite: { promise: Promise<void>; resolve: (v: string) => void; cancel: () => void } | undefined;
+			let deferredWrite:
+				| { promise: Promise<void>; resolve: (v: string) => void; cancel: () => void }
+				| undefined;
 			if (!isTauri) {
 				try {
 					let resolve!: (v: string) => void;
@@ -359,6 +366,30 @@
 			}, 800);
 		}
 
+		// Global hotkey / `jolly --fix`: the backend does the work; mirror it here.
+		let unlistenHotkey: (() => void)[] = [];
+		if (isTauri) {
+			let hotkeyStartedAt = 0;
+			import('@tauri-apps/api/event').then(async ({ listen }) => {
+				const u1 = await listen('correction-started', () => {
+					if (!mounted) return;
+					clearTimeout(greetingTimer);
+					clearTimeout(quotingTimer);
+					hotkeyStartedAt = Date.now();
+					scene = 'correcting';
+				});
+				const u2 = await listen<{ ok: boolean; code?: string }>('correction-finished', (event) => {
+					quoteText = event.payload.ok ? pickQuote() : quoteForError(event.payload.code);
+					// Let the thinking pose show for a moment even on instant results.
+					const wait = Math.max(0, 1500 - (Date.now() - hotkeyStartedAt));
+					clearTimeout(quotingTimer);
+					quotingTimer = setTimeout(showQuote, wait);
+				});
+				if (mounted) unlistenHotkey = [u1, u2];
+				else [u1, u2].forEach((u) => u());
+			});
+		}
+
 		window.addEventListener('keydown', handleKeydown);
 		onEnterRef = handleEnter;
 		onLeaveRef = handleLeave;
@@ -376,6 +407,7 @@
 			clearTimeout(blinkTimer);
 			clearTimeout(deadTimer);
 			window.removeEventListener('keydown', handleKeydown);
+			unlistenHotkey.forEach((u) => u());
 		};
 	});
 </script>

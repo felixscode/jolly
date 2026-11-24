@@ -5,7 +5,7 @@ use std::time::Instant;
 
 use jolly_lib::inference::harper::HarperProvider;
 use jolly_lib::inference::local::{self, LocalProvider};
-use jolly_lib::inference::openrouter::OpenRouterProvider;
+use jolly_lib::inference::remote::RemoteProvider;
 use jolly_lib::inference::registry::MODELS;
 use jolly_lib::inference::LLMProvider;
 
@@ -347,7 +347,7 @@ async fn main() {
     match std::env::var("OPENROUTER_API_KEY") {
         Ok(api_key) if !api_key.is_empty() => {
             eprintln!("\n=== OpenRouter (gpt-4o-mini) ===");
-            let openrouter = OpenRouterProvider::new(api_key);
+            let openrouter = RemoteProvider::openrouter(api_key);
             bench_provider(&mut csv, &cases, &openrouter, "openrouter-gpt4o-mini", "OpenRouter gpt-4o-mini").await;
         }
         _ => {

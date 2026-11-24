@@ -7,6 +7,10 @@ use tauri_plugin_store::StoreExt;
 
 mod commands;
 pub mod inference;
+#[cfg(desktop)]
+mod inject;
+#[cfg(desktop)]
+mod shortcut;
 
 use inference::download::DownloadManager;
 use inference::model_manager;
@@ -78,7 +82,24 @@ fn resolve_startup_model(app: &tauri::AppHandle) -> Option<(std::path::PathBuf, 
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let builder = tauri::Builder::default();
+
+    // Must be the first plugin: a second launch (e.g. `jolly --fix` bound to a
+    // desktop keyboard shortcut) hands its arguments to the running instance.
+    #[cfg(desktop)]
+    let builder = builder
+        .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
+            if argv.iter().any(|a| a == "--fix") {
+                shortcut::trigger(app.clone());
+            } else if let Some(w) = app.get_webview_window("main") {
+                let _ = w.unminimize();
+                let _ = w.set_focus();
+            }
+        }))
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .manage(shortcut::ShortcutManager::default());
+
+    builder
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_store::Builder::new().build())
@@ -86,6 +107,26 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .manage(Arc::new(Mutex::new(DownloadManager::new())))
         .setup(|app| {
+            #[cfg(desktop)]
+            {
+                let handle = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    let accel = shortcut::saved_accelerator(&handle);
+                    let status = shortcut::apply(&handle, accel).await;
+                    eprintln!("[jolly] Global shortcut: {:?}", status);
+                    let _ = handle.emit("shortcut-status", status.clone());
+                    if status.active && shortcut::inline_enabled(&handle) {
+                        if let Err(e) = inject::warm_up().await {
+                            eprintln!("[jolly] In-place replace unavailable: {e}");
+                        }
+                    }
+                });
+                // First launch with --fix: run one correction right away.
+                if std::env::args().any(|a| a == "--fix") {
+                    shortcut::trigger(app.handle().clone());
+                }
+            }
+
             let startup_model = resolve_startup_model(app.handle());
             if let Some((path, model_id, prompt_template)) = startup_model {
                 let handle = app.handle().clone();
@@ -116,6 +157,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::correct_text,
+            commands::list_remote_providers,
             commands::list_available_models,
             commands::list_downloaded_models,
             commands::start_download,
@@ -124,6 +166,12 @@ pub fn run() {
             commands::activate_model,
             commands::import_custom_model,
             commands::validate_custom_models,
+            #[cfg(desktop)]
+            commands::set_global_shortcut,
+            #[cfg(desktop)]
+            commands::get_shortcut_status,
+            #[cfg(desktop)]
+            commands::configure_system_shortcut,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

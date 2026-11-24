@@ -1,4 +1,19 @@
-import type { ModelWithState, CustomModel } from '$lib/types/models';
+import type {
+	ModelWithState,
+	CustomModel,
+	RemoteProviderPreset,
+	RemoteConfig,
+	HistoryEntry,
+	ShortcutStatus
+} from '$lib/types/models';
+
+const KEYRING_SERVICE = 'com.jolly.desktop';
+export const DEFAULT_SHORTCUT = 'CommandOrControl+Shift+J';
+
+/** Keyring account per provider; OpenRouter keeps its pre-0.2 name. */
+function keyringAccount(providerId: string) {
+	return providerId === 'openrouter' ? 'openrouter_api_key' : `api_key_${providerId}`;
+}
 
 // Lazy-load Tauri plugins to avoid errors when running outside Tauri.
 let _store: any = null;
@@ -17,12 +32,22 @@ async function getInvoke() {
 }
 
 function createSettingsStore() {
-	let apiKey = $state('');
 	let themeMode = $state<'system' | 'light' | 'dark'>('system');
 	let activeModelId = $state<string | null>(null);
-	let useOpenRouter = $state(false);
 	let useHarper = $state(false);
-	let correctionHistory = $state<string[]>([]);
+	let correctionHistory = $state<HistoryEntry[]>([]);
+
+	// Remote (cloud API) providers
+	let useRemote = $state(false);
+	let remoteProvider = $state('openrouter');
+	let remoteConfigs = $state<Record<string, RemoteConfig>>({});
+	let remoteProviders = $state<RemoteProviderPreset[]>([]);
+	let apiKeys = $state<Record<string, string>>({});
+
+	// Global hotkey
+	let globalShortcut = $state<string | null>(DEFAULT_SHORTCUT);
+	let shortcutStatus = $state<ShortcutStatus | null>(null);
+	let inlineReplace = $state(true);
 
 	// Models — populated from backend
 	let availableModels = $state<ModelWithState[]>([]);
@@ -49,25 +74,37 @@ function createSettingsStore() {
 			themeMode =
 				((await store.get('themeMode')) as 'system' | 'light' | 'dark' | null) ?? 'system';
 			activeModelId = ((await store.get('activeModelId')) as string | null) ?? null;
-			useOpenRouter = ((await store.get('useOpenRouter')) as boolean | null) ?? false;
+			// `useOpenRouter` is the pre-0.2 name of `useRemote`.
+			useRemote =
+				((await store.get('useRemote')) as boolean | null) ??
+				((await store.get('useOpenRouter')) as boolean | null) ??
+				false;
+			remoteProvider = ((await store.get('remoteProvider')) as string | null) ?? 'openrouter';
+			remoteConfigs =
+				((await store.get('remoteConfigs')) as Record<string, RemoteConfig> | null) ?? {};
 			useHarper = ((await store.get('useHarper')) as boolean | null) ?? false;
-			correctionHistory = ((await store.get('correctionHistory')) as string[] | null) ?? [];
+			const rawHistory = ((await store.get('correctionHistory')) as unknown[] | null) ?? [];
+			// Older versions stored plain corrected strings.
+			correctionHistory = rawHistory.map((h) =>
+				typeof h === 'string' ? { corrected: h, at: 0 } : (h as HistoryEntry)
+			);
+			const savedShortcut = await store.get('globalShortcut');
+			globalShortcut =
+				savedShortcut === undefined ? DEFAULT_SHORTCUT : (savedShortcut as string | null);
+			inlineReplace = ((await store.get('inlineReplace')) as boolean | null) ?? true;
 			customModels = ((await store.get('customModels')) as CustomModel[] | null) ?? [];
 		} catch (e) {
 			console.warn('Failed to load settings from store:', e);
 		}
 
-		// Load API key from keyring
 		try {
 			const invoke = await getInvoke();
-			const key = await invoke<string | null>('plugin:keyring|get_password', {
-				service: 'com.jolly.desktop',
-				user: 'openrouter_api_key'
-			});
-			apiKey = key ?? '';
+			remoteProviders = await invoke<RemoteProviderPreset[]>('list_remote_providers');
 		} catch (e) {
-			console.warn('Failed to load API key from keyring:', e);
+			console.warn('Failed to load remote providers:', e);
 		}
+		await loadApiKey(remoteProvider);
+		await refreshShortcutStatus();
 
 		// Load models from backend
 		await refreshModels();
@@ -180,28 +217,93 @@ function createSettingsStore() {
 			downloadError = event.payload.error;
 		});
 
-		unlisteners = [u1, u2, u3, u4];
+		const u5 = await listen<ShortcutStatus>('shortcut-status', (event) => {
+			shortcutStatus = event.payload;
+		});
+
+		unlisteners = [u1, u2, u3, u4, u5];
 	}
 
-	async function saveApiKey(key: string) {
-		apiKey = key;
+	/** Load a provider's API key from the keyring (cached in `apiKeys`). */
+	async function loadApiKey(providerId: string) {
+		if (providerId in apiKeys) return;
 		try {
 			const invoke = await getInvoke();
-			if (key) {
-				await invoke('plugin:keyring|set_password', {
-					service: 'com.jolly.desktop',
-					user: 'openrouter_api_key',
-					password: key
-				});
-			} else {
-				await invoke('plugin:keyring|delete_password', {
-					service: 'com.jolly.desktop',
-					user: 'openrouter_api_key'
-				});
-			}
+			const key = await invoke<string | null>('plugin:keyring|get_password', {
+				service: KEYRING_SERVICE,
+				user: keyringAccount(providerId)
+			});
+			apiKeys = { ...apiKeys, [providerId]: key ?? '' };
 		} catch (e) {
-			console.error('Failed to save API key to keyring:', e);
+			console.warn('Failed to load API key from keyring:', e);
 		}
+	}
+
+	async function saveApiKey(providerId: string, key: string) {
+		key = key.trim();
+		apiKeys = { ...apiKeys, [providerId]: key };
+		const invoke = await getInvoke();
+		const args = { service: KEYRING_SERVICE, user: keyringAccount(providerId) };
+		if (key) {
+			await invoke('plugin:keyring|set_password', { ...args, password: key });
+		} else {
+			try {
+				await invoke('plugin:keyring|delete_password', args);
+			} catch {
+				// Nothing stored — fine.
+			}
+		}
+	}
+
+	async function setRemoteProvider(providerId: string) {
+		remoteProvider = providerId;
+		await loadApiKey(providerId);
+		await persist({ remoteProvider: providerId });
+	}
+
+	async function setRemoteConfig(providerId: string, config: RemoteConfig) {
+		const cleaned: RemoteConfig = {};
+		if (config.model?.trim()) cleaned.model = config.model.trim();
+		if (config.baseUrl?.trim()) cleaned.baseUrl = config.baseUrl.trim();
+		remoteConfigs = { ...remoteConfigs, [providerId]: cleaned };
+		await persist({ remoteConfigs: $state.snapshot(remoteConfigs) });
+	}
+
+	async function persist(values: Record<string, unknown>) {
+		try {
+			const store = await getStore();
+			for (const [k, v] of Object.entries(values)) await store.set(k, v);
+			await store.save();
+		} catch (e) {
+			console.error('Failed to save settings:', e);
+		}
+	}
+
+	async function refreshShortcutStatus() {
+		try {
+			const invoke = await getInvoke();
+			shortcutStatus = await invoke<ShortcutStatus>('get_shortcut_status');
+		} catch {
+			shortcutStatus = null;
+		}
+	}
+
+	/** Register a new global hotkey (null disables it). Throws if registration fails. */
+	async function setGlobalShortcut(accelerator: string | null) {
+		const invoke = await getInvoke();
+		shortcutStatus = await invoke<ShortcutStatus>('set_global_shortcut', { accelerator });
+		globalShortcut = accelerator;
+	}
+
+	/** Open the desktop's own shortcut dialog (Wayland portal backend). */
+	async function configureSystemShortcut() {
+		const invoke = await getInvoke();
+		await invoke('configure_system_shortcut');
+	}
+
+	async function setInlineReplace(value: boolean) {
+		inlineReplace = value;
+		await persist({ inlineReplace: value });
 	}
 
 	async function setThemeMode(value: 'system' | 'light' | 'dark') {
@@ -231,36 +333,18 @@ function createSettingsStore() {
 		}
 	}
 
-	async function setUseOpenRouter(value: boolean) {
-		useOpenRouter = value;
-		try {
-			const store = await getStore();
-			await store.set('useOpenRouter', value);
-			// Mutual exclusion: OpenRouter ON → Harper OFF
-			if (value && useHarper) {
-				useHarper = false;
-				await store.set('useHarper', false);
-			}
-			await store.save();
-		} catch (e) {
-			console.error('Failed to save OpenRouter preference:', e);
-		}
+	async function setUseRemote(value: boolean) {
+		useRemote = value;
+		// Mutual exclusion: remote ON → Harper OFF
+		if (value && useHarper) useHarper = false;
+		await persist({ useRemote: value, useHarper });
 	}
 
 	async function setUseHarper(value: boolean) {
 		useHarper = value;
-		try {
-			const store = await getStore();
-			await store.set('useHarper', value);
-			// Mutual exclusion: Harper ON → OpenRouter OFF
-			if (value && useOpenRouter) {
-				useOpenRouter = false;
-				await store.set('useOpenRouter', false);
-			}
-			await store.save();
-		} catch (e) {
-			console.error('Failed to save Harper preference:', e);
-		}
+		// Mutual exclusion: Harper ON → remote OFF
+		if (value && useRemote) useRemote = false;
+		await persist({ useHarper: value, useRemote });
 	}
 
 	async function startDownload(modelId: string) {
@@ -298,15 +382,17 @@ function createSettingsStore() {
 
 	const MAX_HISTORY = 20;
 
-	async function addToHistory(text: string) {
-		if (!text.trim()) return;
-		correctionHistory = [text, ...correctionHistory.filter((t) => t !== text)].slice(
-			0,
-			MAX_HISTORY
-		);
+	async function addToHistory(corrected: string, original?: string) {
+		if (!corrected.trim()) return;
+		const entry: HistoryEntry = { corrected, at: Date.now() };
+		if (original && original !== corrected) entry.original = original;
+		correctionHistory = [
+			entry,
+			...correctionHistory.filter((h) => h.corrected !== corrected)
+		].slice(0, MAX_HISTORY);
 		try {
 			const store = await getStore();
-			await store.set('correctionHistory', correctionHistory);
+			await store.set('correctionHistory', $state.snapshot(correctionHistory));
 			await store.save();
 		} catch (e) {
 			console.error('Failed to save correction history:', e);
@@ -343,17 +429,38 @@ function createSettingsStore() {
 	}
 
 	return {
-		get apiKey() {
-			return apiKey;
+		get apiKeys() {
+			return apiKeys;
+		},
+		get useRemote() {
+			return useRemote;
+		},
+		get remoteProvider() {
+			return remoteProvider;
+		},
+		get remoteConfigs() {
+			return remoteConfigs;
+		},
+		get remoteProviders() {
+			return remoteProviders;
+		},
+		get activeRemotePreset() {
+			return remoteProviders.find((p) => p.id === remoteProvider) ?? null;
+		},
+		get globalShortcut() {
+			return globalShortcut;
+		},
+		get shortcutStatus() {
+			return shortcutStatus;
+		},
+		get inlineReplace() {
+			return inlineReplace;
 		},
 		get themeMode() {
 			return themeMode;
 		},
 		get activeModelId() {
 			return activeModelId;
-		},
-		get useOpenRouter() {
-			return useOpenRouter;
 		},
 		get useHarper() {
 			return useHarper;
@@ -386,9 +493,16 @@ function createSettingsStore() {
 		addToHistory,
 		clearHistory,
 		saveApiKey,
+		loadApiKey,
+		setRemoteProvider,
+		setRemoteConfig,
+		setGlobalShortcut,
+		configureSystemShortcut,
+		refreshShortcutStatus,
+		setInlineReplace,
 		setThemeMode,
 		setActiveModel,
-		setUseOpenRouter,
+		setUseRemote,
 		setUseHarper,
 		startDownload,
 		cancelDownload,

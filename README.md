@@ -36,7 +36,18 @@ Built with SvelteKit, Tailwind, Tauri, and lama.cpp in Rust and TypeScript. Joll
 
 - **Privacy-first**: All inference runs locally — nothing leaves your machine
 - **One-shot correction**: Copy, press Enter, paste — corrected text is in your clipboard
-- **Multiple ways**: Choose from on-device LLMs, Openrouter via Api Call or Harper 
+- **Global hotkey**: Highlight text in any app and press `Ctrl+Shift+J` (`⌘⇧J` on macOS). Jolly types a little `. .. ...` animation in place and swaps in the corrected text; the original stays in your clipboard and History. With nothing highlighted, it fixes your clipboard instead. Rebind it in Settings.
+- **Multiple ways**: Choose from on-device LLMs, Harper, or any cloud API — OpenRouter, OpenAI, Anthropic, Mistral, Qwen (DashScope), Cloudflare Workers AI, Vercel AI Gateway, Groq, Google Gemini, or any OpenAI-compatible server (Ollama, LM Studio, vLLM)
+
+### Hotkey notes per platform
+
+| Platform | How it works |
+|----------|--------------|
+| **Windows** | Works out of the box. Can't type into apps running as administrator. |
+| **macOS** | Grant Jolly *Accessibility* access (System Settings → Privacy & Security) for in-place replace. |
+| **Linux X11** | Works out of the box. |
+| **Linux Wayland** | Uses the desktop's GlobalShortcuts portal (GNOME 48+, KDE Plasma 5.27+, Hyprland): confirm the shortcut in the dialog on first launch. In-place replace asks for remote-input permission once. |
+| **Anything else** | Bind the command `jolly --fix` to a key in your system keyboard settings. |
 
 ## Installation
 
