@@ -163,7 +163,9 @@ pub async fn apply(app: &AppHandle, accel: Option<String>) -> ShortcutStatus {
     };
 
     if let Some(accel) = accel {
-        let mut portal_error = None;
+        // Only the Linux portal path assigns this, so the type must be explicit.
+        #[cfg_attr(not(target_os = "linux"), allow(unused_mut))]
+        let mut portal_error: Option<String> = None;
 
         #[cfg(target_os = "linux")]
         if is_wayland() {
